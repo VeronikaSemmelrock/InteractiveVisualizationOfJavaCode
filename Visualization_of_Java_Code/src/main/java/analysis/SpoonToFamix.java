@@ -13,18 +13,20 @@ import spoon.reflect.visitor.filter.TypeFilter;
 import java.util.Collection;
 
 public class SpoonToFamix {
+    private static String PROJECT_PATH = "Z:/SourceCode/InteractiveVisualizationOfJavaCode/Sample_Inputcode";
     private static CtModel spoonModel;
     public static HashMap<Integer, AbstractFamixObject> famixEntities = new HashMap<>();
     public static int entitiesCounter = 0;
     public static HashMap<Integer, AbstractFamixObject> famixAssociations = new HashMap<>();
     public static int associationsCounter = 0;
     public static CtPackage rootPackage;
+    public static ArrayList<FamixClass> generalisations = new ArrayList<>();
 
 
     public static void main(String args[]) {
         //creating SpoonParser model
         Launcher launcher = new Launcher();
-        launcher.addInputResource("C:/Users/veronika/IdeaProjects/Sample_Inputcode");
+        launcher.addInputResource(PROJECT_PATH);
         launcher.buildModel();
         spoonModel = launcher.getModel();
         rootPackage = spoonModel.getRootPackage();
@@ -68,6 +70,14 @@ public class SpoonToFamix {
         for (CtPackage sp : p.getPackages()) {
             parsePackage(sp);
         }
+
+        //after packages are done analysis and parsing of generalisations
+        for(FamixClass fc : generalisations){
+            //TODO
+            //TODO - extract extends and implements relationships!!
+            //CtTypeReference<?> superclass = entity.getSuperclass();
+            //Set<CtTypeReference<?>> interfaces = entity.getSuperInterfaces();
+        }
     }
 
     //mistakes are less likely, less duplicate code
@@ -82,10 +92,10 @@ public class SpoonToFamix {
         //TODO - FamixClass can also be an anonymous class -> what is that? - ct isAnonymous() in CtType
 
 
-        //TODO - extract extends and implements relationships!!
-        CtTypeReference<?> superclass = entity.getSuperclass();
-        Set<CtTypeReference<?>> interfaces = entity.getSuperInterfaces();
-
+        if(entity.getSuperclass() != null || entity.getSuperInterfaces().size() > 0){//has superclass or implements interfaces
+            //add famixClass to list of classes that need to be parsed for generalization later, after all classes were parsed
+            generalisations.add(famixClass);
+        }
 
 
         Set<FamixMethod> famixMethods = new HashSet<>();

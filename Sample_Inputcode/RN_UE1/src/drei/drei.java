@@ -3,7 +3,7 @@ package drei;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-public class drei extends testclass2 implements secondInterface {
+public class drei {
     private static final int vn = 2; //version number is fixed
 
     public static void main(String[] args) {
