@@ -64,7 +64,7 @@ public class SpoonToFamix {
             parsePackage(p);
         }
     }
-    private static Set<FamixClass> parseAllDirectSubclasses(CtPackage ctPackage, FamixPackage famixPackage) {
+    private static Set<FamixClass> parseAllDirectSubclasses(CtPackage ctPackage, AbstractFamixEntity famixParent) {
         Set<FamixClass> famixSubClasses = new HashSet<>();
 
         Collection<CtType> allEntities = new ArrayList<>();
@@ -73,12 +73,7 @@ public class SpoonToFamix {
 
         for(CtType entity : allEntities){
             if(isParent(entity, ctPackage)){
-                FamixClass famixClass = new FamixClass(entity.getQualifiedName(), famixPackage);
-                addToHashEntities(famixClass);
-                //famixEntities.put(famixClass.getUniqueName(), famixClass);
-                famixSubClasses.add(famixClass);
-                //parse all encountered direct subclasses and subinterfaces as a famix class
-                parseAsClass(famixClass, entity);
+                famixSubClasses.add(parseAsClass(entity, famixParent));
             }
         }
         return famixSubClasses;
@@ -98,50 +93,59 @@ public class SpoonToFamix {
         assocCounter++;
     }
 
+    private static boolean hasGeneralisation(CtType entity) {
+        return entity.getSuperclass() != null || entity.getSuperInterfaces().size() > 0;
+    }
+
     //parse class with all its methods and attributes -> methods and attributes are then parsed on their own
-    private static void parseAsClass(FamixClass famixClass, CtType entity){
+    private static FamixClass parseAsClass(CtType ctEntity, AbstractFamixEntity famixParent){
         //TODO set inner classes of class? has to be set, how can it be checked through Ct??? - maybe ct getNestedTypes() ?
         //TODO - FamixClass can also be an anonymous class -> what is that? - ct isAnonymous() in CtType -- see method dort werden sie gesetzt
 
-        if(hasGeneralisation(entity)){
+        FamixClass famixClass = new FamixClass(ctEntity.getQualifiedName(), famixParent);
+        addToHashEntities(famixClass);
+        //famixEntities.put(famixClass.getUniqueName(), famixClass);
+
+        if(hasGeneralisation(ctEntity)){
             generalisationsToParse.add(famixClass);
         }
-        famixClass.setMethods(parseAllMethods(famixClass, entity));
-        famixClass.setAttributes(parseAllAttributes(famixClass, entity));//is attribute and field the same thing? is there more to be added ? TODO
-        setModifiers(famixClass, entity);
+        famixClass.setMethods(parseAllMethods(ctEntity, famixClass));
+        famixClass.setAttributes(parseAllAttributes(ctEntity, famixClass));//is attribute and field the same thing? is there more to be added ? TODO
+        setModifiers(famixClass, ctEntity);
+        return famixClass;
     }
 
-    private static Set<FamixAttribute> parseAllAttributes(FamixClass famixClass, CtType entity) {
+    private static Set<FamixMethod> parseAllMethods(CtType ctEntity, FamixClass famixClass) {
+        Set<FamixMethod> famixMethods = new HashSet<>();
+
+        for(Object m : ctEntity.getMethods()){
+            CtMethod ctMethod = (CtMethod) m; //necessary cast
+            famixMethods.add(parseMethod(ctMethod, famixClass));
+        }
+        return famixMethods;
+    }
+    private static FamixMethod parseMethod(CtMethod ctMethod, AbstractFamixEntity famixParent) {
+        //TODO -- parse the method
+        FamixMethod famixMethod = new FamixMethod(ctMethod.getSimpleName(), famixParent);
+        addToHashEntities(famixMethod);
+        //famixEntities.put(famixMethod.getUniqueName(), famixMethod);
+        return famixMethod;
+    }
+    private static Set<FamixAttribute> parseAllAttributes(CtType ctEntity, AbstractFamixEntity famixEntity) {
         Set<FamixAttribute> famixAttributes = new HashSet<>();
-        //adding a list of corresponding famix attributes to class, then parsing famix attributes on their own
-        for(Object f : entity.getFields()){
-            CtField ctField = (CtField) f; //necessary cast
-            FamixAttribute famixField = new FamixAttribute(ctField.getSimpleName(), famixClass); //name, famixClass as parent
-            addToHashEntities(famixField);
-            //famixEntities.put(famixField.getUniqueName(), famixField);
-            parseAttribute(famixField, ctField);
-            famixAttributes.add(famixField);
+        for(Object f : ctEntity.getFields()){
+            CtField ctField = (CtField) f;
+            famixAttributes.add(parseAttribute(ctField, famixEntity));
         }
         return famixAttributes;
     }
 
-    private static Set<FamixMethod> parseAllMethods(FamixClass famixClass, CtType entity) {
-        Set<FamixMethod> famixMethods = new HashSet<>();
-
-        //adding a list of corresponding famix Methods to class, then parsing famix methods on their own
-        for(Object m : entity.getMethods()){
-            CtMethod ctMethod = (CtMethod) m; //necessary cast
-            FamixMethod famixMethod = new FamixMethod(ctMethod.getSimpleName(), famixClass); //name, famixClass as parent
-            addToHashEntities(famixMethod);
-            //famixEntities.put(famixMethod.getUniqueName(), famixMethod);
-            parseMethod(famixMethod, ctMethod);
-            famixMethods.add(famixMethod);
-        }
-        return famixMethods;
-    }
-
-    private static boolean hasGeneralisation(CtType entity) {
-        return entity.getSuperclass() != null || entity.getSuperInterfaces().size() > 0;
+    private static FamixAttribute parseAttribute(CtField ctField, AbstractFamixEntity famixParent) {
+        //TODO -- parse the attribute
+        FamixAttribute famixField = new FamixAttribute(ctField.getSimpleName(), famixParent);
+        addToHashEntities(famixField);
+        //famixEntities.put(famixField.getUniqueName(), famixField);
+        return famixField;
     }
 
     private static void setModifiers(AbstractFamixEntity famixEntity, CtType ctEntity) {
@@ -170,17 +174,11 @@ public class SpoonToFamix {
         famixEntity.setModifiers(famixModifier);
     }
 
-    private static void parseAttribute(FamixAttribute famixField, CtField ctField) {
-        //TODO parses a famix attribute with its ct counterpart
-    }
-
-    private static void parseMethod(FamixMethod famixMethod, CtMethod ctMethod) {
-        //TODO parses a famix Method with its ct counterpart
-    }
 
     private static void parseAllEncounteredGeneralisations() {
+        //TODO - refactor after errors are gone - errors = duplicate entries
         //after packages are done analysis and parsing of generalisations - because then all famix classes have been created and two famix classes can be put into a relationship
-        for(FamixClass fClass : generalisationsToParse){//TODO -- there are still mistakes in this sourcecode - duplicate entries
+        for(FamixClass fClass : generalisationsToParse){
             FamixInheritance finh = null;
             FamixSubtyping fsub = null;
             FamixClass fAssoc = null;
