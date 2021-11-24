@@ -99,8 +99,6 @@ public class SpoonToFamix {
 
     //parse class with all its methods and attributes -> methods and attributes are then parsed on their own
     private static FamixClass parseAsClass(CtType ctEntity, AbstractFamixEntity famixParent){
-        //TODO - FamixClass can also be an anonymous class -> what is that? - ct isAnonymous() in CtType -- see method dort werden sie gesetzt
-
         FamixClass famixClass = new FamixClass(ctEntity.getQualifiedName(), famixParent);
         addToHashEntities(famixClass);
         //famixEntities.put(famixClass.getUniqueName(), famixClass);
@@ -141,9 +139,19 @@ public class SpoonToFamix {
         FamixMethod famixMethod = new FamixMethod(ctMethod.getSimpleName(), famixParent);
         addToHashEntities(famixMethod);
         //famixEntities.put(famixMethod.getUniqueName(), famixMethod);
-        //TODO - here subclasses need to be checked as well (call parseClass) in case method holds anonymous class
+
+        famixMethod.setAnonymClasses(parseAllAnonymousClasses(ctMethod, famixMethod));
         return famixMethod;
     }
+
+    private static Set<FamixClass> parseAllAnonymousClasses(CtMethod ctMethod, FamixMethod famixMethod) {
+        Set<FamixClass> anonymClasses = new HashSet<>();
+        for (CtClass ctClass : ctMethod.getElements(new TypeFilter<>(CtClass.class))){
+            anonymClasses.add(parseAsClass(ctClass,famixMethod));
+        }
+        return anonymClasses;
+    }
+
     private static Set<FamixAttribute> parseAllAttributes(CtType ctEntity, AbstractFamixEntity famixEntity) {
         Set<FamixAttribute> famixAttributes = new HashSet<>();
         for(Object f : ctEntity.getFields()){
