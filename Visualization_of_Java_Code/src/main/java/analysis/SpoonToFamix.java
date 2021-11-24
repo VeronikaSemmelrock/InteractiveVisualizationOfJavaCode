@@ -99,7 +99,6 @@ public class SpoonToFamix {
 
     //parse class with all its methods and attributes -> methods and attributes are then parsed on their own
     private static FamixClass parseAsClass(CtType ctEntity, AbstractFamixEntity famixParent){
-        //TODO set inner classes of class? has to be set, how can it be checked through Ct??? - maybe ct getNestedTypes() ?
         //TODO - FamixClass can also be an anonymous class -> what is that? - ct isAnonymous() in CtType -- see method dort werden sie gesetzt
 
         FamixClass famixClass = new FamixClass(ctEntity.getQualifiedName(), famixParent);
@@ -112,7 +111,20 @@ public class SpoonToFamix {
         famixClass.setMethods(parseAllMethods(ctEntity, famixClass));
         famixClass.setAttributes(parseAllAttributes(ctEntity, famixClass));//is attribute and field the same thing? is there more to be added ? TODO
         setModifiers(famixClass, ctEntity);
+        famixClass.setInnerClasses(parseAllNestedClasses(ctEntity, famixClass));
         return famixClass;
+    }
+
+    private static Set<FamixClass> parseAllNestedClasses(CtType ctEntity, AbstractFamixEntity famixParentClass) {
+        Set<FamixClass> nestedClasses = new HashSet<>();
+
+        for(Object c : ctEntity.getNestedTypes()){
+            if(c instanceof CtClass){
+                CtClass ctClass = (CtClass) c; //necessary cast
+                nestedClasses.add(parseAsClass(ctClass, famixParentClass));
+            }
+        }
+        return nestedClasses;
     }
 
     private static Set<FamixMethod> parseAllMethods(CtType ctEntity, FamixClass famixClass) {
@@ -129,6 +141,7 @@ public class SpoonToFamix {
         FamixMethod famixMethod = new FamixMethod(ctMethod.getSimpleName(), famixParent);
         addToHashEntities(famixMethod);
         //famixEntities.put(famixMethod.getUniqueName(), famixMethod);
+        //TODO - here subclasses need to be checked as well (call parseClass) in case method holds anonymous class
         return famixMethod;
     }
     private static Set<FamixAttribute> parseAllAttributes(CtType ctEntity, AbstractFamixEntity famixEntity) {

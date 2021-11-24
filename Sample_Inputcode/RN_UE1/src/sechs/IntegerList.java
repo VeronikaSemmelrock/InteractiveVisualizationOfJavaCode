@@ -7,7 +7,6 @@ public class IntegerList { //same instance of this class is used by multiple thr
 
     protected int nextfree = 0; //list is filled from index 0 on, values are always added to "next free" index, if list is full adding starts at index 0 again
 
-
     public IntegerList( ) {
         data = new int[DEFAULT_SIZE];
         size = DEFAULT_SIZE;
