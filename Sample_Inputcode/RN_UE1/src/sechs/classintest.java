@@ -10,4 +10,10 @@ public class classintest {
 
         }
     }
+
+    public classintest() {//Konstruktor!!
+        class anonymConstructorClass{
+
+        }
+    }
 }

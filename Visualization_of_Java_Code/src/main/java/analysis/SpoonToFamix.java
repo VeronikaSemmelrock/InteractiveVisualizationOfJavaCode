@@ -125,18 +125,39 @@ public class SpoonToFamix {
             CtMethod ctMethod = (CtMethod) m; //necessary cast
             famixMethods.add(parseMethod(ctMethod, famixClass));
         }
+        //*
+        if(!(ctEntity instanceof CtInterface)){//only interfaces do not have constructors - if it is not an interface, ctEntity is of type CtClass
+            CtClass ctClass = (CtClass) ctEntity;
+            for(Object c : ctClass.getConstructors()){
+                CtConstructor ctConstructor = (CtConstructor) c;
+                famixMethods.add(parseMethod(ctConstructor, famixClass));
+            }
+        }
+        //*/
         return famixMethods;
     }
-    private static FamixMethod parseMethod(CtMethod ctMethod, AbstractFamixEntity famixParent) {
-        //TODO -- parse the method
-        FamixMethod famixMethod = new FamixMethod(ctMethod.getReference().getDeclaringType().getQualifiedName()+"-"+ctMethod.getSimpleName(), famixParent);//proper unique Name
+
+    private static FamixMethod parseMethod(CtElement ctElement, AbstractFamixEntity famixParent) {
+        //TODO -- parse the method or the constructor
+
+        FamixMethod famixMethod = null;
+        if(ctElement instanceof CtMethod){
+            CtMethod m = (CtMethod) ctElement;
+            famixMethod = new FamixMethod(m.getReference().getDeclaringType().getQualifiedName()+"-"+m.getSimpleName(), famixParent);//proper unique Name
+        }else if(ctElement instanceof CtConstructor){
+            CtConstructor c = (CtConstructor) ctElement;
+            famixMethod = new FamixMethod(c.getReference().getDeclaringType().getQualifiedName()+"_"+c.getSimpleName(), famixParent);//proper unique Name
+        }else{
+            return null;
+        }
+
         famixEntities.put(famixMethod.getUniqueName(), famixMethod);
 
-        famixMethod.setAnonymClasses(parseAllAnonymousClasses(ctMethod, famixMethod));
+        famixMethod.setAnonymClasses(parseAllAnonymousClasses(ctElement, famixMethod));
         return famixMethod;
     }
 
-    private static Set<FamixClass> parseAllAnonymousClasses(CtMethod ctMethod, FamixMethod famixMethod) {
+    private static Set<FamixClass> parseAllAnonymousClasses(CtElement ctMethod, FamixMethod famixMethod) {
         Set<FamixClass> anonymClasses = new HashSet<>();
         for (CtClass ctClass : ctMethod.getElements(new TypeFilter<>(CtClass.class))){
             anonymClasses.add(parseAsClass(ctClass,famixMethod));
