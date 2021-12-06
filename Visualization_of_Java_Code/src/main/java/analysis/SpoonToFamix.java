@@ -44,6 +44,7 @@ public class SpoonToFamix {
         for(CtPackage p : rootPackage.getPackages()){
             parsePackage(p);
         }
+        parseAllEncounteredGeneralisations();
     }
 
     //analyses a package, its subpackages and direct subclasses
@@ -54,7 +55,6 @@ public class SpoonToFamix {
         Set<FamixClass> famixSubClasses = parseAllDirectSubclasses(ctPackage, famixPackage);
         famixPackage.setClasses(famixSubClasses);
         parseAllSubpackages(ctPackage);
-        parseAllEncounteredGeneralisations();
     }
 
 
@@ -193,8 +193,8 @@ public class SpoonToFamix {
         //TODO - refactor after errors are gone - errors = duplicate entries
         //after packages are done analysis and parsing of generalisations - because then all famix classes have been created and two famix classes can be put into a relationship
         for(FamixClass fClass : generalisationsToParse){
-            FamixInheritance finh = null;
-            FamixSubtyping fsub = null;
+            FamixInheritance finh = null; //represents extends
+            FamixSubtyping fsub = null; //represents implements
             FamixClass fAssoc = null;
             List matchingClasses = rootPackage.filterChildren(new AbstractFilter<CtClass>(CtClass.class) {
                 @Override
@@ -204,21 +204,33 @@ public class SpoonToFamix {
             }).list();
             if(matchingClasses.size() == 1){
                 CtClass classMatch = (CtClass) matchingClasses.get(0);
+                System.out.println("Classmatch: "+classMatch.getQualifiedName());
                 CtTypeReference superclass = classMatch.getSuperclass();
+                System.out.println("Superclass: "+superclass.getQualifiedName());
                 Set<CtTypeReference<?>> interfaces = classMatch.getSuperInterfaces();
                 if(superclass != null){
+                    System.out.println("Superclass was not null. ");
                     fAssoc = (FamixClass) famixEntities.get(superclass.getQualifiedName());
-                    if(fAssoc != null){
+                    if(fAssoc != null){ //could be null if class was not parsed by spoon (like class Thread, Enum ...)
+                        System.out.println("Matching Superclass in Spoon was found ");
                         finh = new FamixInheritance(fClass, fAssoc);
-                    }else{//could also extend Thread etc that are not in HashEntities, because it was not parsed by spoonparser
+                    }else{
+                        System.out.println("Matching Superclass in Spoon was not found - like Thread etc ");
                         finh = new FamixInheritance(fClass, new FamixClass(superclass.getQualifiedName()));
                     }
                     addToHashAssociations(finh);
                 }
                 if(interfaces.size()>0){
+                    System.out.println("There is an interface to parse");
                     for(CtTypeReference i : interfaces){
-                        fAssoc = (FamixClass) famixEntities.get(superclass.getQualifiedName());
-                        fsub = new FamixSubtyping(fClass, fAssoc);
+                        System.out.println("Interface: "+i.getQualifiedName());
+                        fAssoc = (FamixClass) famixEntities.get(i.getQualifiedName());
+                        if(fAssoc != null){
+                            fsub = new FamixSubtyping(fClass, fAssoc);
+                        }else{//could be like "implements JavaCompiler" -> Spoonparser did not parse this class
+                            fsub = new FamixSubtyping(fClass, new FamixClass(i.getQualifiedName()));
+                        }
+
                         addToHashAssociations(fsub);
                     }
                 }
