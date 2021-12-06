@@ -145,8 +145,6 @@ public class SpoonToFamix {
     }
 
     private static Set<FamixAttribute> parseAllAttributes(CtType ctEntity, AbstractFamixEntity famixEntity) {
-        //TODO - check, whether uniqueName of attribute inside a method fits for hashmap (because unique name of method was created manually,
-        //should be created manually and added here too, with attribute unique name at the end)
         Set<FamixAttribute> famixAttributes = new HashSet<>();
         for(Object f : ctEntity.getFields()){
             CtField ctField = (CtField) f;
@@ -156,7 +154,8 @@ public class SpoonToFamix {
     }
 
     private static FamixAttribute parseAttribute(CtField ctField, AbstractFamixEntity famixParent) {
-        //TODO -- parse the attribute
+        //TODO -- parse the attribute - Attention: check, whether uniqueName of attribute inside a method fits for hashmap (because unique name of method was created manually,
+        //should be created manually and added here too, with attribute unique name at the end)
         FamixAttribute famixField = new FamixAttribute(ctField.getReference().getQualifiedName(), famixParent); //proper unique Name
         famixEntities.put(famixField.getUniqueName(), famixField);
         return famixField;
@@ -188,51 +187,72 @@ public class SpoonToFamix {
         famixEntity.setModifiers(famixModifier);
     }
 
-
+    //after packages are done analysis and parsing of generalisations - because then all famix classes have been created and two famix classes can be put into a relationship
     private static void parseAllEncounteredGeneralisations() {
-        //TODO - refactor after errors are gone - errors = duplicate entries
-        //after packages are done analysis and parsing of generalisations - because then all famix classes have been created and two famix classes can be put into a relationship
         for(FamixClass fClass : generalisationsToParse){
-            FamixInheritance finh = null; //represents extends
-            FamixSubtyping fsub = null; //represents implements
-            FamixClass fAssoc = null;
-            List matchingClasses = rootPackage.filterChildren(new AbstractFilter<CtClass>(CtClass.class) {
-                @Override
-                public boolean matches(CtClass ctc){
-                    return ctc.getQualifiedName().equals(fClass.getUniqueName()); //filter only matches one specific class
-                }
-            }).list();
-            if(matchingClasses.size() == 1){
-                CtClass classMatch = (CtClass) matchingClasses.get(0);
-                CtTypeReference superclass = classMatch.getSuperclass();
-                Set<CtTypeReference<?>> interfaces = classMatch.getSuperInterfaces();
-                if(superclass != null){
-                    fAssoc = (FamixClass) famixEntities.get(superclass.getQualifiedName());
-                    if(fAssoc != null){ //could be null if first encounter of unparsed class (like Thread, Enum ...)
-                        finh = new FamixInheritance(fClass, fAssoc);
-                    }else{
-                        fAssoc = new FamixClass(superclass.getQualifiedName());
-                        finh = new FamixInheritance(fClass, fAssoc);
-                        famixEntities.put(superclass.getQualifiedName(), fAssoc); //adding unknown class to entities for visualisation
-                    }
-                    addToHashAssociations(finh);
-                }
-                if(interfaces.size()>0){
-                    for(CtTypeReference i : interfaces){
-                        fAssoc = (FamixClass) famixEntities.get(i.getQualifiedName());
-                        if(fAssoc != null){
-                            fsub = new FamixSubtyping(fClass, fAssoc);
-                        }else{//could be first encounter of interface like "JavaCompiler" -> Spoonparser did not parse this class
-                            fAssoc = new FamixClass(i.getQualifiedName());
-                            fsub = new FamixSubtyping(fClass, fAssoc);
-                            famixEntities.put(i.getQualifiedName(), fAssoc);
-                        }
+            parseGeneralisationsOfClass(fClass);
+        }
+    }
 
-                        addToHashAssociations(fsub);
-                    }
-                }
+    private static void parseGeneralisationsOfClass(FamixClass fClass) {
+        CtClass ctClassMatch = getMatchingCtClass(fClass);
 
+        if(ctClassMatch != null){
+            parseExtendsAssoc(fClass, ctClassMatch);
+            parseImplementsAssocs(fClass, ctClassMatch);
+        }
+
+    }
+
+    private static void parseImplementsAssocs(FamixClass fClass, CtClass ctClassMatch) {
+        Set<CtTypeReference<?>> interfaces = ctClassMatch.getSuperInterfaces();
+        FamixSubtyping fsub = null; //represents implements
+        FamixClass fAssoc = null;
+
+        if(interfaces.size()>0){
+            for(CtTypeReference i : interfaces){
+                fAssoc = (FamixClass) famixEntities.get(i.getQualifiedName());
+                if(fAssoc != null){
+                    fsub = new FamixSubtyping(fClass, fAssoc);
+                }else{//could be first encounter of interface like "JavaCompiler" -> Spoonparser did not parse this class
+                    fAssoc = new FamixClass(i.getQualifiedName());
+                    fsub = new FamixSubtyping(fClass, fAssoc);
+                    famixEntities.put(i.getQualifiedName(), fAssoc);
+                }
+                addToHashAssociations(fsub);
             }
+        }
+    }
+
+    private static void parseExtendsAssoc(FamixClass fClass, CtClass ctClassMatch) {
+        CtTypeReference superclass = ctClassMatch.getSuperclass();
+        FamixInheritance finh = null; //represents extends
+        FamixClass fAssoc = null;
+
+        if(superclass != null){
+            fAssoc = (FamixClass) famixEntities.get(superclass.getQualifiedName());
+            if(fAssoc != null){ //could be null if first encounter of unparsed class (like Thread, Enum ...)
+                finh = new FamixInheritance(fClass, fAssoc);
+            }else{
+                fAssoc = new FamixClass(superclass.getQualifiedName());
+                finh = new FamixInheritance(fClass, fAssoc);
+                famixEntities.put(superclass.getQualifiedName(), fAssoc); //adding unknown class to entities for visualisation
+            }
+            addToHashAssociations(finh);
+        }
+    }
+
+    private static CtClass getMatchingCtClass(FamixClass fClass) {
+        List matchingClasses = rootPackage.filterChildren(new AbstractFilter<CtClass>(CtClass.class) {
+            @Override
+            public boolean matches(CtClass ctc){
+                return ctc.getQualifiedName().equals(fClass.getUniqueName()); //filter only matches one specific class
+            }
+        }).list();
+        if(matchingClasses.size() > 0){
+            return (CtClass) matchingClasses.get(0);
+        }else {
+            return null;
         }
     }
 }
