@@ -204,31 +204,28 @@ public class SpoonToFamix {
             }).list();
             if(matchingClasses.size() == 1){
                 CtClass classMatch = (CtClass) matchingClasses.get(0);
-                System.out.println("Classmatch: "+classMatch.getQualifiedName());
                 CtTypeReference superclass = classMatch.getSuperclass();
-                System.out.println("Superclass: "+superclass.getQualifiedName());
                 Set<CtTypeReference<?>> interfaces = classMatch.getSuperInterfaces();
                 if(superclass != null){
-                    System.out.println("Superclass was not null. ");
                     fAssoc = (FamixClass) famixEntities.get(superclass.getQualifiedName());
-                    if(fAssoc != null){ //could be null if class was not parsed by spoon (like class Thread, Enum ...)
-                        System.out.println("Matching Superclass in Spoon was found ");
+                    if(fAssoc != null){ //could be null if first encounter of unparsed class (like Thread, Enum ...)
                         finh = new FamixInheritance(fClass, fAssoc);
                     }else{
-                        System.out.println("Matching Superclass in Spoon was not found - like Thread etc ");
-                        finh = new FamixInheritance(fClass, new FamixClass(superclass.getQualifiedName()));
+                        fAssoc = new FamixClass(superclass.getQualifiedName());
+                        finh = new FamixInheritance(fClass, fAssoc);
+                        famixEntities.put(superclass.getQualifiedName(), fAssoc); //adding unknown class to entities for visualisation
                     }
                     addToHashAssociations(finh);
                 }
                 if(interfaces.size()>0){
-                    System.out.println("There is an interface to parse");
                     for(CtTypeReference i : interfaces){
-                        System.out.println("Interface: "+i.getQualifiedName());
                         fAssoc = (FamixClass) famixEntities.get(i.getQualifiedName());
                         if(fAssoc != null){
                             fsub = new FamixSubtyping(fClass, fAssoc);
-                        }else{//could be like "implements JavaCompiler" -> Spoonparser did not parse this class
-                            fsub = new FamixSubtyping(fClass, new FamixClass(i.getQualifiedName()));
+                        }else{//could be first encounter of interface like "JavaCompiler" -> Spoonparser did not parse this class
+                            fAssoc = new FamixClass(i.getQualifiedName());
+                            fsub = new FamixSubtyping(fClass, fAssoc);
+                            famixEntities.put(i.getQualifiedName(), fAssoc);
                         }
 
                         addToHashAssociations(fsub);
