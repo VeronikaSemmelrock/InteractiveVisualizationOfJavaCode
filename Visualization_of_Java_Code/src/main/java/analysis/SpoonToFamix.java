@@ -16,7 +16,7 @@ import java.util.Collection;
 public class SpoonToFamix {
     private static String PROJECT_PATH = "C:\\Users\\Veronika\\Documents\\IVJC\\InteractiveVisualizationOfJavaCode\\Sample_Inputcode";
     private static CtModel spoonModel;
-    public static HashMap<Integer, AbstractFamixObject> famixEntities = new HashMap<>();
+    public static HashMap<String, AbstractFamixObject> famixEntities = new HashMap<>();
     public static int entitiesCounter=0;
     public static HashMap<Integer, AbstractFamixGeneralization> famixAssociations = new HashMap<>();
     private static int assocCounter = 0;
@@ -49,8 +49,7 @@ public class SpoonToFamix {
     //analyses a package, its subpackages and direct subclasses
     private static void parsePackage(CtPackage ctPackage) {
         FamixPackage famixPackage = new FamixPackage(ctPackage.getQualifiedName());
-        addToHashEntities(famixPackage);
-        //famixEntities.put(famixPackage.getUniqueName(), famixPackage);
+        famixEntities.put(famixPackage.getUniqueName(), famixPackage);
 
         Set<FamixClass> famixSubClasses = parseAllDirectSubclasses(ctPackage, famixPackage);
         famixPackage.setClasses(famixSubClasses);
@@ -83,11 +82,6 @@ public class SpoonToFamix {
         return entity.getParent().equals(ctParent);
     }
 
-    private static void addToHashEntities(AbstractFamixObject f){
-        famixEntities.put(entitiesCounter, f);
-        entitiesCounter++;
-    }
-
     private static void addToHashAssociations(AbstractFamixGeneralization f){
         famixAssociations.put(assocCounter, f);
         assocCounter++;
@@ -100,8 +94,7 @@ public class SpoonToFamix {
     //parse class with all its methods and attributes -> methods and attributes are then parsed on their own
     private static FamixClass parseAsClass(CtType ctEntity, AbstractFamixEntity famixParent){
         FamixClass famixClass = new FamixClass(ctEntity.getQualifiedName(), famixParent);
-        addToHashEntities(famixClass);
-        //famixEntities.put(famixClass.getUniqueName(), famixClass);
+        famixEntities.put(famixClass.getUniqueName(), famixClass);
 
         if(hasGeneralisation(ctEntity)){
             generalisationsToParse.add(famixClass);
@@ -136,9 +129,8 @@ public class SpoonToFamix {
     }
     private static FamixMethod parseMethod(CtMethod ctMethod, AbstractFamixEntity famixParent) {
         //TODO -- parse the method
-        FamixMethod famixMethod = new FamixMethod(ctMethod.getSimpleName(), famixParent);
-        addToHashEntities(famixMethod);
-        //famixEntities.put(famixMethod.getUniqueName(), famixMethod);
+        FamixMethod famixMethod = new FamixMethod(ctMethod.getReference().getDeclaringType().getQualifiedName()+"-"+ctMethod.getSimpleName(), famixParent);//proper unique Name
+        famixEntities.put(famixMethod.getUniqueName(), famixMethod);
 
         famixMethod.setAnonymClasses(parseAllAnonymousClasses(ctMethod, famixMethod));
         return famixMethod;
@@ -153,6 +145,8 @@ public class SpoonToFamix {
     }
 
     private static Set<FamixAttribute> parseAllAttributes(CtType ctEntity, AbstractFamixEntity famixEntity) {
+        //TODO - check, whether uniqueName of attribute inside a method fits for hashmap (because unique name of method was created manually,
+        //should be created manually and added here too, with attribute unique name at the end)
         Set<FamixAttribute> famixAttributes = new HashSet<>();
         for(Object f : ctEntity.getFields()){
             CtField ctField = (CtField) f;
@@ -163,9 +157,8 @@ public class SpoonToFamix {
 
     private static FamixAttribute parseAttribute(CtField ctField, AbstractFamixEntity famixParent) {
         //TODO -- parse the attribute
-        FamixAttribute famixField = new FamixAttribute(ctField.getSimpleName(), famixParent);
-        addToHashEntities(famixField);
-        //famixEntities.put(famixField.getUniqueName(), famixField);
+        FamixAttribute famixField = new FamixAttribute(ctField.getReference().getQualifiedName(), famixParent); //proper unique Name
+        famixEntities.put(famixField.getUniqueName(), famixField);
         return famixField;
     }
 
