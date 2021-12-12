@@ -28,7 +28,8 @@ public class SpoonToFamix {
         createSpoonModel();
         parseAllPackages();//recursive call
 
-        System.out.println("test");
+        exportJSON test = new exportJSON(famixEntities, famixAssociations);
+        test.exportToFile("Test");
     }
 
     private static void createSpoonModel() {
