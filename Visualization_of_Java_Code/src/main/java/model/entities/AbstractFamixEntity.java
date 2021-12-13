@@ -122,8 +122,9 @@ public abstract class AbstractFamixEntity extends AbstractFamixObject{
 
     /**
      * Parent entity.
+     * Transient for serialization.
      */
-    private AbstractFamixEntity fParent;
+    private transient AbstractFamixEntity fParent;
 
     /**
      * Unique name.
