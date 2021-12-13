@@ -5,6 +5,7 @@ import spoon.Launcher;
 import spoon.reflect.CtModel;
 import spoon.reflect.declaration.*;
 
+import java.io.IOException;
 import java.util.*;
 
 import spoon.reflect.reference.CtTypeReference;
@@ -24,12 +25,12 @@ public class SpoonToFamix {
     public static ArrayList<FamixClass> generalisationsToParse = new ArrayList<>();
 
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws IOException {
         createSpoonModel();
         parseAllPackages();//recursive call
 
-        exportJSON test = new exportJSON(famixEntities, famixAssociations);
-        test.exportToFile("Test");
+        exportJSON jsonExport = new exportJSON(famixEntities, famixAssociations);
+        jsonExport.exportToFile();
     }
 
     private static void createSpoonModel() {
