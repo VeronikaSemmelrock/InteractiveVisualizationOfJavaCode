@@ -17,10 +17,12 @@ package model.entities;
 
 //import model.resources.entities.misc.Content;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
-
 /**
  * The base class representing a FAMIX entity.
  * 
