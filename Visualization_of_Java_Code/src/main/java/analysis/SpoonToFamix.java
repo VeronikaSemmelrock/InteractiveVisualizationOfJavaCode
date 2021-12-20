@@ -15,7 +15,7 @@ import spoon.reflect.visitor.filter.TypeFilter;
 import java.util.Collection;
 
 public class SpoonToFamix {
-    private static String PROJECT_PATH = "C:\\Users\\Veronika\\Documents\\IVJC\\InteractiveVisualizationOfJavaCode\\Sample_Inputcode";
+    private static String PROJECT_PATH = "C:\\Users\\semme\\Documents\\IVJC\\InteractiveVisualizationOfJavaCode\\Sample_Inputcode";
     private static CtModel spoonModel;
     public static HashMap<String, AbstractFamixEntity> famixEntities = new HashMap<>();
     public static int entitiesCounter=0;
