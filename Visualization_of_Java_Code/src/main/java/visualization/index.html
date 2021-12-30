@@ -9,49 +9,13 @@
     </script>
     <!-- Loads and initializes library-->
     <script type="text/javascript" src="mxClient.js"></script>
-    <!-- First Hello World Code-->
-    <script type="text/javascript">
-        function main(container){ //container not created yet but will hold graph
-            if(!mxClient.isBrowserSupported()){
-                alert("Browser not supported!");
-            }else{
-                let graph = new mxGraph(container);//create variable holding mxGraph and add to container
-                new mxRubberband(graph); //put rubberband around graph so graph can be moved around
-                let parent = graph.getDefaultParent();
-                graph.getModel().beginUpdate();
-                try{
-                    let v1 = graph.insertVertex(parent, null, "Hello", 20, 20, 80, 30);
-                    //create first Node, parent, id (null -> ids managed by mxgraph, tag, x-coordinates, y-coordinates, width, height, default style
-                    let v2 = graph.insertVertex(parent, null, "World!", 200, 150, 80,30);
-                    let e1 = graph.insertEdge(parent, null, "first Edge", v1,v2);
-                }
-                finally{
-                graph.getModel().endUpdate();
-                }
-            }
-        };
-    </script>
-    
-</head>
-<!-- body holds container for graph - onload -> as soon as body is finished loading, the function should be called-->
-<body onload="main(document.getElementById('graphContainer'))">
-<div    id="graphContainer"
-        style="overflow: hidden;width: 321px;height: 241px;"></div>
-<div id="file"></div>
-    <script type="text/javascript">
-         document.getElementById('file').addEventListener('change', readFile, false);
 
-           function readFile (evt) {
-               var files = evt.target.files;
-               var file = files[0];
-               var reader = new FileReader();
-               reader.onload = function(event) {
-                 console.log(event.target.result);
-               }
-               reader.readAsText(file)
-               alert("Something happened!"); 
-            }
-    </script>
-    <script type="module" src="./loadJSON.js"></script>
+    <!-- "calls" (imports) code in main, while body loads (async) -->
+    <script async defer src="./main.js"></script>
+    <!-- linking stylesheet-->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body id='root'>
+    <div id="graphContainer"></div>
 </body>
 </html>

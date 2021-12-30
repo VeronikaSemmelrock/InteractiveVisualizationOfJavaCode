@@ -122,6 +122,7 @@ public abstract class AbstractFamixEntity extends AbstractFamixObject{
      */
     private Long fId;
 
+    private String fType;
     /**
      * Parent entity.
      * Transient for serialization.
@@ -471,5 +472,12 @@ public abstract class AbstractFamixEntity extends AbstractFamixObject{
     @Transient
     public boolean isFinal() {
         return (getModifiers() & AbstractFamixEntity.MODIFIER_FINAL) == AbstractFamixEntity.MODIFIER_FINAL;
+    }
+
+    public String getType() {
+        return this.fType;
+    }
+    public void setType(String type) {
+        this.fType = type;
     }
 }

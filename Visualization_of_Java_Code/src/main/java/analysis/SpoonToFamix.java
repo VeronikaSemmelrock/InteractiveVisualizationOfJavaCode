@@ -52,6 +52,7 @@ public class SpoonToFamix {
     //analyses a package, its subpackages and direct subclasses
     private static void parsePackage(CtPackage ctPackage) {
         FamixPackage famixPackage = new FamixPackage(ctPackage.getQualifiedName());
+        famixPackage.setType("package");
         famixEntities.put(famixPackage.getUniqueName(), famixPackage);
 
         Set<FamixClass> famixSubClasses = parseAllDirectSubclasses(ctPackage, famixPackage);
@@ -96,6 +97,7 @@ public class SpoonToFamix {
     //parse class with all its methods and attributes -> methods and attributes are then parsed on their own
     private static FamixClass parseAsClass(CtType ctEntity, AbstractFamixEntity famixParent){
         FamixClass famixClass = new FamixClass(ctEntity.getQualifiedName(), famixParent);
+        famixClass.setType("class");
         famixEntities.put(famixClass.getUniqueName(), famixClass);
 
         if(hasGeneralisation(ctEntity)){
@@ -146,9 +148,11 @@ public class SpoonToFamix {
         if(ctElement instanceof CtMethod){
             CtMethod m = (CtMethod) ctElement;
             famixMethod = new FamixMethod(m.getReference().getDeclaringType().getQualifiedName()+"-"+m.getSimpleName(), famixParent);//proper unique Name
+            famixMethod.setType("method");
         }else if(ctElement instanceof CtConstructor){
             CtConstructor c = (CtConstructor) ctElement;
             famixMethod = new FamixMethod(c.getReference().getDeclaringType().getQualifiedName()+"_"+c.getSimpleName(), famixParent);//proper unique Name
+            famixMethod.setType("method");
         }else{
             return null;
         }
@@ -180,6 +184,7 @@ public class SpoonToFamix {
         //TODO -- parse the attribute - Attention: check, whether uniqueName of attribute inside a method fits for hashmap (because unique name of method was created manually,
         //should be created manually and added here too, with attribute unique name at the end)
         FamixAttribute famixField = new FamixAttribute(ctField.getReference().getQualifiedName(), famixParent); //proper unique Name
+        famixField.setType("attribute");
         famixEntities.put(famixField.getUniqueName(), famixField);
         return famixField;
     }
@@ -239,6 +244,7 @@ public class SpoonToFamix {
                     fsub = new FamixSubtyping(fClass, fAssoc);
                 }else{//could be first encounter of interface like "JavaCompiler" -> Spoonparser did not parse this class
                     fAssoc = new FamixClass(i.getQualifiedName());
+                    fAssoc.setType("class");
                     fsub = new FamixSubtyping(fClass, fAssoc);
                     famixEntities.put(i.getQualifiedName(), fAssoc);
                 }
@@ -258,6 +264,7 @@ public class SpoonToFamix {
                 finh = new FamixInheritance(fClass, fAssoc);
             }else{
                 fAssoc = new FamixClass(superclass.getQualifiedName());
+                fAssoc.setType("class");
                 finh = new FamixInheritance(fClass, fAssoc);
                 famixEntities.put(superclass.getQualifiedName(), fAssoc); //adding unknown class to entities for visualisation
             }

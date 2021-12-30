@@ -1,0 +1,5 @@
+#graphContainer{ /* #<ID> := document.getElementById(<ID>) -- style for this element*/
+    overflow: hidden;
+    width: 100vw; /* := 100% of max screen width */
+    height: 100vh;     
+}
