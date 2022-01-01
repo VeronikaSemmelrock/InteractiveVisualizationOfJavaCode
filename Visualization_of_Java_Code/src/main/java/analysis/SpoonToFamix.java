@@ -17,9 +17,9 @@ import java.util.Collection;
 public class SpoonToFamix {
     private static String PROJECT_PATH = "C:\\Users\\semme\\Documents\\IVJC\\InteractiveVisualizationOfJavaCode\\Sample_Inputcode";
     private static CtModel spoonModel;
-    public static HashMap<String, AbstractFamixEntity> famixEntities = new HashMap<>();
+    public static HashMap<String, AbstractFamixEntity> famixEntities = new LinkedHashMap<>();
     public static int entitiesCounter=0;
-    public static HashMap<Integer, AbstractFamixGeneralization> famixAssociations = new HashMap<>();
+    public static HashMap<Integer, AbstractFamixGeneralization> famixAssociations = new LinkedHashMap<>();
     private static int assocCounter = 0;
     public static CtPackage rootPackage;
     public static ArrayList<FamixClass> generalisationsToParse = new ArrayList<>();
@@ -98,6 +98,7 @@ public class SpoonToFamix {
     private static FamixClass parseAsClass(CtType ctEntity, AbstractFamixEntity famixParent){
         FamixClass famixClass = new FamixClass(ctEntity.getQualifiedName(), famixParent);
         famixClass.setType("class");
+        famixClass.setParentString(famixParent.getUniqueName());
         famixEntities.put(famixClass.getUniqueName(), famixClass);
 
         if(hasGeneralisation(ctEntity)){
@@ -149,10 +150,12 @@ public class SpoonToFamix {
             CtMethod m = (CtMethod) ctElement;
             famixMethod = new FamixMethod(m.getReference().getDeclaringType().getQualifiedName()+"-"+m.getSimpleName(), famixParent);//proper unique Name
             famixMethod.setType("method");
+            famixMethod.setParentString(famixParent.getUniqueName());
         }else if(ctElement instanceof CtConstructor){
             CtConstructor c = (CtConstructor) ctElement;
             famixMethod = new FamixMethod(c.getReference().getDeclaringType().getQualifiedName()+"_"+c.getSimpleName(), famixParent);//proper unique Name
             famixMethod.setType("method");
+            famixMethod.setParentString(famixParent.getUniqueName());
         }else{
             return null;
         }
@@ -185,6 +188,7 @@ public class SpoonToFamix {
         //should be created manually and added here too, with attribute unique name at the end)
         FamixAttribute famixField = new FamixAttribute(ctField.getReference().getQualifiedName(), famixParent); //proper unique Name
         famixField.setType("attribute");
+        famixField.setParentString(famixParent.getUniqueName());
         famixEntities.put(famixField.getUniqueName(), famixField);
         return famixField;
     }
