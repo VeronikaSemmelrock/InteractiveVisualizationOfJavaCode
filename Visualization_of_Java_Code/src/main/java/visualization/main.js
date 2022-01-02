@@ -32,7 +32,7 @@ async function main(container){
         let y= 0;
         let xUpperLayer = 0; 
         let yUpperLayer =0; 
-        const vertexes = [];
+        const vertices = [];
         let newtype; 
         let oldtype; 
         let width; 
@@ -42,35 +42,78 @@ async function main(container){
         let pkgOffsetY = 0;
         let pkgColumns
 
+        
+
         try{
+
+
+            var layout = new mxHierarchicalLayout(graph);
+            
+            layout.resizeParent = true; 
+            layout.moveParent = false; 
+            
+            layout.parentBorder = 20; 
+            layout.intraCellSpacing = 20; 
+            layout.interRankCellSpacing = 50; 
+            layout.interHierarchySpacing = 10; 
+
+            //layout.parallelEdgeSpacing = 0; //Edge bundling? 
+
+            //layout.orientation = mxConstants.DIRECTION_WEST; 
+
+            
+            layout.fineTuning = true; 
+            layout.tightenToSource = true; 
+            //layout.disableEdgeStyle = false; //makes custom edge style possible
+
+            //layout.traverseAncestors = true;
+            
+            
+            var v1 = graph.insertVertex(parent, null, "test1", 50 ,50,200,200);//x and y is ignored because of automatic layouting
+            var v2 = graph.insertVertex(v1, null, "test2", 0,0,80,30);
+            var v3 = graph.insertVertex(v1, null, "test3", 0,0,80,30);
+            var v4 = graph.insertVertex(v1, null, "test4", 0,0,80,30);
+            var v5 = graph.insertVertex(v1, null, "test5", 0,0,80,30);
+            var e1 = graph.insertEdge(parent, null, "edge1", v2, v5);
+            var e2 = graph.insertEdge(parent, null, "edge2", v2, v3);
+            var e3 = graph.insertEdge(parent, null, "edge3", v4, v5);
+
+            layout.execute(parent);
+            layout.execute(v1); //must be executed on all vertices that are parents, else children arent displayed inside their parent
+
+            /*
             Object.keys(entities).forEach(function(key){
+                
 
                 //deciding on shape/style and correct coordinates
                 switch (entities[key].fType){
                     case "class": 
-                       style = "SHAPE_RECTANGLE;rounded=1;fillColor=#D0DDFF";  // blue; style from mxConstants.js
+                       style = "rectangle;rounded=1;fillColor=#D0DDFF";  // blue; style from mxConstants.js
                        newtype = "class";
                        width = 200; 
                        height = 50; 
+                       
                        break; 
                     case "package":
-                        style = "SHAPE_RECTANGLE;rounded=1;fillColor=#FAFFB0"; // yellow
+                        style = "rectangle;rounded=1;fillColor=#FAFFB0"; // yellow
                         newtype = "package";
                         width = 300; 
                         height = 300; 
                         pkgColumns ++
+                        
                         break; 
                     case "method": 
-                        style = "SHAPE_RHOMBUS;rounded=1;fillColor=#FFC6D6"; // red
+                        style = "rhombus;fillColor=#FFC6D6"; // red
                         newtype = "method";
                         width = 180; 
                         height = 30;
                         break; 
                     case "attribute": 
-                        style = "SHAPE_ELLIPSE;rounded=1;fillColor=#C0FFB6"; // green
+                        style = "ellipse;fillColor=#C0FFB6"; // green
                         newtype = "attribute";
                         width = 180; 
                         height = 30;
+                    
                         break; 
                     default: 
                         alert("Object "+key+" did not have a correclty set type for choosing shape");
@@ -81,18 +124,20 @@ async function main(container){
                 if(entities[key].fParentAsString == "null"){
                     parent = graph.getDefaultParent();
                 }else{
-                    parent = vertexes.find(function(vertex){
+                    parent = vertices.find(function(vertex){
                         if(vertex.id == entities[key].fParentAsString){
                             return vertex
                         }
                     })
                 }
+                
 
                 if(pkgColumns === 3) {
                     pkgColumns = 0;
                     pkgOffsetX = 0;
                     pkgOffsetY += 400;
                 }
+                
                 //setting x and y coordinates relative to parent correctly - because hashmap is structured every time a new
                 //type is encountered x and y must be set back to 0 because a new recursive layer is entered
                 //this is not the case with the uppermost layer, these need to be structured seperately 
@@ -117,10 +162,17 @@ async function main(container){
                 }
 
                 console.log(parent, entities[key].fUniqueName, entities[key].fUniqueName, x, y, width, height, style)
-                //creating vertexes
-                vertexes.push(graph.insertVertex(parent, entities[key].fUniqueName, entities[key].fUniqueName, x, y, width, height, style));
+                //creating vertices
+                vertices.push(graph.insertVertex(parent, entities[key].fUniqueName, entities[key].fUniqueName, x, y, width, height, style));
                      
             });
+
+            vertices.forEach(function(vertex, i){
+                graph.insertEdge(graph.getDefaultParent, null, "tests", vertex, vertices[i+1]); 
+            })
+
+            */
+
         } finally{
             graph.getModel().endUpdate();
         }
