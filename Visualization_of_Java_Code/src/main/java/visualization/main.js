@@ -29,148 +29,87 @@ async function main(container){
         let parent = graph.getDefaultParent(); 
         graph.getModel().beginUpdate();
         let x = 0; 
-        let y= 0;
-        let xUpperLayer = 0; 
-        let yUpperLayer =0; 
+        let y= 0; 
         const vertices = [];
-        let newtype; 
-        let oldtype; 
+        const parents =[]; //remembering parents for layouting
         let width; 
-        let height; 
-    
-        let pkgOffsetX = 300;
-        let pkgOffsetY = 0;
-        let pkgColumns
-
-        
+        let height;  
 
         try{
-
-
             var layout = new mxHierarchicalLayout(graph);
             
-            layout.resizeParent = true; 
+            layout.resizeParent = true;//resize parent so parent is able to hold all children 
             layout.moveParent = false; 
             
-            layout.parentBorder = 20; 
+            layout.parentBorder = 10;//border size between children of parent and parent border 
             layout.intraCellSpacing = 20; 
-            layout.interRankCellSpacing = 50; 
-            layout.interHierarchySpacing = 10; 
+            layout.interRankCellSpacing = 0; 
+            layout.interHierarchySpacing = 20; //spacing between seperate hierarchies
 
-            //layout.parallelEdgeSpacing = 0; //Edge bundling? 
-
+            //layout.parallelEdgeSpacing = 0; //Edge bundling? -- or adding another layouting algorithm
             //layout.orientation = mxConstants.DIRECTION_WEST; 
-
-            
             layout.fineTuning = true; 
             layout.tightenToSource = true; 
             //layout.disableEdgeStyle = false; //makes custom edge style possible
 
-            //layout.traverseAncestors = true;
-            
-            
-            var v1 = graph.insertVertex(parent, null, "test1", 50 ,50,200,200);//x and y is ignored because of automatic layouting
-            var v2 = graph.insertVertex(v1, null, "test2", 0,0,80,30);
-            var v3 = graph.insertVertex(v1, null, "test3", 0,0,80,30);
-            var v4 = graph.insertVertex(v1, null, "test4", 0,0,80,30);
-            var v5 = graph.insertVertex(v1, null, "test5", 0,0,80,30);
-            var e1 = graph.insertEdge(parent, null, "edge1", v2, v5);
-            var e2 = graph.insertEdge(parent, null, "edge2", v2, v3);
-            var e3 = graph.insertEdge(parent, null, "edge3", v4, v5);
+            layout.traverseAncestors = true;
 
-            layout.execute(parent);
-            layout.execute(v1); //must be executed on all vertices that are parents, else children arent displayed inside their parent
-
-            /*
             Object.keys(entities).forEach(function(key){
-                
-
-                //deciding on shape/style and correct coordinates
+                //deciding on shape/style
                 switch (entities[key].fType){
                     case "class": 
-                       style = "rectangle;rounded=1;fillColor=#D0DDFF";  // blue; style from mxConstants.js
-                       newtype = "class";
-                       width = 200; 
-                       height = 50; 
-                       
+                       style = "rounded=1;fillColor=#D0DDFF;shape=rectangle";  // blue; style from mxConstants.js                       
                        break; 
                     case "package":
-                        style = "rectangle;rounded=1;fillColor=#FAFFB0"; // yellow
-                        newtype = "package";
-                        width = 300; 
-                        height = 300; 
-                        pkgColumns ++
-                        
+                        style = "shape=rectangle;rounded=1;fillColor=#FAFFB0"; // yellow
                         break; 
                     case "method": 
-                        style = "rhombus;fillColor=#FFC6D6"; // red
-                        newtype = "method";
-                        width = 180; 
-                        height = 30;
+                        style = "fillColor=#FFC6D6;shape=rhombus"; // red
                         break; 
                     case "attribute": 
-                        style = "ellipse;fillColor=#C0FFB6"; // green
-                        newtype = "attribute";
-                        width = 180; 
-                        height = 30;
-                    
+                        style = "fillColor=#C0FFB6;shape=ellipse"; // green
                         break; 
                     default: 
                         alert("Object "+key+" did not have a correclty set type for choosing shape");
                         style = null; 
                         break;
                 }
-                //getting correct parent of hierarchial structure
+                
+                //getting correct parent for hierarchical structure
                 if(entities[key].fParentAsString == "null"){
                     parent = graph.getDefaultParent();
+                    height = 100; 
+                    width = 100; 
                 }else{
                     parent = vertices.find(function(vertex){
                         if(vertex.id == entities[key].fParentAsString){
+                            parents.push(vertex); 
                             return vertex
                         }
                     })
+                    height = 20; 
+                    width = 20; 
                 }
-                
-
-                if(pkgColumns === 3) {
-                    pkgColumns = 0;
-                    pkgOffsetX = 0;
-                    pkgOffsetY += 400;
-                }
-                
-                //setting x and y coordinates relative to parent correctly - because hashmap is structured every time a new
-                //type is encountered x and y must be set back to 0 because a new recursive layer is entered
-                //this is not the case with the uppermost layer, these need to be structured seperately 
-                if(!oldtype){
-                    oldtype = newtype; 
-                }else if(newtype !== oldtype){
-                    //uppermost layer must be structured well too
-                    if(parent == graph.getDefaultParent()){
-                        x = xUpperLayer; 
-                        y = yUpperLayer; 
-                        xUpperLayer += pkgOffsetX; 
-                        yUpperLayer += pkgOffsetY; 
-                    }else{
-                        x=0; 
-                        y=0;  
-                    }
-                     
-                    oldtype = newtype; 
-                }else{
-                    x+=20; 
-                    y+=20; 
-                }
-
-                console.log(parent, entities[key].fUniqueName, entities[key].fUniqueName, x, y, width, height, style)
+                //console.log(parent, entities[key].fUniqueName, entities[key].fUniqueName, x, y, width, height, style)
                 //creating vertices
-                vertices.push(graph.insertVertex(parent, entities[key].fUniqueName, entities[key].fUniqueName, x, y, width, height, style));
+                vertices.push(graph.insertVertex(parent, entities[key].fUniqueName, entities[key].fUniqueName, x, y, height, width, style));
                      
             });
 
-            vertices.forEach(function(vertex, i){
+            //layout.execute(graph.getDefaultParent(), parents);
+            layout.execute(graph.getDefaultParent(), graph.getDefaultParent().getChildren())
+            /*layout.execute(graph.getDefaultParent()); 
+            parents.forEach(function(parent){
+                layout.execute(parent);
+            })
+            
+            //??? different layout if both execute statements are executed?? - hm 
+            //make use of findRoots()??
+
+            //inserting dummy vertices
+            /*vertices.forEach(function(vertex, i){
                 graph.insertEdge(graph.getDefaultParent, null, "tests", vertex, vertices[i+1]); 
             })
-
             */
 
         } finally{
