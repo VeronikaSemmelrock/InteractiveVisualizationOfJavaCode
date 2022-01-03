@@ -41,11 +41,55 @@ async function main(container){
     if(!mxClient.isBrowserSupported()){
         alert("Browser not supported!");
     }else{
-        graph = createGraph(container);  
+        graph = createGraph(container); 
+        
+        
+        /////////code for folding (show/hide of groups)
+        graph.setDropEnabled(true);
+				
+        // Disables global features
+        graph.collapseToPreferredSize = false;
+        graph.constrainChildren = false;
+        graph.cellsSelectable = false; //nothing can be moved around anymore
+        graph.extendParentsOnAdd = false;
+        graph.extendParents = false;
+        graph.border = 100;//changes a lot too - TODO - what is that? 
+
+        // Installs auto layout for all levels
+        var layout = new mxStackLayout(graph, true);
+        layout.border = graph.border;
+        var layoutMgr = new mxLayoutManager(graph);
+        layoutMgr.getLayout = function(cell)
+        {
+            if (!cell.collapsed)
+            {
+                if (cell.parent != graph.model.root)
+                {
+                    layout.resizeParent = true;
+                    layout.horizontal = false;
+                    layout.spacing = 10;
+                }
+                else
+                {
+                    layout.resizeParent = true;
+                    layout.horizontal = true;
+                    layout.spacing = 40;
+                }
+                
+                return layout;
+            }
+            
+            return null;
+        };
+        // Resizes the container
+		graph.setResizeContainer(true);
+        /////////
+
+
         graph.getModel().beginUpdate(); 
         try{
             let layout = createHierarchicalLayout(graph); 
-            insertVertices(); 
+            insertVertices();         
             executeLayout(layout); 
           
             //inserting dummy vertices
@@ -64,6 +108,7 @@ async function main(container){
 function createGraph(container){
     let graph = new mxGraph(container); 
     new mxRubberband(graph); 
+    //graph.setResizeContainer(true);?
     return graph;
 }
 
@@ -79,8 +124,10 @@ function createHierarchicalLayout(graph){
     //layout.orientation = mxConstants.DIRECTION_WEST; 
     layout.fineTuning = true; 
     layout.tightenToSource = true; 
+    layout.border = graph.border;
     //layout.disableEdgeStyle = false; //makes custom edge style possible
     //layout.traverseAncestors = true;
+    //layout.useBoundingBox=false; 
     return layout; 
 }
 
@@ -151,8 +198,12 @@ function insertVertices(){
 
 function executeLayout(layout){
     //executing layout - ?? slighty different statements perform totally different layout
-    layout.execute(graph.getDefaultParent(), graph.getChildVertices(graph.getDefaultParent()));
+    //do i need to call execute from inside out? so from end of array to start of array? 
+    
     parents.forEach(function(parent){
         layout.execute(parent, graph.getChildVertices(parent));
     })
+    
+    //layout.execute(graph.getDefaultParent(), graph.getChildVertices(graph.getDefaultParent()));
+    //layout.execute(graph.getDefaultParent()); 
 }
