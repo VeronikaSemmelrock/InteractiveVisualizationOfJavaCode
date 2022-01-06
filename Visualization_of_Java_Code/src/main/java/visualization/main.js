@@ -176,12 +176,15 @@ function getWidth(parent){
 }
 
 function insertVertices(){
+    let v; 
     Object.keys(entities).forEach(function(key){//looping through each entity
         style = getStyle(entities[key].fType, key); //get style depending on what type of entity it is
         parent = getParent(entities[key].fParentAsString); //get parent for correct hierarchical structure
         width = getWidth(parent);
         height = HEIGHT_LOWESTLEVEL; //height is always autoresized, except lowest level (when element has no children)
-        vertices.push(graph.insertVertex(parent, entities[key].fUniqueName, entities[key].fUniqueName, 0, 0, width, HEIGHT_LOWESTLEVEL, style));
+        v = graph.insertVertex(parent, entities[key].fUniqueName, entities[key].fUniqueName, 0, 0, width, HEIGHT_LOWESTLEVEL, style); 
+        v.collapsed = true; 
+        vertices.push(v);
     });
 }
 
