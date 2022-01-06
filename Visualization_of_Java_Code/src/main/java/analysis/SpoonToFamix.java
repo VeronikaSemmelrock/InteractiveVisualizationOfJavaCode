@@ -153,7 +153,7 @@ public class SpoonToFamix {
             famixMethod.setParentString(famixParent.getUniqueName());
         }else if(ctElement instanceof CtConstructor){
             CtConstructor c = (CtConstructor) ctElement;
-            famixMethod = new FamixMethod(c.getReference().getDeclaringType().getQualifiedName()+"_"+c.getSimpleName(), famixParent);//proper unique Name
+            famixMethod = new FamixMethod(c.getReference().getDeclaringType().getQualifiedName()+"-"+c.getSimpleName(), famixParent);//proper unique Name
             famixMethod.setType("method");
             famixMethod.setParentString(famixParent.getUniqueName());
         }else{

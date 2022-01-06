@@ -182,7 +182,7 @@ function insertVertices(){
         parent = getParent(entities[key].fParentAsString); //get parent for correct hierarchical structure
         width = getWidth(parent);
         height = HEIGHT_LOWESTLEVEL; //height is always autoresized, except lowest level (when element has no children)
-        v = graph.insertVertex(parent, entities[key].fUniqueName, entities[key].fUniqueName, 0, 0, width, HEIGHT_LOWESTLEVEL, style); 
+        v = graph.insertVertex(parent, entities[key].fUniqueName, getName(entities[key].fUniqueName), 0, 0, width, HEIGHT_LOWESTLEVEL, style); 
         v.collapsed = true; 
         vertices.push(v);
     });
@@ -192,4 +192,21 @@ function executeLayout(layout){
     parents.forEach(function(parent){
         layout.execute(parent, graph.getChildVertices(parent));
     })
+}
+
+function getName(name){
+    highestIndex = 0; 
+    let deliminters = [".", "-", "#", "$"]; 
+    deliminters.forEach(function(del){
+        tempIndex = name.lastIndexOf(del); //find last occurrence of this index in name
+        if(tempIndex > highestIndex){
+            highestIndex = tempIndex; 
+        }
+    })
+    if(highestIndex == 0){
+        return name.substring(highestIndex); //no delimiter, full name is returned
+    }else{
+        return name.substring(highestIndex+1); //returns rest of name, excluding last occurrence of a delimiter
+    }
+    
 }
