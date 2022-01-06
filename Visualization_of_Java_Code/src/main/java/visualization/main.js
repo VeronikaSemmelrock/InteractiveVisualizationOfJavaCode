@@ -2,10 +2,11 @@ const MYCOLOUR_BLUE = "#D0DDFF";
 const MYCOLOUR_GREEN = "#C0FFB6";
 const MYCOLOUR_RED = "#FFC6D6";
 const MYCOLOUR_YELLOW = "#FAFFB0";
-const STYLE_CLASS = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_BLUE;
-const STYLE_PACKAGE = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_YELLOW;
-const STYLE_METHOD = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_RED;
-const STYLE_ATTRIBUTE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_GREEN;
+const LABELSTYLE = "verticalAlign=top";
+const STYLE_CLASS = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_BLUE+";"+LABELSTYLE;
+const STYLE_PACKAGE = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_YELLOW+";"+LABELSTYLE;
+const STYLE_METHOD = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_RED+";"+LABELSTYLE;
+const STYLE_ATTRIBUTE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_GREEN+";"+LABELSTYLE;
 
 const HEIGHT_LOWESTLEVEL = 30; //determines height of elements that dont have children. Rest is autoresized
 const STANDARD_WIDTH = 250; //determines width of elements of upper layer 
@@ -208,5 +209,4 @@ function getName(name){
     }else{
         return name.substring(highestIndex+1); //returns rest of name, excluding last occurrence of a delimiter
     }
-    
 }
