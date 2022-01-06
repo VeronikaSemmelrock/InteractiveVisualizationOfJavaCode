@@ -475,9 +475,6 @@ public abstract class AbstractFamixEntity extends AbstractFamixObject{
         return (getModifiers() & AbstractFamixEntity.MODIFIER_FINAL) == AbstractFamixEntity.MODIFIER_FINAL;
     }
 
-    public String getType() {
-        return this.fType;
-    }
     public void setType(String type) {
         this.fType = type;
     }

@@ -47,6 +47,8 @@ public class FamixAssociation extends AbstractFamixObject {
      */
 //    private String fStatement;
 
+    private String fType;
+
     /**
      * The default constructor.
      */
@@ -217,5 +219,9 @@ public class FamixAssociation extends AbstractFamixObject {
         String uri =
                 getType() + ": " + getFromEntity().getURI() + " -> " + getToEntity().getURI() + ": " + getSourceAnchor().getURI();
         return uri;
+    }
+
+    public void setType(String type) {
+        this.fType = type;
     }
 }

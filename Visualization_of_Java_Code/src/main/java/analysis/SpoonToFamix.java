@@ -250,8 +250,10 @@ public class SpoonToFamix {
                     fAssoc = new FamixClass(i.getQualifiedName());
                     fAssoc.setType("class");
                     fsub = new FamixSubtyping(fClass, fAssoc);
+                    fsub.setType("implements");
                     famixEntities.put(i.getQualifiedName(), fAssoc);
                 }
+                fsub.setType("implements");
                 addToHashAssociations(fsub);
             }
         }
@@ -272,6 +274,7 @@ public class SpoonToFamix {
                 finh = new FamixInheritance(fClass, fAssoc);
                 famixEntities.put(superclass.getQualifiedName(), fAssoc); //adding unknown class to entities for visualisation
             }
+            finh.setType("extends");
             addToHashAssociations(finh);
         }
     }

@@ -7,6 +7,8 @@ const STYLE_CLASS = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_BLUE+";"+LA
 const STYLE_PACKAGE = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_YELLOW+";"+LABELSTYLE;
 const STYLE_METHOD = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_RED+";"+LABELSTYLE;
 const STYLE_ATTRIBUTE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_GREEN+";"+LABELSTYLE;
+const STYLE_EXTENDS = "strokeColor="+MYCOLOUR_BLUE; 
+const STYLE_IMPLEMENTS = "strokeColor="+MYCOLOUR_GREEN; 
 
 const HEIGHT_LOWESTLEVEL = 30; //determines height of elements that dont have children. Rest is autoresized
 const STANDARD_WIDTH = 250; //determines width of elements of upper layer 
@@ -20,6 +22,7 @@ const LAYOUT_INTERHIERARCHYSPACING = 13; //spacing between seperate hierarchies
 let assocs;
 let entities;
 const vertices=[];
+const edges = []; 
 const parents=[];
 let graph;
 
@@ -53,13 +56,7 @@ async function main(container){
         try{
             insertVertices();
             //executeLayout(layout); //for additional / hierarchical layout - at least not for installmxStackLayout
-
-            //inserting dummy vertices
-            /*vertices.forEach(function(vertex, i){
-                graph.insertEdge(graph.getDefaultParent, null, "tests", vertex, vertices[i+1]);
-            })
-            */
-
+            insertEdges(); 
         } finally{
             graph.getModel().endUpdate();
         }
@@ -130,7 +127,7 @@ function createHierarchicalLayout(graph){
 
 function getStyle(fType, key){
     let style;
-    //deciding on shape/style
+    //deciding on shape/style for entities and assocs
     switch (fType){
         case "class":
            style = STYLE_CLASS;
@@ -144,9 +141,15 @@ function getStyle(fType, key){
         case "attribute":
             style = STYLE_ATTRIBUTE;
             break;
+        case "extends": 
+            style = STYLE_EXTENDS; 
+            break; 
+        case "implements": 
+            style = STYLE_IMPLEMENTS; 
+            break; 
         default:
-            alert("Object "+key+" did not have a correclty set type for choosing shape");
-            style = null;
+            alert("Object "+key+" did not have a correclty set type for choosing style");
+            style = "";
             break;
     }
     return style;
@@ -209,4 +212,25 @@ function getName(name){
     }else{
         return name.substring(highestIndex+1); //returns rest of name, excluding last occurrence of a delimiter
     }
+}
+
+function insertEdges(){
+    let from; 
+    Object.keys(assocs).forEach(function(key){//looping through each association
+        style = getStyle(assocs[key].fType, key); //get style depending on what type of assoc
+        from = getVertex(assocs[key].fFromEntity.fUniqueName);
+        //parent, id (just index), value (type) - what is written, from, to, style
+        e = graph.insertEdge(graph.getDefaultParent(), key, assocs[key].fType, from, getVertex(assocs[key].fToEntity.fUniqueName), style);
+        edges.push(e);
+    });
+}
+
+function getVertex(uniqueName){ 
+    let found; 
+    found = vertices.find(function(vertex){
+        if(vertex.id == uniqueName){ 
+            return vertex;
+        }
+    })
+    return found; 
 }
