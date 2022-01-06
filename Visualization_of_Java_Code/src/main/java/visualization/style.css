@@ -1,15 +1,12 @@
 #graphContainer{ /* #<ID> := document.getElementById(<ID>) -- style for this element*/
-    overflow: hidden;
     width: 100vw; /* := 100% of max screen width */
-    height: 100vh;  
+    height: 100vh;
+    overflow-y: scroll;
+    overflow-x: scroll;
+    min-width: 100vw;
     max-width: 100vw;
-    max-height: 100vh;  
-    overflow-y: hidden;
-    overflow-y: hidden; 
 }
 body{
     height: 100vh;
     width: 100vw;
-    overflow-y: hidden;
-    overflow-y: hidden;
 }
