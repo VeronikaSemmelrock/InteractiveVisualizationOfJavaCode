@@ -7,8 +7,7 @@ const STYLE_CLASS = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_BLUE+";"+LA
 const STYLE_PACKAGE = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_YELLOW+";"+LABELSTYLE;
 const STYLE_METHOD = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_RED+";"+LABELSTYLE;
 const STYLE_ATTRIBUTE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_GREEN+";"+LABELSTYLE;
-const STYLE_EXTENDS = "strokeColor="+MYCOLOUR_BLUE; 
-const STYLE_IMPLEMENTS = "strokeColor="+MYCOLOUR_GREEN; 
+
 
 const HEIGHT_LOWESTLEVEL = 30; //determines height of elements that dont have children. Rest is autoresized
 const STANDARD_WIDTH = 250; //determines width of elements of upper layer 
@@ -18,6 +17,8 @@ const LAYOUT_PARENTBORDER = 10;//border size between children of parent and pare
 const LAYOUT_INTRACELLSPACING = 20; 
 const LAYOUT_INTERRANKCELLSPACING = 0; 
 const LAYOUT_INTERHIERARCHYSPACING = 13; //spacing between seperate hierarchies
+const LAYOUT_XDISTANCE_PARENTS = 50; //distance of parents between each other (x)
+const LAYOUT_YDISTANCE_CHILDREN = 10; //distance between children of one parent (y) in stack
 
 let assocs;
 let entities;
@@ -55,8 +56,9 @@ async function main(container){
         graph.getModel().beginUpdate();
         try{
             insertVertices();
-            //executeLayout(layout); //for additional / hierarchical layout - at least not for installmxStackLayout
+            setEdgeStyle(); 
             insertEdges(); 
+            //executeLayout(layout); //for additional / hierarchical layout - at least not for installmxStackLayout
         } finally{
             graph.getModel().endUpdate();
         }
@@ -93,13 +95,13 @@ function installmxStackLayout(){
             {
                 layout.resizeParent = true;
                 layout.horizontal = false;
-                layout.spacing = 10;
+                layout.spacing = LAYOUT_YDISTANCE_CHILDREN;
             }
             else
             {
                 layout.resizeParent = true;
                 layout.horizontal = true;
-                layout.spacing = 50;
+                layout.spacing = LAYOUT_XDISTANCE_PARENTS; 
             }
             return layout;
         }
@@ -110,7 +112,7 @@ function createHierarchicalLayout(graph){
     var layout = new mxHierarchicalLayout(graph);
     //layout.resizeParent = true;
     layout.moveParent = false; //move parent if resizing is called
-    layout.parentBorder = PARENTBORDER;
+    layout.parentBorder = LAYOUT_PARENTBORDER;
     layout.intraCellSpacing = LAYOUT_INTRACELLSPACING; 
     layout.interRankCellSpacing = LAYOUT_INTERRANKCELLSPACING;
     layout.interHierarchySpacing = LAYOUT_INTERHIERARCHYSPACING;
@@ -140,12 +142,6 @@ function getStyle(fType, key){
             break;
         case "attribute":
             style = STYLE_ATTRIBUTE;
-            break;
-        case "extends": 
-            style = STYLE_EXTENDS; 
-            break; 
-        case "implements": 
-            style = STYLE_IMPLEMENTS; 
             break; 
         default:
             alert("Object "+key+" did not have a correclty set type for choosing style");
@@ -172,11 +168,15 @@ function getParent(parentString){
 
 function getWidth(parent){
     let width = STANDARD_WIDTH; 
-    if(parent === graph.getDefaultParent()) return width;
-    else if(parent.parent === graph.getDefaultParent())return width - GRAPH_BORDER*2; 
-    else if (parent.parent.parent === graph.getDefaultParent()) return width -GRAPH_BORDER*4; 
-    else if (parent.parent.parent.parent === graph.getDefaultParent()) return width - GRAPH_BORDER*6; 
-    else if (parent.parent.parent.parent.parent === graph.getDefaultParent()) return width - GRAPH_BORDER*8; 
+    let sub = GRAPH_BORDER; 
+    if(parent === graph.getDefaultParent()) return width; 
+    else{
+        while(parent !== graph.getDefaultParent()){//each layer we go deeper, more must be subtracted (times 2 because once on each side)
+            parent = parent.parent;//go one layer higher, trying to find defaultParent to determine on which layer this element is 
+            sub += GRAPH_BORDER*2;//for each step subtract more from width
+        }
+        return width - sub; 
+    }
 }
 
 function insertVertices(){
@@ -217,10 +217,9 @@ function getName(name){
 function insertEdges(){
     let from; 
     Object.keys(assocs).forEach(function(key){//looping through each association
-        style = getStyle(assocs[key].fType, key); //get style depending on what type of assoc
         from = getVertex(assocs[key].fFromEntity.fUniqueName);
-        //parent, id (just index), value (type) - what is written, from, to, style
-        e = graph.insertEdge(graph.getDefaultParent(), key, assocs[key].fType, from, getVertex(assocs[key].fToEntity.fUniqueName), style);
+        //parent, id (just index), value (type) - what is written, from, to (style - set already in stylesheet)
+        e = graph.insertEdge(graph.getDefaultParent(), key, assocs[key].fType, from, getVertex(assocs[key].fToEntity.fUniqueName));
         edges.push(e);
     });
 }
@@ -233,4 +232,21 @@ function getVertex(uniqueName){
         }
     })
     return found; 
+}
+
+function setEdgeStyle(){
+    var edgeStyle = graph.stylesheet.getDefaultEdgeStyle(); 
+    edgeStyle[mxConstants.STYLE_STROKEWIDTH]=1; 
+    edgeStyle[mxConstants.STYLE_STROKECOLOR]="black";
+    edgeStyle[mxConstants.STYLE_FONTCOLOR] = "black"; 
+    edgeStyle[mxConstants.STYLE_ROUNDED]=true; //depends on taste
+
+    //edgeStyle[mxConstants.STYLE_EDGE]=mxConstants.EDGESTYLE_ENTITY_RELATION; //good
+    edgeStyle[mxConstants.STYLE_EDGE]=mxConstants.EDGESTYLE_SIDETOSIDE;//good 
+ 
+    //edgeStyle[mxConstants.STYLE_EDGE]=mxConstants.EDGESTYLE_ORTHOGONAL; 
+    //edgeStyle[mxConstants.STYLE_EDGE]=mxConstants.EDGESTYLE_SEGMENT; 
+    //edgeStyle[mxConstants.STYLE_EDGE]=mxConstants.EDGESTYLE_TOPTOBOTTOM; 
+    //edgeStyle[mxConstants.STYLE_EDGE] = mxEdgeStyle.ElbowConnector; 
+
 }
