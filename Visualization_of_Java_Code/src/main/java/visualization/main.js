@@ -26,9 +26,11 @@ const vertices=[];
 const edges = []; 
 const parents=[];
 let graph;
+var layout; 
 
 const body = document.getElementById('root');
 const graphContainer = document.getElementById('graphContainer');
+const optionsContainer = document.getElementById('optionsContainer'); 
 body.onload = main(graphContainer); //calls main when body is finished loading
 
 async function loadFiles(){
@@ -52,6 +54,8 @@ async function main(container){
     }else{
         graph = createGraph(container);
         layout = installmxStackLayout();
+        //layout = installmxCircleLayout(); //does not work as intended - styling not perfect
+        //layout = installmxCompositeLayout(); //does not work at all yet
         //layout = createHierarchicalLayout(graph);//must be seperately executed via executeLayout(layout); 
         graph.getModel().beginUpdate();
         try{
@@ -83,31 +87,29 @@ function createGraph(container){
     return graph;
 }
 //installs auto layouting on all levels of hierarchies (folding)
+//Layouting can be changed in here too 
 function installmxStackLayout(){
-    var layout = new mxStackLayout(graph, true);
+    layout = new mxStackLayout(graph, true);
     layout.border = graph.border;
-    var layoutMgr = new mxLayoutManager(graph);
-    layoutMgr.getLayout = function(cell)
-    {
-        if (!cell.collapsed)
-        {
-            if (cell.parent != graph.model.root)
-            {
-                layout.resizeParent = true;
-                layout.horizontal = false;
-                layout.spacing = LAYOUT_YDISTANCE_CHILDREN;
-            }
-            else
-            {
-                layout.resizeParent = true;
-                layout.horizontal = true;
-                layout.spacing = LAYOUT_XDISTANCE_PARENTS; 
-            }
-            return layout;
-        }
-        return null;
-    }; 
+    createmxStackLayoutManager(layout); 
+    return layout;      
 }
+
+/*function installmxCircleLayout(){
+    layout = new mxCircleLayout(graph, 50);//50 stands for radius, default is 100
+    layout.border = graph.border;
+    createmxCircleLayoutManager(layout); 
+    return layout; 
+}
+function installmxCompositeLayout(){
+    var first = new mxCircleLayout(graph); 
+    var second = new mxStackLayout(graph, true); 
+    layout = new mxCompositeLayout(graph, [first,second], first); 
+    layout.border = graph.border; 
+    //createmxCompositeLayoutManager(layout); 
+    return layout; 
+}
+
 function createHierarchicalLayout(graph){
     var layout = new mxHierarchicalLayout(graph);
     //layout.resizeParent = true;
@@ -126,7 +128,7 @@ function createHierarchicalLayout(graph){
     //layout.useBoundingBox=false;
     return layout;
 }
-
+*/
 function getStyle(fType, key){
     let style;
     //deciding on shape/style for entities and assocs
@@ -191,13 +193,13 @@ function insertVertices(){
         vertices.push(v);
     });
 }
-
+/*
 function executeLayout(layout){
     parents.forEach(function(parent){
         layout.execute(parent, graph.getChildVertices(parent));
     })
 }
-
+*/
 function getName(name){
     highestIndex = 0; 
     let deliminters = [".", "-", "#", "$"]; 
@@ -249,4 +251,160 @@ function setEdgeStyle(){
     //edgeStyle[mxConstants.STYLE_EDGE]=mxConstants.EDGESTYLE_TOPTOBOTTOM; 
     //edgeStyle[mxConstants.STYLE_EDGE] = mxEdgeStyle.ElbowConnector; 
 
+}
+//i think layoutManager specifically for mxStack
+function createmxStackLayoutManager(layout){
+    var layoutMgr = new mxLayoutManager(graph);
+    layoutMgr.getLayout = function(cell)
+    {
+        if (!cell.collapsed)
+        {
+            if (cell.parent != graph.model.root)
+            {
+                layout.resizeParent = true;
+                layout.horizontal = false;
+                layout.spacing = LAYOUT_YDISTANCE_CHILDREN;
+            }
+            else
+            {
+                layout.resizeParent = true;
+                layout.horizontal = true;
+                layout.spacing = LAYOUT_XDISTANCE_PARENTS; 
+            }
+            return layout;
+        }
+        return null;
+    };
+}
+/*
+//layout manager is run after changes are made to graph - so collapsing ! - so with this code different layouts can be implemented on different levels of hierarchy
+function createmxCircleLayoutManager(layout){
+    let innerLayout = new mxStackLayout(graph, true); 
+    var layoutMgr = new mxLayoutManager(graph);
+    layoutMgr.getLayout = function(cell)
+    {
+        if (!cell.collapsed)
+        {
+            if (cell.parent != graph.model.root)
+            {
+                innerLayout.resizeParent = true;
+                innerLayout.horizontal = false;
+                innerLayout.spacing = LAYOUT_YDISTANCE_CHILDREN;
+            }
+            else
+            {
+                innerLayout.resizeParent = true;
+                innerLayout.horizontal = true;
+                innerLayout.spacing = LAYOUT_XDISTANCE_PARENTS; 
+            }
+            return innerLayout;
+        }
+        return null;
+    };
+}
+
+function createmxCompositeLayoutManager(layout){
+    let innerLayout = new mxStackLayout(graph, true); 
+    var layoutMgr = new mxLayoutManager(graph);
+    layoutMgr.getLayout = function(cell)
+    {
+        if (!cell.collapsed)
+        {
+            if (cell.parent != graph.model.root)
+            {
+                innerLayout.resizeParent = true;
+                innerLayout.horizontal = false;
+                innerLayout.spacing = LAYOUT_YDISTANCE_CHILDREN;
+            }
+            else
+            {
+                innerLayout.resizeParent = true;
+                innerLayout.horizontal = true;
+                innerLayout.spacing = LAYOUT_XDISTANCE_PARENTS; 
+            }
+            return innerLayout;
+        }
+        return null;
+    };
+}
+*/
+
+function executeLayoutoptions(){
+    console.log("Executing Layout!"); 
+}
+
+function executeFilteroptions(){
+    console.log("Executing Filtering!");
+    let filters=[]; 
+    filters.push(document.getElementById("filterPackages").checked); 
+    filters.push(document.getElementById("filterClasses").checked);
+    filters.push(document.getElementById("filterMethods").checked);
+    filters.push(document.getElementById("filterAttributes").checked);
+    filters.push(document.getElementById("filterImplements").checked);
+    filters.push(document.getElementById("filterExtends").checked);
+    console.log(filters); 
+ 
+    graph.getModel().beginUpdate();
+        try{
+            vertices.forEach((value)=>setVisibility(value, filters)); 
+            edges.forEach((value)=>setVisibility(value, filters));
+        } finally{
+            graph.getModel().endUpdate();
+        } 
+}
+
+function setVisibility(value, filters){
+    let type; 
+    if(value.isVertex()){
+        type = getTypeViaName(value.id);
+    }else{
+        type = value.value; //in edges type is set in value
+    }
+    
+    if(type !== null) {    
+        let bool; 
+        switch (type){
+            case "package": 
+                bool = filters[0]; 
+                break;
+            case "class": 
+                bool = filters[1]; 
+                break; 
+            case "method": 
+                bool = filters[2]; 
+                break; 
+            case "attribute": 
+                bool = filters[3]; 
+                break; 
+            case "implements": 
+                bool = filters[4]; 
+                break; 
+            case "extends": 
+                bool = filters[5]; 
+                break; 
+            default: 
+                bool = true; 
+        }
+        if(bool){
+            value.visible = true;
+            console.log("I set visibility of "+value.id+" to true") 
+        }else{ 
+            value.visible = false; 
+            console.log("I set visibility of "+value.id+" to false") 
+        }
+    }
+}
+
+function getTypeViaName(uniqueName){
+    let entity;
+    let res
+    Object.keys(entities).forEach(function(key){//looping through each association
+        if(entities[key].fUniqueName == uniqueName){
+            res = entities[key]
+            return key; 
+        }
+    });
+    if(res) {
+        return res.fType
+    }
 }
