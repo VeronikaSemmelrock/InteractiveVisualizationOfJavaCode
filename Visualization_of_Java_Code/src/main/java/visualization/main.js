@@ -8,7 +8,7 @@ const STYLE_PACKAGE = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_YELLOW+";
 const STYLE_METHOD = "autosize=1;shape=rectangle;fillColor="+MYCOLOUR_RED+";"+LABELSTYLE;
 const STYLE_ATTRIBUTE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_GREEN+";"+LABELSTYLE;
 
-
+//variables for layouting 
 const HEIGHT_LOWESTLEVEL = 30; //determines height of elements that dont have children. Rest is autoresized
 const STANDARD_WIDTH = 250; //determines width of elements of upper layer 
 const GRAPH_BORDER = 20; //determines, how far away child is from parent border (how small child is inside of parent) - works together with standard width
@@ -20,6 +20,7 @@ const LAYOUT_INTERHIERARCHYSPACING = 13; //spacing between seperate hierarchies
 const LAYOUT_XDISTANCE_PARENTS = 50; //distance of parents between each other (x)
 const LAYOUT_YDISTANCE_CHILDREN = 10; //distance between children of one parent (y) in stack
 
+//global variables
 let assocs;
 let entities;
 const vertices=[];
@@ -28,11 +29,12 @@ const parents=[];
 let graph;
 var layout; 
 
+//calling of main function
 const body = document.getElementById('root');
 const graphContainer = document.getElementById('graphContainer');
-const optionsContainer = document.getElementById('optionsContainer'); 
 body.onload = main(graphContainer); //calls main when body is finished loading
 
+//method that loads files (json-STrings) into global variables
 async function loadFiles(){
     try{
         assocs = await (await fetch('/assocs.json')).json();
@@ -62,6 +64,8 @@ async function main(container){
             insertVertices();
             setEdgeStyle(); 
             insertEdges(); 
+            executeFilteroptions(true); 
+            executeLayoutoptions(); 
             //executeLayout(layout); //for additional / hierarchical layout - at least not for installmxStackLayout
         } finally{
             graph.getModel().endUpdate();
@@ -69,7 +73,7 @@ async function main(container){
     }
 };
 
-
+//creates graph with specific design options
 function createGraph(container){
     let graph = new mxGraph(container);
     //options for folding (show/hide of groups)
@@ -78,7 +82,7 @@ function createGraph(container){
     graph.setPanning(true);
     graph.collapseToPreferredSize = false;
     graph.constrainChildren = false;
-    graph.cellsSelectable = false; //nothing can be moved around anymore!
+    graph.cellsSelectable = false; //nothing can be moved around anymore!!
     graph.extendParentsOnAdd = false;
     graph.extendParents = false;
     graph.border = GRAPH_BORDER;
@@ -86,49 +90,8 @@ function createGraph(container){
     new mxRubberband(graph);
     return graph;
 }
-//installs auto layouting on all levels of hierarchies (folding)
-//Layouting can be changed in here too 
-function installmxStackLayout(){
-    layout = new mxStackLayout(graph, true);
-    layout.border = graph.border;
-    createmxStackLayoutManager(layout); 
-    return layout;      
-}
 
-/*function installmxCircleLayout(){
-    layout = new mxCircleLayout(graph, 50);//50 stands for radius, default is 100
-    layout.border = graph.border;
-    createmxCircleLayoutManager(layout); 
-    return layout; 
-}
-function installmxCompositeLayout(){
-    var first = new mxCircleLayout(graph); 
-    var second = new mxStackLayout(graph, true); 
-    layout = new mxCompositeLayout(graph, [first,second], first); 
-    layout.border = graph.border; 
-    //createmxCompositeLayoutManager(layout); 
-    return layout; 
-}
-
-function createHierarchicalLayout(graph){
-    var layout = new mxHierarchicalLayout(graph);
-    //layout.resizeParent = true;
-    layout.moveParent = false; //move parent if resizing is called
-    layout.parentBorder = LAYOUT_PARENTBORDER;
-    layout.intraCellSpacing = LAYOUT_INTRACELLSPACING; 
-    layout.interRankCellSpacing = LAYOUT_INTERRANKCELLSPACING;
-    layout.interHierarchySpacing = LAYOUT_INTERHIERARCHYSPACING;
-    //layout.parallelEdgeSpacing = 0; //Edge bundling? -- or adding another layouting algorithm
-    layout.orientation = mxConstants.DIRECTION_WEST;
-    layout.fineTuning = true;
-    layout.tightenToSource = true;
-    layout.border = graph.border;
-    //layout.disableEdgeStyle = false; //makes custom edge style possible
-    //layout.traverseAncestors = true;
-    //layout.useBoundingBox=false;
-    return layout;
-}
-*/
+//returns specific style for vertex as string
 function getStyle(fType, key){
     let style;
     //deciding on shape/style for entities and assocs
@@ -153,6 +116,7 @@ function getStyle(fType, key){
     return style;
 }
 
+//returns correct parent for hierarchy (folding etc)
 function getParent(parentString){
     //getting correct parent for hierarchical structure
     if(parentString == "null"){
@@ -168,6 +132,7 @@ function getParent(parentString){
     return parent;
 }
 
+//returns correct width - smaller, if deeper in hierarchy
 function getWidth(parent){
     let width = STANDARD_WIDTH; 
     let sub = GRAPH_BORDER; 
@@ -181,6 +146,7 @@ function getWidth(parent){
     }
 }
 
+//inserts all vertices, one vertice per element in entities.json
 function insertVertices(){
     let v; 
     Object.keys(entities).forEach(function(key){//looping through each entity
@@ -193,13 +159,8 @@ function insertVertices(){
         vertices.push(v);
     });
 }
-/*
-function executeLayout(layout){
-    parents.forEach(function(parent){
-        layout.execute(parent, graph.getChildVertices(parent));
-    })
-}
-*/
+
+//returns name of elements, cuts away "path" from uniqueName
 function getName(name){
     highestIndex = 0; 
     let deliminters = [".", "-", "#", "$"]; 
@@ -216,6 +177,7 @@ function getName(name){
     }
 }
 
+//inserts all edges, one edge per element in assocs.json
 function insertEdges(){
     let from; 
     Object.keys(assocs).forEach(function(key){//looping through each association
@@ -226,6 +188,7 @@ function insertEdges(){
     });
 }
 
+//returns the vertex in graph that has given unique name set as id
 function getVertex(uniqueName){ 
     let found; 
     found = vertices.find(function(vertex){
@@ -236,6 +199,7 @@ function getVertex(uniqueName){
     return found; 
 }
 
+//sets global edge style once - TODO fix edge layouting? Here or in general layout? 
 function setEdgeStyle(){
     var edgeStyle = graph.stylesheet.getDefaultEdgeStyle(); 
     edgeStyle[mxConstants.STYLE_STROKEWIDTH]=1; 
@@ -252,7 +216,16 @@ function setEdgeStyle(){
     //edgeStyle[mxConstants.STYLE_EDGE] = mxEdgeStyle.ElbowConnector; 
 
 }
-//i think layoutManager specifically for mxStack
+
+//installs auto layouting on all levels of hierarchies (folding)
+//Layouting can be changed in here too - TODO
+function installmxStackLayout(){
+    layout = new mxStackLayout(graph, true);
+    layout.border = graph.border;
+    createmxStackLayoutManager(layout); 
+    return layout;      
+}
+//creates layout manager for used layout - manager is called when +/- button of hierarchy is pressed/so when graph changes
 function createmxStackLayoutManager(layout){
     var layoutMgr = new mxLayoutManager(graph);
     layoutMgr.getLayout = function(cell)
@@ -276,6 +249,7 @@ function createmxStackLayoutManager(layout){
         return null;
     };
 }
+
 /*
 //layout manager is run after changes are made to graph - so collapsing ! - so with this code different layouts can be implemented on different levels of hierarchy
 function createmxCircleLayoutManager(layout){
@@ -329,20 +303,61 @@ function createmxCompositeLayoutManager(layout){
 }
 */
 
+/*
+function executeLayout(layout){
+    parents.forEach(function(parent){
+        layout.execute(parent, graph.getChildVertices(parent));
+    })
+}
+*/
+/*function installmxCircleLayout(){
+    layout = new mxCircleLayout(graph, 50);//50 stands for radius, default is 100
+    layout.border = graph.border;
+    createmxCircleLayoutManager(layout); 
+    return layout; 
+}
+function installmxCompositeLayout(){
+    var first = new mxCircleLayout(graph); 
+    var second = new mxStackLayout(graph, true); 
+    layout = new mxCompositeLayout(graph, [first,second], first); 
+    layout.border = graph.border; 
+    //createmxCompositeLayoutManager(layout); 
+    return layout; 
+}
+
+function createHierarchicalLayout(graph){
+    var layout = new mxHierarchicalLayout(graph);
+    //layout.resizeParent = true;
+    layout.moveParent = false; //move parent if resizing is called
+    layout.parentBorder = LAYOUT_PARENTBORDER;
+    layout.intraCellSpacing = LAYOUT_INTRACELLSPACING; 
+    layout.interRankCellSpacing = LAYOUT_INTERRANKCELLSPACING;
+    layout.interHierarchySpacing = LAYOUT_INTERHIERARCHYSPACING;
+    //layout.parallelEdgeSpacing = 0; //Edge bundling? -- or adding another layouting algorithm
+    layout.orientation = mxConstants.DIRECTION_WEST;
+    layout.fineTuning = true;
+    layout.tightenToSource = true;
+    layout.border = graph.border;
+    //layout.disableEdgeStyle = false; //makes custom edge style possible
+    //layout.traverseAncestors = true;
+    //layout.useBoundingBox=false;
+    return layout;
+}
+*/
+//executes the specific layout that is given through UI radio buttons - TODO
 function executeLayoutoptions(){
     console.log("Executing Layout!"); 
 }
 
-function executeFilteroptions(){
-    console.log("Executing Filtering!");
+//executes filtering depending on status of checkboxes in UI
+function executeFilteroptions(noReload){
     let filters=[]; 
     filters.push(document.getElementById("filterPackages").checked); 
     filters.push(document.getElementById("filterClasses").checked);
     filters.push(document.getElementById("filterMethods").checked);
     filters.push(document.getElementById("filterAttributes").checked);
     filters.push(document.getElementById("filterImplements").checked);
-    filters.push(document.getElementById("filterExtends").checked);
-    console.log(filters); 
+    filters.push(document.getElementById("filterExtends").checked); 
  
     graph.getModel().beginUpdate();
         try{
@@ -350,9 +365,12 @@ function executeFilteroptions(){
             edges.forEach((value)=>setVisibility(value, filters));
         } finally{
             graph.getModel().endUpdate();
-        } 
+        }
+    //undefined is false 
+    if(!noReload) window.location.reload() //only reloads if method is called because of changing state of checkboxes 
 }
 
+//sets correct visibility of edge/vertex depending on what filters are applied through checkboxes in UI 
 function setVisibility(value, filters){
     let type; 
     if(value.isVertex()){
@@ -386,15 +404,14 @@ function setVisibility(value, filters){
                 bool = true; 
         }
         if(bool){
-            value.visible = true;
-            console.log("I set visibility of "+value.id+" to true") 
+            value.visible = true; 
         }else{ 
-            value.visible = false; 
-            console.log("I set visibility of "+value.id+" to false") 
+            value.visible = false;  
         }
     }
 }
 
+//receives a uniquename of a vertex, checks what type this vertex has (class, method, package) from corresponding element in entities.json
 function getTypeViaName(uniqueName){
     let entity;
     let res
