@@ -37,16 +37,12 @@
         <label for="filterExtends">Extends relationships</label><br>
         <br><br><br>
         <span>Layout:</span><br>
-        <input type="radio" id="layoutStack" name="layout" checked="checked" onchange="executeLayoutoptions()">
-        <label for="layoutStack">Stack Layout</label><br>
-        <input type="radio" id="layoutHierarchicalWest" name="layout" onchange="executeLayoutoptions()">
-        <label for="layoutHierarchicalWest">Hirachical Layout West</label><br>
-        <input type="radio" id="layoutHierarchicalNorth" name="layout" onchange="executeLayoutoptions()">
-        <label for="layoutHierarchicalNorth">Hierarchical Layout North</label><br>
-        <input type="radio" id="layoutCircle" name="layout" onchange="executeLayoutoptions()">
+        <input type="radio" id="layoutStackVertical" value="stackVertical" name="layout" checked="checked" onchange="executeLayoutoptions(value)">
+        <label for="layoutStack">Stack Layout Vertical</label><br>
+        <input type="radio" id="layoutStackHorizontal" value="stackHorizontal" name="layout" onchange="executeLayoutoptions(value)">
+        <label for="layoutHierarchicalWest">Stack Layout Horizontal</label><br>
+        <input type="radio" id="layoutCircle" value ="circle" name="layout" onchange="executeLayoutoptions(value)">
         <label for="layoutCircle">Circle Layout</label><br>
-        <input type="radio" id="layoutFastOrganic" name="layout" onchange="executeLayoutoptions()">
-        <label for="layoutFastOrganic">Fast Organic Layout</label> 
         <br><br><br>
     </div>
 </body>
