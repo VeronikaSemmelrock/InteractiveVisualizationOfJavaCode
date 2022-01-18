@@ -15,42 +15,60 @@ import spoon.reflect.visitor.filter.TypeFilter;
 import java.util.Collection;
 
 public class SpoonToFamix {
-    private static String PROJECT_PATH = "C:\\Users\\semme\\Documents\\IVJC\\InteractiveVisualizationOfJavaCode\\Sample_Inputcode";
-    private static CtModel spoonModel;
-    public static HashMap<String, AbstractFamixEntity> famixEntities = new LinkedHashMap<>();
-    public static int entitiesCounter=0;
-    public static HashMap<Integer, AbstractFamixGeneralization> famixAssociations = new LinkedHashMap<>();
-    private static int assocCounter = 0;
-    public static CtPackage rootPackage;
-    public static ArrayList<FamixClass> generalisationsToParse = new ArrayList<>();
+    /**
+     * The CtModel that is parsed to create hashmaps of Famix Objects
+     */
+    private CtModel spoonModel;
+
+    /**
+     * HashMap that holds all parsed Famix Entities
+     */
+    private HashMap<String, AbstractFamixEntity> famixEntities = new LinkedHashMap<>();
+
+    /**
+     * HashMap that holds all parsed Famix Associations
+     */
+    private HashMap<Integer, AbstractFamixGeneralization> famixAssociations = new LinkedHashMap<>();
+    /**
+     * Counter for IDs in famixAssociations-hashMap
+     */
+    private int assocCounter = 0;
+    /**
+     * root package in ctModel. Source from where parsing starts.
+     * The rootPackage itself is not parsed into a famix object as it is a package added by spoonParser
+     */
+    private CtPackage rootPackage;
+    /**
+     * Hashmap to temporarily hold all encountered entities with associations that need to be parsed
+     */
+    private ArrayList<FamixClass> generalisationsToParse = new ArrayList<>();
 
 
-    public static void main(String args[]) throws IOException {
-        createSpoonModel();
-        parseAllPackages();//recursive call
-
-        exportJSON jsonExport = new exportJSON(famixEntities, famixAssociations);
-        jsonExport.exportToFile();
+    /**
+     * Constructor. Sets spoonModel and rootPackage.
+     * @param model - the SpoonParser ctModel that needs to be parsed into hashmaps of famix objects
+     */
+    public SpoonToFamix(CtModel model){
+        this.spoonModel = model;
+        this.rootPackage = spoonModel.getRootPackage();
     }
 
-    private static void createSpoonModel() {
-        Launcher launcher = new Launcher();
-        launcher.addInputResource(PROJECT_PATH);
-        launcher.buildModel();
-        spoonModel = launcher.getModel();
-        rootPackage = spoonModel.getRootPackage();
-    }
-
-    //parse all packages, subpackages and subclasses/subinterfaces
-    private static void parseAllPackages() {
+    /**
+     * Starts parsing of all packages, subpackages and classes and interfaces inside packages
+     * Afterwards, starts parsing of all encountered associations
+     */
+    public void parseAllPackages() {
         for(CtPackage p : rootPackage.getPackages()){
             parsePackage(p);
         }
         parseAllEncounteredGeneralisations();
     }
 
-    //analyses a package, its subpackages and direct subclasses
-    private static void parsePackage(CtPackage ctPackage) {
+    /**
+     * Parses a package and starts parsing of all its subpackages and subclasses
+     * @param ctPackage - the package that needs to be parsed
+     */
+    private void parsePackage(CtPackage ctPackage) {
         FamixPackage famixPackage = new FamixPackage(ctPackage.getQualifiedName());
         famixPackage.setType("package");
         famixEntities.put(famixPackage.getUniqueName(), famixPackage);
@@ -61,12 +79,23 @@ public class SpoonToFamix {
     }
 
 
-    private static void parseAllSubpackages(CtPackage ctPackage){
+    /**
+     * Starts parsing of all subpackages of a package
+     * @param ctPackage - the package of which the subpackages need to be parsed
+     */
+    private void parseAllSubpackages(CtPackage ctPackage){
         for (CtPackage p : ctPackage.getPackages()) {
             parsePackage(p);
         }
     }
-    private static Set<FamixClass> parseAllDirectSubclasses(CtPackage ctPackage, AbstractFamixEntity famixParent) {
+
+    /**
+     * Starts parsing of all direct subclasses (subentities - classes and interfaces) of a package
+     * @param ctPackage - the package of which the direct subclasses need to be parsed
+     * @param famixParent - the ctPackage as a famixObject, so famixObject can easily be set as parent of all parsed direct subclasses
+     * @return the parsed subclasses, so they can be set as list of subclasses in parent famixObject
+     */
+    private Set<FamixClass> parseAllDirectSubclasses(CtPackage ctPackage, AbstractFamixEntity famixParent) {
         Set<FamixClass> famixSubClasses = new HashSet<>();
 
         Collection<CtType> allEntities = new ArrayList<>();
@@ -81,21 +110,41 @@ public class SpoonToFamix {
         return famixSubClasses;
     }
 
-    private static boolean isParent(CtType entity, CtElement ctParent) {
+    /**
+     * Checks whether a given Spoonparser entity has a given Spoonparser entity (ctParent) as its parent in the Spoonparser CtModel
+     * @param entity - the entity for which the parent is checked
+     * @param ctParent - the supposed parent of the entity
+     * @return boolean, whether ctParent is parent of entity in ctModel
+     */
+    private boolean isParent(CtType entity, CtElement ctParent) {
         return entity.getParent().equals(ctParent);
     }
 
-    private static void addToHashAssociations(AbstractFamixGeneralization f){
+    /**
+     * Adds a famix generalisation to the famixAssociations-Hashmap and updates the ID-counter
+     * @param f - the famix generalisation that should be added to the hashmap
+     */
+    private void addToHashAssociations(AbstractFamixGeneralization f){
         famixAssociations.put(assocCounter, f);
         assocCounter++;
     }
 
-    private static boolean hasGeneralisation(CtType entity) {
+    /**
+     * Checks whether a given entity has an implements- or extends-relationship to another entity in the ctModel
+     * @param entity - the entity whose relationships are checked
+     * @return boolean, whether the entity has some type of relationship to another entity
+     */
+    private boolean hasGeneralisation(CtType entity) {
         return entity.getSuperclass() != null || entity.getSuperInterfaces().size() > 0;
     }
 
-    //parse class with all its methods and attributes -> methods and attributes are then parsed on their own
-    private static FamixClass parseAsClass(CtType ctEntity, AbstractFamixEntity famixParent){
+    /**
+     * Parses a class or interface into a famix-class. Calls parsing-methods for its method and attribute entities
+     * @param ctEntity the entity that should be parsed into a famix-class
+     * @param famixParent the direct famix parent of the entity that should be parsed
+     * @return the famix class the entity was parsed into
+     */
+    private FamixClass parseAsClass(CtType ctEntity, AbstractFamixEntity famixParent){
         FamixClass famixClass = new FamixClass(ctEntity.getQualifiedName(), famixParent);
         famixClass.setType("class");
         famixClass.setParentString(famixParent.getUniqueName());
@@ -111,7 +160,13 @@ public class SpoonToFamix {
         return famixClass;
     }
 
-    private static Set<FamixClass> parseAllNestedClasses(CtType ctEntity, AbstractFamixEntity famixParentClass) {
+    /**
+     * Parses all nested Classes of an entity.
+     * @param ctEntity the entity of which all nested classes should be parsed
+     * @param famixParentClass the entity as a famix class, so famix parent can easily be set in nestedclasses as their direct parent
+     * @return a list of famixObjects, the nested classes were parsed into
+     */
+    private Set<FamixClass> parseAllNestedClasses(CtType ctEntity, AbstractFamixEntity famixParentClass) {
         Set<FamixClass> nestedClasses = new HashSet<>();
 
         for(Object c : ctEntity.getNestedTypes()){
@@ -123,26 +178,37 @@ public class SpoonToFamix {
         return nestedClasses;
     }
 
-    private static Set<FamixMethod> parseAllMethods(CtType ctEntity, FamixClass famixClass) {
+    /**
+     * Parses all direct submethods of an entity
+     * @param ctEntity the entity of which all submethods should be parsed
+     * @param famixClass the entity as a famix object, so parent can easily be set in all submethods
+     * @return a list of famixMethods, the submethods were parsed into
+     */
+    private Set<FamixMethod> parseAllMethods(CtType ctEntity, FamixClass famixClass) {
         Set<FamixMethod> famixMethods = new HashSet<>();
 
         for(Object m : ctEntity.getMethods()){
             CtMethod ctMethod = (CtMethod) m; //necessary cast
             famixMethods.add(parseMethod(ctMethod, famixClass));
         }
-        //*
-        if(!(ctEntity instanceof CtInterface)){//only interfaces do not have constructors - if it is not an interface, ctEntity is of type CtClass
+
+        if(!(ctEntity instanceof CtInterface)) {//only interfaces do not have constructors - if it is not an interface, ctEntity is of type CtClass
             CtClass ctClass = (CtClass) ctEntity;
-            for(Object c : ctClass.getConstructors()){
+            for (Object c : ctClass.getConstructors()) {
                 CtConstructor ctConstructor = (CtConstructor) c;
                 famixMethods.add(parseMethod(ctConstructor, famixClass));
             }
         }
-        //*/
         return famixMethods;
     }
 
-    private static FamixMethod parseMethod(CtElement ctElement, AbstractFamixEntity famixParent) {
+    /**
+     * Parses one ctElement (method or constructor) into a famixMethod
+     * @param ctElement the ctElement that should be parsed into a famixMethod
+     * @param famixParent the ctElement as a famixObject, so parent can easily be set in famixMethod
+     * @return the famixMethod, the ctElement was parsed into
+     */
+    private FamixMethod parseMethod(CtElement ctElement, AbstractFamixEntity famixParent) {
         //TODO -- parse the method or the constructor
 
         FamixMethod famixMethod = null;
@@ -166,7 +232,13 @@ public class SpoonToFamix {
         return famixMethod;
     }
 
-    private static Set<FamixClass> parseAllAnonymousClasses(CtElement ctMethod, FamixMethod famixMethod) {
+    /**
+     * Parses all anonymous classes of a method
+     * @param ctMethod the ctMethod, which holds anonymous classes that should be parsed into famix classes
+     * @param famixMethod the ctMethod as a famixObject, so parent can easily be set in resulting famix classes
+     * @return list of famix classes, the anonymous classes were parsed into
+     */
+    private Set<FamixClass> parseAllAnonymousClasses(CtElement ctMethod, FamixMethod famixMethod) {
         Set<FamixClass> anonymClasses = new HashSet<>();
         for (CtClass ctClass : ctMethod.getElements(new TypeFilter<>(CtClass.class))){
             anonymClasses.add(parseAsClass(ctClass,famixMethod));
@@ -174,7 +246,13 @@ public class SpoonToFamix {
         return anonymClasses;
     }
 
-    private static Set<FamixAttribute> parseAllAttributes(CtType ctEntity, AbstractFamixEntity famixEntity) {
+    /**
+     * Parses all attributes of a ctEntity
+     * @param ctEntity the entity of which all attributes should be parsed
+     * @param famixEntity the entity as its famixObject equivalent, so parent of parsed attributes can be easily set
+     * @return a list of famix attributes, the ctFields (attributes) were parsed into
+     */
+    private Set<FamixAttribute> parseAllAttributes(CtType ctEntity, AbstractFamixEntity famixEntity) {
         Set<FamixAttribute> famixAttributes = new HashSet<>();
         for(Object f : ctEntity.getFields()){
             CtField ctField = (CtField) f;
@@ -183,7 +261,13 @@ public class SpoonToFamix {
         return famixAttributes;
     }
 
-    private static FamixAttribute parseAttribute(CtField ctField, AbstractFamixEntity famixParent) {
+    /**
+     * Parses one ctFields into a famix field/attribute
+     * @param ctField the ctFields that should be parsed
+     * @param famixParent the ctField as its famixObject equivalent, so parent can easily be set
+     * @return the famixField the ctField was parsed into
+     */
+    private FamixAttribute parseAttribute(CtField ctField, AbstractFamixEntity famixParent) {
         //TODO -- parse the attribute - Attention: check, whether uniqueName of attribute inside a method fits for hashmap (because unique name of method was created manually,
         //should be created manually and added here too, with attribute unique name at the end)
         FamixAttribute famixField = new FamixAttribute(ctField.getReference().getQualifiedName(), famixParent); //proper unique Name
@@ -193,7 +277,12 @@ public class SpoonToFamix {
         return famixField;
     }
 
-    private static void setModifiers(AbstractFamixEntity famixEntity, CtType ctEntity) {
+    /**
+     * Sets the correct modifiers of a famix object, depending on the modifiers of the corresponding ctEntity
+     * @param famixEntity the famix entity of which the modifiers are set
+     * @param ctEntity the corresponding ctEntity
+     */
+    private void setModifiers(AbstractFamixEntity famixEntity, CtType ctEntity) {
         int famixModifier = 0;
         for(ModifierKind modifier : ctEntity.getModifiers()) {
             if(modifier.toString().equals("public")) {
@@ -219,14 +308,21 @@ public class SpoonToFamix {
         famixEntity.setModifiers(famixModifier);
     }
 
+    /**
+     * Starts parsing of all generalisations that were encountered when the entities were being parsed
+     */
     //after packages are done analysis and parsing of generalisations - because then all famix classes have been created and two famix classes can be put into a relationship
-    private static void parseAllEncounteredGeneralisations() {
+    private void parseAllEncounteredGeneralisations() {
         for(FamixClass fClass : generalisationsToParse){
             parseGeneralisationsOfClass(fClass);
         }
     }
 
-    private static void parseGeneralisationsOfClass(FamixClass fClass) {
+    /**
+     * Starts parsing of the generalisations of one famix Class (implements and extends relationships)
+     * @param fClass the class of which the generalisations should be parsed
+     */
+    private void parseGeneralisationsOfClass(FamixClass fClass) {
         CtClass ctClassMatch = getMatchingCtClass(fClass);
 
         if(ctClassMatch != null){
@@ -236,7 +332,12 @@ public class SpoonToFamix {
 
     }
 
-    private static void parseImplementsAssocs(FamixClass fClass, CtClass ctClassMatch) {
+    /**
+     * Parses all implements relationships of one famix Class
+     * @param fClass the famix Class of which all implements relationships should be parsed
+     * @param ctClassMatch the corresponding ctEntity that provides all  additional data for the famixClass
+     */
+    private void parseImplementsAssocs(FamixClass fClass, CtClass ctClassMatch) {
         Set<CtTypeReference<?>> interfaces = ctClassMatch.getSuperInterfaces();
         FamixSubtyping fsub = null; //represents implements
         FamixClass fAssoc = null;
@@ -259,7 +360,12 @@ public class SpoonToFamix {
         }
     }
 
-    private static void parseExtendsAssoc(FamixClass fClass, CtClass ctClassMatch) {
+    /**
+     * Parses all extends relationships of one famix class
+     * @param fClass the famix Class of which all extends relationships should be parsed
+     * @param ctClassMatch the corresponding ctEntity that provides all additional data for the famixClass
+     */
+    private void parseExtendsAssoc(FamixClass fClass, CtClass ctClassMatch) {
         CtTypeReference superclass = ctClassMatch.getSuperclass();
         FamixInheritance finh = null; //represents extends
         FamixClass fAssoc = null;
@@ -279,7 +385,12 @@ public class SpoonToFamix {
         }
     }
 
-    private static CtClass getMatchingCtClass(FamixClass fClass) {
+    /**
+     * Searches through the ctModel and returns the corresponding ctEntity to a given famixClass
+     * @param fClass the famixClass for which the corresponding ctEntity should be found
+     * @return the corresponding ctEntity
+     */
+    private CtClass getMatchingCtClass(FamixClass fClass) {
         List matchingClasses = rootPackage.filterChildren(new AbstractFilter<CtClass>(CtClass.class) {
             @Override
             public boolean matches(CtClass ctc){
@@ -291,5 +402,21 @@ public class SpoonToFamix {
         }else {
             return null;
         }
+    }
+
+    /**
+     * Getter for famixEntites-hashmap
+     * @return the famixEntities-hashmap
+     */
+    public HashMap<String, AbstractFamixEntity> getFamixEntities() {
+        return famixEntities;
+    }
+
+    /**
+     * Getter for famixAssociations-hashmap
+     * @return the famixAssociations-hashmap
+     */
+    public HashMap<Integer, AbstractFamixGeneralization> getFamixAssociations() {
+        return famixAssociations;
     }
 }

@@ -46,6 +46,16 @@ public abstract class AbstractFamixObject implements Cloneable {
     private Set<String> fProperties = new HashSet<String>();
 
     /**
+     * The type of the assoctiation as String. For serialization.
+     */
+    private String fType;
+
+    /**
+     * Unique name of parent as string, because parent itself is left out of serialization (transient).
+     */
+    private String fParentAsString = "null";
+
+    /**
      * The default constructor.
      */
     public AbstractFamixObject() {
@@ -155,4 +165,19 @@ public abstract class AbstractFamixObject implements Cloneable {
         // Override in subclasses
         return null;
     }
+
+    /**
+     * Sets the type of the object.
+     */
+    public void setType(String type) {
+        this.fType = type;
+    }
+
+    /**
+     * Sets the unique name of the parent of the entitiy as fParentAsString.
+     */
+    public void setParentString(String fParentAsString) {
+        this.fParentAsString = fParentAsString;
+    }
+
 }

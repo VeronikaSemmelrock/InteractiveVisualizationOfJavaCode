@@ -20,7 +20,7 @@ const LAYOUT_INTERHIERARCHYSPACING = 13; //spacing between seperate hierarchies
 const LAYOUT_XDISTANCE_PARENTS = 50; //distance of parents between each other (x)
 const LAYOUT_YDISTANCE_CHILDREN = 10; //distance between children of one parent (y) in stack
 
-const DEFAULT_LAYOUT = "stackVertical"
+const DEFAULT_LAYOUT = "circle"//stackVertical
 
 //global variables
 let assocs;
@@ -33,6 +33,7 @@ var circleLayout;
 var stackLayout; 
 var layoutManager; 
 var invisibleParent; 
+var globalLayout = DEFAULT_LAYOUT; 
 
 //calling of main function
 const body = document.getElementById('root');
@@ -59,8 +60,8 @@ async function main(container){
         alert("Browser not supported!");
     }else{
         graph = createGraph(container);
-        installLayoutManager(DEFAULT_LAYOUT); 
-        //executeLayoutoptions(); 
+        createLayouts();
+        installLayoutManager(); 
         setVertexStyle();
         setEdgeStyle();  
         graph.getModel().beginUpdate();
@@ -68,7 +69,7 @@ async function main(container){
             insertVertices();
             insertEdges(); 
             executeFilteroptions(true); 
-            executeLayoutoptions(); 
+            //executeLayoutoptions(); 
         } finally{
             graph.getModel().endUpdate();
         }
@@ -242,23 +243,26 @@ function createLayouts(){
 }
 
 //installs layoutManager - called everytime a change is made to graph - used to set different layouts for different cells
-function installLayoutManager(defaultLayout){
-    createLayouts();
-    layout = "stack";//switch to given Layout
-    var layoutMgr = new mxLayoutManager(graph);
+function installLayoutManager(){
+    layoutManager = new mxLayoutManager(graph);
 
-    layoutMgr.getLayout = function(cell)
+    layoutManager.getLayout = function(cell)
     {   
+        layout = globalLayout;  
         //sets different layouts on different parent cells. 
         //attention -> layout is applied on children of parent cell, not parent itself
         if(cell.parent === graph.getDefaultParent()){//selects invisible parent - layout is applied on all children so first visible layer
-            if(layout == "circle"){//TODO - maybe small adjustmenst - radius is big
+            if(layout == "circle"){
+                //TODO - maybe small adjustmenst - radius is big
                 //TODO - edges do not filter properly!
                 circleLayout.moveCircle = true;
                 return circleLayout;                         
-            }else if(layout == "stack"){
-                //TODO - edges do not filter properly in vertical view
+            }else if(layout == "stackVertical"){
+                //TODO - edges do not filter properly
                 stackLayout.horizontal = false;
+                return stackLayout; 
+            }else if(layout =="stackHorizontal"){
+                stackLayout.horizontal = true;
                 return stackLayout; 
             }
         }else{//all cells except invisible parent
@@ -268,7 +272,7 @@ function installLayoutManager(defaultLayout){
                 if (cell.parent !== graph.getDefaultParent()){
                     stackLayout.resizeParent = true;
                     stackLayout.horizontal = false;
-                    stackLayout.spacing = 10;
+                    stackLayout.spacing = 10; 
                 }
             }
             return stackLayout; 
@@ -276,9 +280,12 @@ function installLayoutManager(defaultLayout){
     };
 
 }
-//executes the specific layout that is given through UI radio buttons - TODO
-function executeLayoutoptions(){
-    console.log("Executing Layout!"); 
+//executes the specific layout that is given through UI radio buttons - TODO calling of getLayout does not work 
+function executeLayoutoptions(layout){
+    console.log("executing Layout with value "+layout)
+    globalLayout = layout; 
+    //layoutManager.getLayout(cell); //only gets layout i think.. does not actually execute..
+    installLayoutManager(); 
 }
 
 //executes filtering depending on status of checkboxes in UI
