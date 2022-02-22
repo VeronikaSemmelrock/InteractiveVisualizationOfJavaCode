@@ -15,7 +15,7 @@ public class IVC {
 
         //parsing the ctModel and creating two hashmaps (entities and associations of model), held by spoonToFamixClass
         SpoonToFamix spoonToFamix = new SpoonToFamix(model);
-        spoonToFamix.parseAllPackages();
+        spoonToFamix.parseSpoonRootPackage();//starts parsing from root package on
 
         //exporting both hashmaps
         ExportJSON jsonExport = new ExportJSON();
