@@ -114,21 +114,20 @@ public class SpoonToFamix {
 
 
     /**
-     * Starts parsing of all direct subclasses (subentities - classes and interfaces) of a package
+     * Starts parsing of all direct subclasses (subentities - classes, abstract classes and interfaces) of a package and returns the parsed famix objects as a list
      * @param ctPackage - the package of which the direct subclasses need to be parsed
      * @param famixParent - the ctPackage as a famixObject, so famixObject can easily be set as parent of all parsed direct subclasses
      * @return the parsed subclasses, so they can be set as list of subclasses in parent famixObject
      */
     private Set<FamixClass> parseAllDirectSubclasses(CtPackage ctPackage, AbstractFamixEntity famixParent) {
         Set<FamixClass> famixSubClasses = new HashSet<>();
-
         Collection<CtType> allEntities = new ArrayList<>();
-        allEntities.addAll(ctPackage.getElements(new TypeFilter<>(CtClass.class))); //add all classes contained in the package
-        //TODO - are abstract classes also added to allEntities?
-        allEntities.addAll(ctPackage.getElements(new TypeFilter<>(CtInterface.class))); //add all interfaces contained in the package
+        allEntities.addAll(ctPackage.getElements(new TypeFilter<>(CtClass.class))); //add all subclasses (including abstract classes) of the package
+        allEntities.addAll(ctPackage.getElements(new TypeFilter<>(CtInterface.class))); //add all subinterfaces of the package
 
+        //call parsing of every encountered subentity
         for(CtType entity : allEntities){
-            if(isParent(entity, ctPackage)){
+            if(isParent(entity, ctPackage)){//parse only DIRECT subentites
                 famixSubClasses.add(parseAsClass(entity, famixParent));
             }
         }
@@ -136,7 +135,7 @@ public class SpoonToFamix {
     }
 
     /**
-     * Checks whether a given Spoonparser entity has a given Spoonparser entity (ctParent) as its parent in the Spoonparser CtModel
+     * Checks whether a given Spoonparser entity has another given Spoonparser entity (ctParent) as its parent in the Spoonparser CtModel
      * @param entity - the entity for which the parent is checked
      * @param ctParent - the supposed parent of the entity
      * @return boolean, whether ctParent is parent of entity in ctModel
@@ -164,38 +163,42 @@ public class SpoonToFamix {
     }
 
     /**
-     * Parses a class or interface into a famix-class. Calls parsing-methods for its method and attribute entities
+     * Parses a class, (abstract class) or interface into a famix-class. Calls parsing-methods for its method and attribute entities
      * @param ctEntity the entity that should be parsed into a famix-class
      * @param famixParent the direct famix parent of the entity that should be parsed
      * @return the famix class the entity was parsed into
      */
     private FamixClass parseAsClass(CtType ctEntity, AbstractFamixEntity famixParent){
+        //basic parsing of class
         FamixClass famixClass = new FamixClass(ctEntity.getQualifiedName(), famixParent);
         famixClass.setType("class");
         famixClass.setParentString(famixParent.getUniqueName());
         famixEntities.put(famixClass.getUniqueName(), famixClass);
+        setModifiers(famixClass, ctEntity);
 
+        //checking whether class has generalization relationship, then adding it to a list for further parsing of the relationship
         if(hasGeneralisation(ctEntity)){
             generalisationsToParse.add(famixClass);
         }
+
+        //further parsing of class with calls to parse its methods, attributes and inner classes
         famixClass.setMethods(parseAllMethods(ctEntity, famixClass));
         famixClass.setAttributes(parseAllAttributes(ctEntity, famixClass));
-        setModifiers(famixClass, ctEntity);
         famixClass.setInnerClasses(parseAllNestedClasses(ctEntity, famixClass));
         return famixClass;
     }
 
     /**
-     * Parses all nested Classes of an entity.
+     * Parses all nested Classes of a class
      * @param ctEntity the entity of which all nested classes should be parsed
      * @param famixParentClass the entity as a famix class, so famix parent can easily be set in nestedclasses as their direct parent
-     * @return a list of famixObjects, the nested classes were parsed into
+     * @return the list of parsed famix objects
      */
     private Set<FamixClass> parseAllNestedClasses(CtType ctEntity, AbstractFamixEntity famixParentClass) {
         Set<FamixClass> nestedClasses = new HashSet<>();
 
         for(Object c : ctEntity.getNestedTypes()){
-            if(c instanceof CtClass){//TODO - why am I checking this ? what other nestedtypes does a class have that are not classes ?
+            if(c instanceof CtClass){//checking before casting just in case
                 CtClass ctClass = (CtClass) c; //necessary cast
                 nestedClasses.add(parseAsClass(ctClass, famixParentClass));
             }
