@@ -1,12 +1,9 @@
 package analysis;
 
 import model.entities.*;
-import spoon.Launcher;
 import spoon.reflect.CtModel;
 import spoon.reflect.declaration.*;
 
-import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.*;
 
 import spoon.reflect.reference.CtTypeReference;
@@ -39,6 +36,8 @@ public class SpoonToFamix {
      * The spoonRootPackage itself is not parsed into a famix object as it is a package added by spoonParser
      */
     private CtPackage spoonRootPackage;
+
+    private ArrayList<FamixMethod> encounteredMethods = new ArrayList<>();
     /**
      * Hashmap to temporarily hold all encountered entities with associations that need to be parsed
      */
@@ -62,8 +61,10 @@ public class SpoonToFamix {
         for(CtPackage p : spoonRootPackage.getPackages()){
             parseRootPackage(p);
         }
-        parseAllEncounteredGeneralisations();
+        setAllDeclaredReturnClasses(); //after everything (especially all famix classes) have been parsed -> setting declared return classes of each encountered method
+        parseAllEncounteredGeneralisations(); //parses all encountered import and extends relationships between classes
     }
+
 
     /**
      * Parses a root package and starts parsing of all its subpackages and subclasses
@@ -207,10 +208,10 @@ public class SpoonToFamix {
     }
 
     /**
-     * Parses all direct submethods of an entity
+     * Parses all methods ("normal" methods and constrcutors) of a class
      * @param ctEntity the entity of which all submethods should be parsed
      * @param famixClass the entity as a famix object, so parent can easily be set in all submethods
-     * @return a list of famixMethods, the submethods were parsed into
+     * @return a list of famixMethods the submethods were parsed into
      */
     private Set<FamixMethod> parseAllMethods(CtType ctEntity, FamixClass famixClass) {
         Set<FamixMethod> famixMethods = new HashSet<>();
@@ -222,45 +223,89 @@ public class SpoonToFamix {
         }
 
         //parsing all contructors of a class -> interfaces do not have constructors
-        if(!(ctEntity instanceof CtInterface)) {//only interfaces do not have constructors - if it is not an interface, ctEntity is of type CtClass
+        if(!(ctEntity instanceof CtInterface)) {
             CtClass ctClass = (CtClass) ctEntity;
             for (Object c : ctClass.getConstructors()) {
-                CtConstructor ctConstructor = (CtConstructor) c;
-                famixMethods.add(parseMethod(ctConstructor, famixClass));
+                //CtMethod ctMethod = (CtMethod) c;  //necessary cast
+                //famixMethods.add(parseMethod(ctMethod, famixClass));//TODO - also call parsing of constructors
             }
         }
         return famixMethods;
     }
 
     /**
-     * Parses one ctElement (method or constructor) into a famixMethod
-     * @param ctElement the ctElement that should be parsed into a famixMethod
-     * @param famixParent the ctElement as a famixObject, so parent can easily be set in famixMethod
-     * @return the famixMethod, the ctElement was parsed into
+     * Rarses a CtMethod object into a FamixMethod-Object
+     * @param m the ctMethod, that holds all information for famixMethod
+     * @param famixParent the parent of the method as a Famix Object for easy setting of parent
      */
-    private FamixMethod parseMethod(CtElement ctElement, AbstractFamixEntity famixParent) {
-        //TODO -- parse the method or the constructor
-        //method has a list of local variables -> ... parse them into FamixLocalVariable -> needs unique name, parent and declareed class so type -- i dont know how to get the local Vars yet
-        FamixMethod famixMethod = null;
-        if(ctElement instanceof CtMethod){
-            CtMethod m = (CtMethod) ctElement;
-            famixMethod = new FamixMethod(m.getReference().getDeclaringType().getQualifiedName()+"-"+m.getSimpleName(), famixParent);//proper unique Name //TODO - fix naming
-            parseAsMethod(m, famixMethod);
-
-        }else if(ctElement instanceof CtConstructor){
-            CtConstructor c = (CtConstructor) ctElement;
-            famixMethod = new FamixMethod(c.getReference().getDeclaringType().getQualifiedName()+"-"+c.getSimpleName(), famixParent);//proper unique Name //TODO - fix naming
-
-            parseAsConstructor(c, famixMethod);
-        }else{
-            return null;
-        }
+    private FamixMethod parseMethod(CtMethod m, FamixClass famixParent) {
+        //basic parsing of method
+        FamixMethod famixMethod = new FamixMethod(m.getReference().getDeclaringType().getQualifiedName()+"-"+m.getSimpleName(), famixParent);//proper unique Name //TODO - fix naming
         famixMethod.setParentString(famixParent.getUniqueName());
-        famixMethod.setParameters(parseAllParameters(ctElement, famixMethod));
         famixMethod.setType("method");
+        setMethodModifiers(famixMethod, m);
         famixEntities.put(famixMethod.getUniqueName(), famixMethod);
-        famixMethod.setAnonymClasses(parseAllAnonymousClasses(ctElement, famixMethod));
+
+        //adding famixMethod to a list of methods where declared return class needs to be set after all classes were parsed into FamixClasses
+        encounteredMethods.add(famixMethod);
+
+        //further parsing of method and call to parse all its parameters, anonymous classes and local variables
+        famixMethod.setParameters(parseAllParameters(m, famixMethod));
+        famixMethod.setAnonymClasses(parseAllAnonymousClasses(m, famixMethod));
+        famixMethod.setLocalVariables(parseAllLocalVariables(m, famixMethod));
+
         return famixMethod;
+    }
+
+    /**
+     * Starts parsing of all local Variables of a CtMethod into FamixLocalVariables
+     * @param m the ctMethod of which the local Variables should be parsed
+     * @param famixMethod the parent of the local Variables
+     * @return a list of all parsed FamixLocalVariables
+     */
+    private Set<FamixLocalVariable> parseAllLocalVariables(CtMethod m, FamixMethod famixMethod) {
+        Set<FamixLocalVariable> localVars = new HashSet<>();
+
+        for(CtVariable var : m.getElements(new TypeFilter<>(CtVariable.class))){
+            localVars.add(parseLocalVariable(var, famixMethod));
+        }
+
+        return localVars;
+    }
+
+    /**
+     * Parses a CtLocalVariable into a FamixLocalVariable
+     * @param ctVar the CtLocalVariable that should be parsed
+     * @param famixMethod the parent of the resulting FamixLocalVariable
+     * @return a parsed FamixLocalVariable
+     */
+    private FamixLocalVariable parseLocalVariable(CtVariable ctVar, FamixMethod famixMethod) {
+        //basic parsing of FamixLocalVariable
+        FamixLocalVariable famixVar = new FamixLocalVariable(ctVar.getSimpleName(), famixMethod); //TODO - not unique!!!
+        famixVar.setType("localVariable");
+        setVariableModifiers(famixVar, (CtVariable) ctVar);
+        famixVar.setParentString(famixMethod.getUniqueName());
+        famixEntities.put(famixVar.getUniqueName(), famixVar);
+
+        //TODO - set declared class of local variable (data type)
+
+        return famixVar;
+    }
+
+
+
+    /**
+     * Parses all anonymous classes of a method
+     * @param ctMethod the ctMethod, which holds anonymous classes that should be parsed into famix classes
+     * @param famixMethod the ctMethod as a famixObject, so parent can easily be set in resulting famix classes
+     * @return list of famix classes, the anonymous classes were parsed into
+     */
+    private Set<FamixClass> parseAllAnonymousClasses(CtElement ctMethod, FamixMethod famixMethod) {
+        Set<FamixClass> anonymClasses = new HashSet<>();
+        for (CtClass ctClass : ctMethod.getElements(new TypeFilter<>(CtClass.class))){
+            anonymClasses.add(parseAsClass(ctClass,famixMethod));
+        }
+        return anonymClasses;
     }
 
     /**
@@ -286,11 +331,15 @@ public class SpoonToFamix {
      * @return the parsed FamixParameter
      */
     private FamixParameter parseAsParameter(CtParameter param,int index, FamixMethod famixMethod) {
-        FamixClass declaredType = null;
-        //TODO - name of param will not be okay probably..
-        FamixParameter famixParameter = new FamixParameter(param.getSimpleName(), famixMethod, index);
+        //basic parsing of parameter
+        FamixParameter famixParameter = new FamixParameter(param.getSimpleName(), famixMethod, index);//TODO - name not unique!!
         famixParameter.setParentString(famixMethod.getUniqueName());
-        famixParameter.setType("parameter"); //TODO - add styling in javascript
+        famixParameter.setType("parameter");
+        famixParameter.setModifiers(0);//TODO - is anything else even possible?
+
+        //TODO - proper setting of declared class
+        /*
+        FamixClass declaredType = null;
         declaredType = (FamixClass) famixEntities.get(param.getType().toString());
         if (declaredType == null){
             declaredType = new FamixClass(param.getType().toString());
@@ -298,59 +347,16 @@ public class SpoonToFamix {
         }
         famixParameter.setDeclaredClass(declaredType);//works? looks weird? test out with own class/type - reference does not work properly.. maybe just switch out for string?
         famixEntities.put(famixParameter.getUniqueName(), famixParameter);
+
+
+         */
+
         return famixParameter;
     }
 
-    /**Almost identical to parseAsMethod
-     * Method to finish parsing existing famixMethod -> sets all fields that can be set with additional information from ctConstructor
-     * @param c the ctConstructor, that holds all information for famixMethod
-     * @param famixMethod the FamixMethod that should be parsed
-     */
-    private void parseAsConstructor(CtConstructor c, FamixMethod famixMethod) {
-        //TODO
-        //is it necessary to show constructors.. ?
-        //TODO... set modifiers
-        //copy basically everything from parseAsMethod
-        //System.out.println(c.getSimpleName()+" is a Constructor! Its parameters: "+ c.getParameters());
-        //System.out.println("//////The return type is "+c.getDirectChildren().get(0));
-    }
-
-    /**Almost identical to parseAsConstructor
-     * Method to finish parsing existing famixMethod -> sets all fields that can be set with additional information from ctMethod
-     * @param m the ctMethod, that holds all information for famixMethod
-     * @param famixMethod the FamixMethod that should be parsed
-     */
-    private void parseAsMethod(CtMethod m, FamixMethod famixMethod) {
-
-        FamixClass returnType = null;
-        //TODO set Modifiers...
-        //method has return type search whether specific return class (set in getChildren at first position) already exists as a famixClass in entitiesHashmap
-        returnType = (FamixClass) famixEntities.get(m.getDirectChildren().get(0));
-        //TODO - that will probably create a problem... now everytime a new entity is created it should first be checked whether it does not exist in list yet...
-        if(returnType == null){//returnType does not exist as FamixClass in hashmap -> must create (int etc)
-            returnType = new FamixClass(m.getDirectChildren().get(0).toString());
-        }
-        //TODO - check whether void should be set as "declared" return class
-        famixMethod.setDeclaredReturnClass(returnType);
-        }
-
 
     /**
-     * Parses all anonymous classes of a method
-     * @param ctMethod the ctMethod, which holds anonymous classes that should be parsed into famix classes
-     * @param famixMethod the ctMethod as a famixObject, so parent can easily be set in resulting famix classes
-     * @return list of famix classes, the anonymous classes were parsed into
-     */
-    private Set<FamixClass> parseAllAnonymousClasses(CtElement ctMethod, FamixMethod famixMethod) {
-        Set<FamixClass> anonymClasses = new HashSet<>();
-        for (CtClass ctClass : ctMethod.getElements(new TypeFilter<>(CtClass.class))){
-            anonymClasses.add(parseAsClass(ctClass,famixMethod));
-        }
-        return anonymClasses;
-    }
-
-    /**
-     * Parses all attributes of a ctEntity
+     * Parses all attributes of a ctEntity (class)
      * @param ctEntity the entity of which all attributes should be parsed
      * @param famixEntity the entity as its famixObject equivalent, so parent of parsed attributes can be easily set
      * @return a list of famix attributes, the ctFields (attributes) were parsed into
@@ -365,28 +371,65 @@ public class SpoonToFamix {
     }
 
     /**
-     * Parses one ctFields into a famix field/attribute
+     * Parses one ctField into a FamixAttribute
      * @param ctField the ctFields that should be parsed
      * @param famixParent the ctField as its famixObject equivalent, so parent can easily be set
-     * @return the famixField the ctField was parsed into
+     * @return the famixAttribute the ctField was parsed into
      */
     private FamixAttribute parseAttribute(CtField ctField, AbstractFamixEntity famixParent) {
-        //TODO also set a declared class -> so the type.. could just set as a string instead of a famix class.... hmmmm -> gehen dann die references verloren?
-        //TODO - check whether uniqueName of attribute inside a method will be set correctly - because method was given unique name manually
-        FamixAttribute famixField = new FamixAttribute(ctField.getReference().getQualifiedName(), famixParent); //proper unique Name
-        famixField.setType("attribute");
-        famixField.setParentString(famixParent.getUniqueName());
-        famixEntities.put(famixField.getUniqueName(), famixField);
-        return famixField;
+        //basic parsing of attribute
+        FamixAttribute famixAttribute = new FamixAttribute(ctField.getReference().getQualifiedName(), famixParent); //TODO - not a unique name!
+        famixAttribute.setType("attribute");
+        famixAttribute.setParentString(famixParent.getUniqueName());
+        setVariableModifiers(famixAttribute, (CtVariable) ctField);
+        famixEntities.put(famixAttribute.getUniqueName(), famixAttribute);
+
+        //TODO set declaredClass (type)
+
+
+
+        return famixAttribute;
     }
 
     /**
+     * Sets the declared return class of each
+     */
+    private void setAllDeclaredReturnClasses() {
+        for(FamixMethod famixMethod : encounteredMethods){
+            //famixMethod.setDeclaredReturnClass(getDeclaredReturnClass(getMatchingCtMethod(famixMethod)));
+        }
+    }
+
+    /*
+    /**
+     * Returns the declared return class (class of return type) of a given CtMethod
+     * @param m the CtMethod of which the return type should be returned
+     * @return the return type of the CtMethod
+
+    private FamixClass getDeclaredReturnClass(CtMethod m) {
+        FamixClass returnType = null;
+        //searching in famixEntities-hashmap, whether return type of method already exists as a FamixClass in the hashmap
+        returnType = (FamixClass) famixEntities.get(m.getDirectChildren().get(0));
+        //TODO - that will probably create a problem... now everytime a new entity is created it should first be checked whether it does not exist in list yet...
+        if(returnType == null){//returnType does not exist as FamixClass in hashmap -> must create (like int, boolean ...) and only set specific name
+            returnType = new FamixClass(m.getDirectChildren().get(0).toString());
+        }
+        //TODO - should "void" count as a declared return type?
+        return returnType;
+    }
+    */
+
+
+
+    /**
      * Sets the correct modifiers of a famix object, depending on the modifiers of the corresponding ctEntity
+     * The ctEntity is of type CtType
      * @param famixEntity the famix entity of which the modifiers are set
      * @param ctEntity the corresponding ctEntity
      */
     private void setModifiers(AbstractFamixEntity famixEntity, CtType ctEntity) {
         int famixModifier = 0;
+
         for(ModifierKind modifier : ctEntity.getModifiers()) {
             if(modifier.toString().equals("public")) {
                 famixModifier += AbstractFamixEntity.MODIFIER_PUBLIC;
@@ -409,6 +452,61 @@ public class SpoonToFamix {
         }
 
         famixEntity.setModifiers(famixModifier);
+    }
+
+    /**
+     * Sets the correct modifiers of a famix object, depending on the modifiers of the corresponding ctEntity
+     * The ctEntity is of type CtMethod
+     * @param famixEntity the famix entity of which the modifiers are set
+     * @param ctEntity the corresponding ctEntity
+     */
+    private void setMethodModifiers(AbstractFamixEntity famixEntity, CtMethod ctEntity) {
+        int famixModifier = 0;
+
+        for(ModifierKind modifier : ctEntity.getModifiers()) {
+            if(modifier.toString().equals("public")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_PUBLIC;
+            }else if(modifier.toString().equals("private")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_PRIVATE;
+            }else if(modifier.toString().equals("protected")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_PROTECTED;
+            }else if(modifier.toString().equals("static")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_STATIC;
+            }else if(modifier.toString().equals("final")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_FINAL;
+            }else if(modifier.toString().equals("abstract")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_ABSTRACT;
+            }
+        }
+        famixEntity.setModifiers(famixModifier);
+    }
+
+    /**
+     * Sets the correct modifiers of a famix variable, depending on the modifiers of the corresponding ctEntity
+     * The ctEntity is of type CtVariable
+     * @param famixVar the famix entity of which the modifiers are set
+     * @param ctVar the corresponding ctEntity
+     */
+    private void setVariableModifiers(AbstractFamixVariable famixVar, CtVariable ctVar) {
+        int famixModifier = 0;
+
+        for(ModifierKind modifier : ctVar.getModifiers()) {
+            if(modifier.toString().equals("public")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_PUBLIC;
+            }else if(modifier.toString().equals("private")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_PRIVATE;
+            }else if(modifier.toString().equals("protected")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_PROTECTED;
+            }else if(modifier.toString().equals("static")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_STATIC;
+            }else if(modifier.toString().equals("final")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_FINAL;
+            }else if(modifier.toString().equals("abstract")) {
+                famixModifier += AbstractFamixEntity.MODIFIER_ABSTRACT;
+            }
+        }
+
+        famixVar.setModifiers(famixModifier);
     }
 
     /**
@@ -506,6 +604,30 @@ public class SpoonToFamix {
             return null;
         }
     }
+
+    /**
+     * Searches through the ctModel and returns the corresponding ctEntity to a given famixMethod
+     * @param famixMethod the famixMethod for which the corresponding ctEntity should be found
+     * @returnthe corresponding ctEntity
+     */
+
+    /*
+    private CtMethod getMatchingCtMethod(FamixMethod famixMethod) {
+        List matchingMethods = spoonRootPackage.filterChildren(new AbstractFilter<CtClass>(CtClass.class) {
+            @Override
+            public boolean matches(CtClass ctc){
+                return ctc.getQualifiedName().equals(fClass.getUniqueName()); //filter only matches one specific class
+            }
+        }).list();
+        if(matchingClasses.size() > 0){
+            return (CtClass) matchingClasses.get(0);
+        }else {
+            return null;
+        }
+
+    }
+    */
+
 
     /**
      * Getter for famixEntites-hashmap

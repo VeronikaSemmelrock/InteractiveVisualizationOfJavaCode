@@ -21,6 +21,7 @@ public class IntegerListThread extends Thread {//thread class that always uses t
         ArrayList<Thread> threads = new ArrayList<>();
         il = new IntegerList();
 
+        final int test = 0;
         //lets start 10 threads
         int i = 0;
         while(i<10){
