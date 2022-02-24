@@ -43,6 +43,12 @@ public class SpoonToFamix {
      */
     private ArrayList<FamixClass> generalisationsToParse = new ArrayList<>();
 
+    /**
+     * Delimiters that make unique naming of methods (overloading issues), local variables and parameters possible 
+     */
+    private final char DELIMITER_METHOD = '-';
+    private final char DELIMITER_LOCALVARIABLE = '^';
+    private final char DELIMITER_PARAMETER ='\'';
 
     /**
      * Constructor. Sets spoonModel and spoonRootPackage. The spoonRootPackage is a package created and added by SpoonParser at the root
@@ -242,10 +248,9 @@ public class SpoonToFamix {
         FamixMethod famixMethod = null;
         //creating unique name depending on whether it is a constructor or "normal" method -> "-" can not be used in naming of classes, methods ... so it is used here as a delimiter
         if(m instanceof CtMethod){
-            famixMethod = new FamixMethod(m.getReference().getDeclaringType().getQualifiedName()+"-"+m.getReference(), famixParent);//proper unique Name
+            famixMethod = new FamixMethod(m.getReference().getDeclaringType().getQualifiedName()+DELIMITER_METHOD+m.getReference(), famixParent);//proper unique Name
             famixMethod.setType("method");
         }else if(m instanceof CtConstructor){ //Name of constructors will look different
-            System.out.println(m.getReference());
             famixMethod = new FamixMethod(""+m.getReference(), famixParent);//proper unique name
             famixMethod.setType(("constructor"));
         }
@@ -289,7 +294,7 @@ public class SpoonToFamix {
      */
     private FamixLocalVariable parseLocalVariable(CtVariable ctVar, FamixMethod famixMethod) {
         //basic parsing of FamixLocalVariable
-        FamixLocalVariable famixVar = new FamixLocalVariable(ctVar.getSimpleName(), famixMethod); //TODO - not unique!!!
+        FamixLocalVariable famixVar = new FamixLocalVariable(famixMethod.getUniqueName()+DELIMITER_LOCALVARIABLE+ctVar.getSimpleName(), famixMethod);
         famixVar.setType("localVariable");
         setVariableModifiers(famixVar, (CtVariable) ctVar);
         famixVar.setParentString(famixMethod.getUniqueName());
@@ -340,7 +345,7 @@ public class SpoonToFamix {
      */
     private FamixParameter parseAsParameter(CtParameter param,int index, FamixMethod famixMethod) {
         //basic parsing of parameter
-        FamixParameter famixParameter = new FamixParameter(param.getSimpleName(), famixMethod, index);//TODO - name not unique!!
+        FamixParameter famixParameter = new FamixParameter(famixMethod.getUniqueName()+DELIMITER_PARAMETER+param.getSimpleName(), famixMethod, index);
         famixParameter.setParentString(famixMethod.getUniqueName());
         famixParameter.setType("parameter");
         famixParameter.setModifiers(0);//TODO - is anything else even possible?

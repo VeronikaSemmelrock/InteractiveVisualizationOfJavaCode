@@ -11,6 +11,7 @@ public class Consumer extends Thread {
 
     public Consumer(Stack<Integer> stack) {
         this.stack = stack;
+        int test = 10;
     }
 
     public void run() {
