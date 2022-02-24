@@ -226,8 +226,8 @@ public class SpoonToFamix {
         if(!(ctEntity instanceof CtInterface)) {
             CtClass ctClass = (CtClass) ctEntity;
             for (Object c : ctClass.getConstructors()) {
-                //CtMethod ctMethod = (CtMethod) c;  //necessary cast
-                //famixMethods.add(parseMethod(ctMethod, famixClass));//TODO - also call parsing of constructors
+                CtConstructor ctConstructor = (CtConstructor) c;
+                famixMethods.add(parseMethod(ctConstructor, famixClass));
             }
         }
         return famixMethods;
@@ -238,11 +238,15 @@ public class SpoonToFamix {
      * @param m the ctMethod, that holds all information for famixMethod
      * @param famixParent the parent of the method as a Famix Object for easy setting of parent
      */
-    private FamixMethod parseMethod(CtMethod m, FamixClass famixParent) {
+    private FamixMethod parseMethod(CtExecutable m, FamixClass famixParent) {
         //basic parsing of method
         FamixMethod famixMethod = new FamixMethod(m.getReference().getDeclaringType().getQualifiedName()+"-"+m.getSimpleName(), famixParent);//proper unique Name //TODO - fix naming
         famixMethod.setParentString(famixParent.getUniqueName());
-        famixMethod.setType("method");
+        if(m instanceof CtMethod){
+            famixMethod.setType("method");
+        }else if(m instanceof CtConstructor){
+            famixMethod.setType(("constructor"));
+        }
         setMethodModifiers(famixMethod, m);
         famixEntities.put(famixMethod.getUniqueName(), famixMethod);
 
@@ -263,7 +267,7 @@ public class SpoonToFamix {
      * @param famixMethod the parent of the local Variables
      * @return a list of all parsed FamixLocalVariables
      */
-    private Set<FamixLocalVariable> parseAllLocalVariables(CtMethod m, FamixMethod famixMethod) {
+    private Set<FamixLocalVariable> parseAllLocalVariables(CtExecutable m, FamixMethod famixMethod) {
         Set<FamixLocalVariable> localVars = new HashSet<>();
 
         for(CtVariable var : m.getElements(new TypeFilter<>(CtVariable.class))){
@@ -460,22 +464,42 @@ public class SpoonToFamix {
      * @param famixEntity the famix entity of which the modifiers are set
      * @param ctEntity the corresponding ctEntity
      */
-    private void setMethodModifiers(AbstractFamixEntity famixEntity, CtMethod ctEntity) {
+    private void setMethodModifiers(AbstractFamixEntity famixEntity, CtExecutable ctEntity) {
         int famixModifier = 0;
 
-        for(ModifierKind modifier : ctEntity.getModifiers()) {
-            if(modifier.toString().equals("public")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_PUBLIC;
-            }else if(modifier.toString().equals("private")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_PRIVATE;
-            }else if(modifier.toString().equals("protected")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_PROTECTED;
-            }else if(modifier.toString().equals("static")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_STATIC;
-            }else if(modifier.toString().equals("final")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_FINAL;
-            }else if(modifier.toString().equals("abstract")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_ABSTRACT;
+        if(ctEntity instanceof CtConstructor){
+            CtConstructor c = (CtConstructor) ctEntity;
+            for(ModifierKind modifier : c.getModifiers()) {
+                if(modifier.toString().equals("public")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_PUBLIC;
+                }else if(modifier.toString().equals("private")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_PRIVATE;
+                }else if(modifier.toString().equals("protected")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_PROTECTED;
+                }else if(modifier.toString().equals("static")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_STATIC;
+                }else if(modifier.toString().equals("final")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_FINAL;
+                }else if(modifier.toString().equals("abstract")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_ABSTRACT;
+                }
+            }
+        }else {
+            CtMethod m = (CtMethod) ctEntity;
+            for(ModifierKind modifier : m.getModifiers()) {
+                if(modifier.toString().equals("public")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_PUBLIC;
+                }else if(modifier.toString().equals("private")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_PRIVATE;
+                }else if(modifier.toString().equals("protected")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_PROTECTED;
+                }else if(modifier.toString().equals("static")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_STATIC;
+                }else if(modifier.toString().equals("final")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_FINAL;
+                }else if(modifier.toString().equals("abstract")) {
+                    famixModifier += AbstractFamixEntity.MODIFIER_ABSTRACT;
+                }
             }
         }
         famixEntity.setModifiers(famixModifier);
