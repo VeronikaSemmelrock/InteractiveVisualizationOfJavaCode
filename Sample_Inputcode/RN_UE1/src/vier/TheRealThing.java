@@ -32,6 +32,7 @@ public class TheRealThing extends Thread {
         return tempresult;
     }
 
+
     public void run() {
         //extract sub float-array from float[] data - only the indexes that this thread has to process!
         float[] threaddata = new float[end-start+1]; //e.g. thread has to process 1-3 -> 3-1 = 2 +1 = 3 entries

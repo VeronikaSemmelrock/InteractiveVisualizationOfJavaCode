@@ -239,14 +239,18 @@ public class SpoonToFamix {
      * @param famixParent the parent of the method as a Famix Object for easy setting of parent
      */
     private FamixMethod parseMethod(CtExecutable m, FamixClass famixParent) {
-        //basic parsing of method
-        FamixMethod famixMethod = new FamixMethod(m.getReference().getDeclaringType().getQualifiedName()+"-"+m.getSimpleName(), famixParent);//proper unique Name //TODO - fix naming
-        famixMethod.setParentString(famixParent.getUniqueName());
+        FamixMethod famixMethod = null;
+        //creating unique name depending on whether it is a constructor or "normal" method -> "-" can not be used in naming of classes, methods ... so it is used here as a delimiter
         if(m instanceof CtMethod){
+            famixMethod = new FamixMethod(m.getReference().getDeclaringType().getQualifiedName()+"-"+m.getReference(), famixParent);//proper unique Name
             famixMethod.setType("method");
-        }else if(m instanceof CtConstructor){
+        }else if(m instanceof CtConstructor){ //Name of constructors will look different
+            System.out.println(m.getReference());
+            famixMethod = new FamixMethod(""+m.getReference(), famixParent);//proper unique name
             famixMethod.setType(("constructor"));
         }
+        //basic parsing of method
+        famixMethod.setParentString(famixParent.getUniqueName());
         setMethodModifiers(famixMethod, m);
         famixEntities.put(famixMethod.getUniqueName(), famixMethod);
 

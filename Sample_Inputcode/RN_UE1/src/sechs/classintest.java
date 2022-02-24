@@ -5,6 +5,7 @@ public class classintest {
 
     }
 
+
     public void anonymclassTestMethod(sieben.Consumer consumer){
         class anonymClass {
 
