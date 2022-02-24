@@ -37,16 +37,20 @@ public class SpoonToFamix {
      */
     private CtPackage spoonRootPackage;
 
-    private ArrayList<FamixMethod> encounteredMethods = new ArrayList<>();
+    /**
+     * Lists of encountered methods and attributes to finish parsing, after all classes were parsed, to be able to set declared class
+     */
+    private HashMap<FamixMethod, CtExecutable> encounteredMethods = new HashMap<>();
+    private HashMap<FamixAttribute, CtField> encounteredAttributes = new HashMap<>();
     /**
      * Hashmap to temporarily hold all encountered entities with associations that need to be parsed
      */
     private ArrayList<FamixClass> generalisationsToParse = new ArrayList<>();
 
     /**
-     * Delimiters that make unique naming of methods (overloading issues), local variables and parameters possible 
+     * Delimiters that make unique naming of methods (overloading issues), local variables and parameters possible
      */
-    private final char DELIMITER_METHOD = '-';
+    private final char DELIMITER_METHOD = '.';
     private final char DELIMITER_LOCALVARIABLE = '^';
     private final char DELIMITER_PARAMETER ='\'';
 
@@ -67,7 +71,8 @@ public class SpoonToFamix {
         for(CtPackage p : spoonRootPackage.getPackages()){
             parseRootPackage(p);
         }
-        setAllDeclaredReturnClasses(); //after everything (especially all famix classes) have been parsed -> setting declared return classes of each encountered method
+        setAttributeDeclaredClass(); //after all classes have been parsed -> attributes can have their declaring class (data type - could be a class) set
+        finishMethodParsing(); //after all classes have been parsed -> methods parsing can be finished -> setting declared return type in method and starts parsing of parameters and Local variables that also have declared class
         parseAllEncounteredGeneralisations(); //parses all encountered import and extends relationships between classes
     }
 
@@ -254,18 +259,14 @@ public class SpoonToFamix {
             famixMethod = new FamixMethod(""+m.getReference(), famixParent);//proper unique name
             famixMethod.setType(("constructor"));
         }
-        //basic parsing of method
+        //parsing of method and all its anonymous inner classes
         famixMethod.setParentString(famixParent.getUniqueName());
         setMethodModifiers(famixMethod, m);
         famixEntities.put(famixMethod.getUniqueName(), famixMethod);
-
-        //adding famixMethod to a list of methods where declared return class needs to be set after all classes were parsed into FamixClasses
-        encounteredMethods.add(famixMethod);
-
-        //further parsing of method and call to parse all its parameters, anonymous classes and local variables
-        famixMethod.setParameters(parseAllParameters(m, famixMethod));
         famixMethod.setAnonymClasses(parseAllAnonymousClasses(m, famixMethod));
-        famixMethod.setLocalVariables(parseAllLocalVariables(m, famixMethod));
+
+        //adding famixMethod to a list of methods whose parsing (and their parameters and local vars parsing) will be finished once all classes were parsed - for declared return class
+        encounteredMethods.put(famixMethod, m);
 
         return famixMethod;
     }
@@ -300,7 +301,7 @@ public class SpoonToFamix {
         famixVar.setParentString(famixMethod.getUniqueName());
         famixEntities.put(famixVar.getUniqueName(), famixVar);
 
-        //TODO - set declared class of local variable (data type)
+        famixVar.setDeclaredClass(getDeclaredClass(ctVar.getType().toString()));
 
         return famixVar;
     }
@@ -348,21 +349,9 @@ public class SpoonToFamix {
         FamixParameter famixParameter = new FamixParameter(famixMethod.getUniqueName()+DELIMITER_PARAMETER+param.getSimpleName(), famixMethod, index);
         famixParameter.setParentString(famixMethod.getUniqueName());
         famixParameter.setType("parameter");
-        famixParameter.setModifiers(0);//TODO - is anything else even possible?
+        famixParameter.setModifiers(-1);//a parameter does not have any modifiers
 
-        //TODO - proper setting of declared class
-        /*
-        FamixClass declaredType = null;
-        declaredType = (FamixClass) famixEntities.get(param.getType().toString());
-        if (declaredType == null){
-            declaredType = new FamixClass(param.getType().toString());
-            famixEntities.put(param.getType().toString(), declaredType);
-        }
-        famixParameter.setDeclaredClass(declaredType);//works? looks weird? test out with own class/type - reference does not work properly.. maybe just switch out for string?
-        famixEntities.put(famixParameter.getUniqueName(), famixParameter);
-
-
-         */
+        famixParameter.setDeclaredClass(getDeclaredClass(param.getType().toString()));
 
         return famixParameter;
     }
@@ -391,48 +380,59 @@ public class SpoonToFamix {
      */
     private FamixAttribute parseAttribute(CtField ctField, AbstractFamixEntity famixParent) {
         //basic parsing of attribute
-        FamixAttribute famixAttribute = new FamixAttribute(ctField.getReference().getQualifiedName(), famixParent); //TODO - not a unique name!
+        FamixAttribute famixAttribute = new FamixAttribute(ctField.getReference().getQualifiedName(), famixParent); //unique name
         famixAttribute.setType("attribute");
         famixAttribute.setParentString(famixParent.getUniqueName());
         setVariableModifiers(famixAttribute, (CtVariable) ctField);
         famixEntities.put(famixAttribute.getUniqueName(), famixAttribute);
 
-        //TODO set declaredClass (type)
-
-
+        //adding attribute to a list of attributes whose parsing (setting of declared class (data type)) will be finished once all classes have been parsed
+        encounteredAttributes.put(famixAttribute, ctField);
 
         return famixAttribute;
     }
 
     /**
-     * Sets the declared return class of each
+     * Calls functions to finish parsing of all encountered methods and subsequently its parameters and local variables.
+     * This method is called after all classes have been parsed, so data types (declared class) of method (return type), parameter and local variable can now be set.
+     * For all methods the declared return class is set and parsing of parameters and local variables is started.
      */
-    private void setAllDeclaredReturnClasses() {
-        for(FamixMethod famixMethod : encounteredMethods){
-            //famixMethod.setDeclaredReturnClass(getDeclaredReturnClass(getMatchingCtMethod(famixMethod)));
+    private void finishMethodParsing() {
+        for(Map.Entry<FamixMethod, CtExecutable> entry : encounteredMethods.entrySet()){
+            FamixMethod fmethod = entry.getKey();
+            CtExecutable ctmethod = entry.getValue();
+
+            //further parsing of method and call to parse all its parameters and local variables
+            fmethod.setParameters(parseAllParameters(ctmethod, fmethod));
+            fmethod.setLocalVariables(parseAllLocalVariables(ctmethod, fmethod));
+            fmethod.setDeclaredReturnClass(getDeclaredClass(ctmethod.getDirectChildren().get(0).toString()));
         }
     }
 
-    /*
     /**
-     * Returns the declared return class (class of return type) of a given CtMethod
-     * @param m the CtMethod of which the return type should be returned
-     * @return the return type of the CtMethod
-
-    private FamixClass getDeclaredReturnClass(CtMethod m) {
-        FamixClass returnType = null;
-        //searching in famixEntities-hashmap, whether return type of method already exists as a FamixClass in the hashmap
-        returnType = (FamixClass) famixEntities.get(m.getDirectChildren().get(0));
-        //TODO - that will probably create a problem... now everytime a new entity is created it should first be checked whether it does not exist in list yet...
-        if(returnType == null){//returnType does not exist as FamixClass in hashmap -> must create (like int, boolean ...) and only set specific name
-            returnType = new FamixClass(m.getDirectChildren().get(0).toString());
+     * Method to set declared class of each encountered attribute. This method is called after all classes have been parsed to be able to set declared class
+     */
+    private void setAttributeDeclaredClass(){
+        for(Map.Entry<FamixAttribute, CtField> entry : encounteredAttributes.entrySet()){
+            entry.getKey().setDeclaredClass(getDeclaredClass(entry.getValue().getType().toString()));
         }
-        //TODO - should "void" count as a declared return type?
+    }
+
+
+    /**
+     * Searches for a uniqueName representing a class in entities-Hashmap and returns it. If no class is found, a new one is created, added to the hashmap and returned.
+     * @param uniqueName the uniqueName that represensts the key in the hashmap. The value in the hashmap is the class that is looked for.
+     * @return a famixClass representing the searched for class.
+     */
+    private FamixClass getDeclaredClass(String uniqueName) {
+        FamixClass returnType = null;
+        //searching in famixEntities-hashmap, whether data type (declared class) already exists as a FamixClass in the hashmap
+        returnType = (FamixClass) famixEntities.get(uniqueName);
+        if(returnType == null){//returnType does not exist as FamixClass in hashmap -> must create (like int, boolean ...) and only set specific name
+            returnType = new FamixClass(uniqueName);
+        }
         return returnType;
     }
-    */
-
-
 
     /**
      * Sets the correct modifiers of a famix object, depending on the modifiers of the corresponding ctEntity
