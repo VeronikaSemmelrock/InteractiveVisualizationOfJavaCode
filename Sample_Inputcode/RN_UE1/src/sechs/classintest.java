@@ -7,7 +7,12 @@ public class classintest {
 
 
     public void anonymclassTestMethod(sieben.Consumer consumer){
+
         class anonymClass {
+
+        }
+        String test = "instanceoftest";
+        if(test instanceof String){
 
         }
     }

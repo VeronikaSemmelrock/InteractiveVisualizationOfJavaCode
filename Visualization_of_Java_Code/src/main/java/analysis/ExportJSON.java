@@ -32,7 +32,7 @@ public class ExportJSON {
      * @param filename - the filename with which the file will be saved
      * @throws IOException
      */
-    public void exportAssociationsToFile(HashMap<Integer, AbstractFamixGeneralization> famixAssociations, String filename) throws IOException {
+    public void exportAssociationsToFile(HashMap<Integer, FamixAssociation> famixAssociations, String filename) throws IOException {
         writer = new FileWriter(filename+".json");
         new GsonBuilder().setPrettyPrinting().create().toJson(famixAssociations, writer);
         writer.close();

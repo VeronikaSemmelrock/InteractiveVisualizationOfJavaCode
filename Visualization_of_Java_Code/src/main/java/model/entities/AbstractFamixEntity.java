@@ -387,7 +387,8 @@ public abstract class AbstractFamixEntity extends AbstractFamixObject{
         return source;
     }
 
-    /**
+    */
+    /*
      * Sets the content.
      *
      * @param content
@@ -412,6 +413,8 @@ public abstract class AbstractFamixEntity extends AbstractFamixObject{
     public Content getContent() {
         return fContent;
     }
+
+*/
 
     /**
      * Checks if is abstract.

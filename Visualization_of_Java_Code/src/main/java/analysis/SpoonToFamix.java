@@ -2,6 +2,7 @@ package analysis;
 
 import model.entities.*;
 import spoon.reflect.CtModel;
+import spoon.reflect.code.CtInvocation;
 import spoon.reflect.declaration.*;
 
 import java.util.*;
@@ -9,6 +10,7 @@ import java.util.*;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.AbstractFilter;
 import spoon.reflect.visitor.filter.TypeFilter;
+import spoon.support.reflect.declaration.CtMethodImpl;
 
 import java.util.Collection;
 
@@ -26,7 +28,7 @@ public class SpoonToFamix {
     /**
      * HashMap that holds all parsed Famix Associations
      */
-    private HashMap<Integer, AbstractFamixGeneralization> famixAssociations = new LinkedHashMap<>();
+    private HashMap<Integer, FamixAssociation> famixAssociations = new LinkedHashMap<>();
     /**
      * Counter for IDs in famixAssociations-hashMap
      */
@@ -67,14 +69,17 @@ public class SpoonToFamix {
      * Starts parsing of all entities
      * Afterwards, starts parsing of all encountered associations
      */
-    public void parseSpoonRootPackage() {
+    public void parseSpoonRootPackage() throws Exception {
         for(CtPackage p : spoonRootPackage.getPackages()){
             parseRootPackage(p);
         }
         setAttributeDeclaredClass(); //after all classes have been parsed -> attributes can have their declaring class (data type - could be a class) set
         finishMethodParsing(); //after all classes have been parsed -> methods parsing can be finished -> setting declared return type in method and starts parsing of parameters and Local variables that also have declared class
         parseAllEncounteredGeneralisations(); //parses all encountered import and extends relationships between classes
+        parseAllMethodInvocations(); //parses any and all method invocations
     }
+
+
 
 
     /**
@@ -160,7 +165,7 @@ public class SpoonToFamix {
      * Adds a famix generalisation to the famixAssociations-Hashmap and updates the ID-counter
      * @param f - the famix generalisation that should be added to the hashmap
      */
-    private void addToHashAssociations(AbstractFamixGeneralization f){
+    private void addToHashAssociations(FamixAssociation f){
         famixAssociations.put(assocCounter, f);
         assocCounter++;
     }
@@ -619,11 +624,12 @@ public class SpoonToFamix {
         }
     }
 
+
     /**
      * Searches through the ctModel and returns the corresponding ctEntity to a given famixClass
      * @param fClass the famixClass for which the corresponding ctEntity should be found
      * @return the corresponding ctEntity
-     */
+    */
     private CtClass getMatchingCtClass(FamixClass fClass) {
         List matchingClasses = spoonRootPackage.filterChildren(new AbstractFilter<CtClass>(CtClass.class) {
             @Override
@@ -638,29 +644,61 @@ public class SpoonToFamix {
         }
     }
 
-    /**
-     * Searches through the ctModel and returns the corresponding ctEntity to a given famixMethod
-     * @param famixMethod the famixMethod for which the corresponding ctEntity should be found
-     * @returnthe corresponding ctEntity
-     */
 
-    /*
-    private CtMethod getMatchingCtMethod(FamixMethod famixMethod) {
-        List matchingMethods = spoonRootPackage.filterChildren(new AbstractFilter<CtClass>(CtClass.class) {
-            @Override
-            public boolean matches(CtClass ctc){
-                return ctc.getQualifiedName().equals(fClass.getUniqueName()); //filter only matches one specific class
-            }
-        }).list();
-        if(matchingClasses.size() > 0){
-            return (CtClass) matchingClasses.get(0);
+    /**
+     * Parses all method invocations in the spoon parser model to FamixInvocation and adds them to assocations-hashmap
+     * @throws Exception - is thrown, when caller-method is unknown
+     */
+    private void parseAllMethodInvocations() throws Exception {
+        List<CtInvocation> invocations = spoonModel.getElements(ctElement -> ctElement instanceof CtInvocation);
+        for (CtInvocation invocation : invocations) {
+            addToHashAssociations(createFamixInvocation(invocation));
+        }
+    }
+
+
+    /**
+     * Parses a given CtInvocation into a FamixInvocation
+     * @param invocation the invocation from the spoon model, that needs to be parsed into FamixInvocation
+     * @return a FamixInvocation representing the CtInvocation from the SpoonModel
+     * @throws Exception - is thrown, when caller-method of invocation is unknown
+     */
+    private FamixInvocation createFamixInvocation(CtInvocation invocation) throws Exception {
+        //extracting uniqueNames for caller- and callee-method
+        String uniqueNameCallee = null;
+        String uniqueNameCaller = null;
+        CtMethod parentMethod = invocation.getParent(new TypeFilter<>(CtMethod.class));
+        CtConstructor parentConstructor = invocation.getParent(new TypeFilter<>(CtConstructor.class));
+        if(parentMethod != null){//parent/caller is a method
+            uniqueNameCaller = parentMethod.getReference().getDeclaringType().getQualifiedName()+DELIMITER_METHOD+parentMethod.getReference();
+            uniqueNameCallee = invocation.getExecutable().getDeclaringType().toString()+DELIMITER_METHOD+invocation.getExecutable().toString();
+        }else if(parentConstructor != null){//parent/caller is a constructor
+            uniqueNameCaller = parentConstructor.getReference().toString();
+            uniqueNameCallee = invocation.getExecutable().toString();
         }else {
             return null;
         }
 
-    }
-    */
+        //searching for uniqueNames in entities-hashmap, in case it is a known method that was already parsed
+        FamixMethod caller = (FamixMethod) famixEntities.get(uniqueNameCaller);
+        FamixMethod callee = (FamixMethod) famixEntities.get(uniqueNameCallee);
 
+        //if the caller is unknown, throw exception
+        if(caller == null){//TODO - not really possible?
+            throw new Exception("Unknown caller in method invocation!");
+        }
+        //if the callee is unknown, create new FamixMethod with this uniqueName and add to entities-hashmap -> possible in cases like calling java.lang.Object() for constructors
+        if(callee == null){
+            callee = new FamixMethod(uniqueNameCallee);
+            callee.setType("method");
+            famixEntities.put(uniqueNameCallee, callee);
+        }
+
+        //create and return FamixInvocation
+        FamixInvocation finvocation = new FamixInvocation(caller, callee);
+        finvocation.setType("invocation");
+        return finvocation;
+    }
 
     /**
      * Getter for famixEntites-hashmap
@@ -674,7 +712,7 @@ public class SpoonToFamix {
      * Getter for famixAssociations-hashmap
      * @return the famixAssociations-hashmap
      */
-    public HashMap<Integer, AbstractFamixGeneralization> getFamixAssociations() {
+    public HashMap<Integer, FamixAssociation> getFamixAssociations() {
         return famixAssociations;
     }
 }

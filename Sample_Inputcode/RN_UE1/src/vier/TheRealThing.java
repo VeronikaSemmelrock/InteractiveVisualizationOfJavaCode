@@ -30,6 +30,7 @@ public class TheRealThing extends Thread {
             tempresult += array[i];
         }
         return tempresult;
+
     }
 
 

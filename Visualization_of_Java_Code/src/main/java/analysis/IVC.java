@@ -6,7 +6,7 @@ import spoon.reflect.declaration.CtPackage;
 import java.io.IOException;
 
 public class IVC {
-    public static void main(String args[]) throws IOException {
+    public static void main(String args[]) throws Exception {
         final String PROJECT_PATH = "C:\\Users\\semme\\Documents\\IVJC\\InteractiveVisualizationOfJavaCode\\Sample_Inputcode";
 
         //creating a model of the project via spoon - returns ctModel
