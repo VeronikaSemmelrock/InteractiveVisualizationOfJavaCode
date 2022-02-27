@@ -410,7 +410,11 @@ public class SpoonToFamix {
             //further parsing of method and call to parse all its parameters and local variables
             fmethod.setParameters(parseAllParameters(ctmethod, fmethod));
             fmethod.setLocalVariables(parseAllLocalVariables(ctmethod, fmethod));
-            fmethod.setDeclaredReturnClass(getDeclaredClass(ctmethod.getDirectChildren().get(0).toString()));
+
+            //only set a declared return class if it is not a constructor -> constructors do not have return types
+            if(ctmethod instanceof CtMethod){
+                fmethod.setDeclaredReturnClass(getDeclaredClass(ctmethod.getType().toString()));
+            }
         }
     }
 
@@ -435,6 +439,8 @@ public class SpoonToFamix {
         returnType = (FamixClass) famixEntities.get(uniqueName);
         if(returnType == null){//returnType does not exist as FamixClass in hashmap -> must create (like int, boolean ...) and only set specific name
             returnType = new FamixClass(uniqueName);
+            returnType.setType("class");
+            famixEntities.put(uniqueName, returnType);
         }
         return returnType;
     }
