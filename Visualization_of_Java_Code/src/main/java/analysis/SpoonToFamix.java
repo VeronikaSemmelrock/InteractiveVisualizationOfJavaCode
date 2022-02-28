@@ -4,6 +4,7 @@ import model.entities.*;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtFieldAccess;
 import spoon.reflect.code.CtInvocation;
+import spoon.reflect.code.CtTypeAccess;
 import spoon.reflect.code.CtVariableAccess;
 import spoon.reflect.declaration.*;
 
@@ -82,7 +83,9 @@ public class SpoonToFamix {
         parseAllEncounteredGeneralisations(); //parses all encountered import and extends relationships between classes
         parseAllMethodInvocations(); //parses any and all method invocations
         parseAllAttributeAccesses(); //parses any and all field/attribute accesses (read/write)
+        parseAllCastToAssociations(); //parses any and all cast to associations
     }
+
 
 
     /**
@@ -404,6 +407,7 @@ public class SpoonToFamix {
      * Calls functions to finish parsing of all encountered methods and subsequently its parameters and local variables.
      * This method is called after all classes have been parsed, so data types (declared class) of method (return type), parameter and local variable can now be set.
      * For all methods the declared return class is set and parsing of parameters and local variables is started.
+     * Furthermore, for each found return type of a method, an FamixAssociation between FamixMethod and its return type (FamixClass) is created and added to the assocs hashmap
      */
     private void finishMethodParsing() {
         for(Map.Entry<FamixMethod, CtExecutable> entry : encounteredMethods.entrySet()){
@@ -416,7 +420,14 @@ public class SpoonToFamix {
 
             //only set a declared return class if it is not a constructor -> constructors do not have return types
             if(ctmethod instanceof CtMethod){
-                fmethod.setDeclaredReturnClass(getDeclaredClass(ctmethod.getType().toString()));
+                //getting the declaredReturnClass and setting it in FamixMethod
+                FamixClass declaredReturnClass = getDeclaredClass(ctmethod.getType().toString());
+                fmethod.setDeclaredReturnClass(declaredReturnClass);
+
+                //creating a famixAssociation connecting the method to its return type (declared return class)
+                FamixAssociation returnTypeAssoc = new FamixAssociation(fmethod, declaredReturnClass);
+                returnTypeAssoc.setType("returnType");
+                addToHashAssociations(returnTypeAssoc);
             }
         }
     }
@@ -756,6 +767,35 @@ public class SpoonToFamix {
         FamixAccess famixAccess = new FamixAccess(method, attribute);
         famixAccess.setType("access");
         return famixAccess;
+    }
+
+    /**
+     * Parses any and all Instance of Associations in the spoon model (CtTypeAccess) into FamixInstanceOf and adds FamixInstanceOf to assocs hashmap
+     */
+    private void parseAllCastToAssociations() {
+        List<CtTypeAccess> accesses = spoonModel.getElements(ctAccess -> ctAccess instanceof CtTypeAccess);
+        for (CtTypeAccess access : accesses) {
+            addToHashAssociations(createFamixInstanceOf(access));
+        }
+    }
+
+    /**
+     * Parses one CtTypeAccess into a FamixCastTo object and returns it
+     * @param access
+     * @return
+     */
+    private FamixAssociation createFamixInstanceOf(CtTypeAccess access) {
+        System.out.print("\n\n");
+        System.out.println("Accessed Type -> "+access.getAccessedType());
+        System.out.println("Children -> "+access.getDirectChildren());
+        System.out.println("Type Casts-> "+access.getTypeCasts());
+        System.out.println("Parent -> "+access.getParent());
+        System.out.println("Referenced Types -> "+access.getReferencedTypes());
+
+
+
+
+        return null;
     }
 
 
