@@ -2,11 +2,14 @@ package analysis;
 
 import model.entities.*;
 import spoon.reflect.CtModel;
+import spoon.reflect.code.CtFieldAccess;
 import spoon.reflect.code.CtInvocation;
+import spoon.reflect.code.CtVariableAccess;
 import spoon.reflect.declaration.*;
 
 import java.util.*;
 
+import spoon.reflect.reference.CtFieldReference;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.AbstractFilter;
 import spoon.reflect.visitor.filter.TypeFilter;
@@ -55,6 +58,7 @@ public class SpoonToFamix {
     private final char DELIMITER_METHOD = '.';
     private final char DELIMITER_LOCALVARIABLE = '^';
     private final char DELIMITER_PARAMETER ='\'';
+    private final char DELIMITER_ATTRIBUTE = '#';
 
     /**
      * Constructor. Sets spoonModel and spoonRootPackage. The spoonRootPackage is a package created and added by SpoonParser at the root
@@ -77,9 +81,8 @@ public class SpoonToFamix {
         finishMethodParsing(); //after all classes have been parsed -> methods parsing can be finished -> setting declared return type in method and starts parsing of parameters and Local variables that also have declared class
         parseAllEncounteredGeneralisations(); //parses all encountered import and extends relationships between classes
         parseAllMethodInvocations(); //parses any and all method invocations
+        parseAllAttributeAccesses(); //parses any and all field/attribute accesses (read/write)
     }
-
-
 
 
     /**
@@ -705,6 +708,56 @@ public class SpoonToFamix {
         finvocation.setType("invocation");
         return finvocation;
     }
+
+    /**
+     * Parses all attribute accesses in the spoon parser model to FamixAccess and adds them to assocations-hashmap
+     */
+    private void parseAllAttributeAccesses() throws Exception {
+        List<CtFieldAccess> accesses = spoonModel.getElements(ctAccess -> ctAccess instanceof CtFieldAccess);
+        for (CtFieldAccess access : accesses) {
+            //System.out.println("Type Casts -> "+access.getTypeCasts()); //maybe helpful later for other assocs
+            FamixAccess famixAccess = createFamixAccess(access);
+            if(famixAccess != null ){//only add if no error occurred -> unknown attribute TODO
+                addToHashAssociations(famixAccess);
+            }
+        }
+    }
+
+    /**
+     *Parses a given CtFieldAccess into a FamixAccess
+     *@param access the CtFieldAccess from the spoon model, that needs to be parsed into FamixAccess
+     *@return a FamixAccess representing the CtVariableAccess from the SpoonModel
+     */
+    private FamixAccess createFamixAccess(CtFieldAccess access) throws Exception {
+        String uniqueNameMethod = null;
+        String uniqueNameField = access.getVariable().getQualifiedName();
+
+        //getting uniqueName of method/constructor that is accessing attribute
+        CtMethod parentMethod = access.getParent(new TypeFilter<>(CtMethod.class));
+        CtConstructor parentConstructor = access.getParent(new TypeFilter<>(CtConstructor.class));
+        if(parentMethod != null){//parent/caller is a method
+            uniqueNameMethod = parentMethod.getReference().getDeclaringType().getQualifiedName()+DELIMITER_METHOD+parentMethod.getReference();
+        }else if(parentConstructor != null){//parent/caller is a constructor
+            uniqueNameMethod = parentConstructor.getReference().toString();
+        }else {
+            return null;
+        }
+
+        FamixMethod method = (FamixMethod) famixEntities.get(uniqueNameMethod);
+        FamixAttribute attribute = (FamixAttribute) famixEntities.get(uniqueNameField);
+        if(method == null){
+            throw new Exception("Unknown Method in parsing of attribute access!");
+        }else if(attribute == null){
+            System.out.println("Attribute is UNKNOWN!!! -> "+uniqueNameField);
+            return null;
+        }
+
+        //creating famixAccess, setting correct type and returning
+        FamixAccess famixAccess = new FamixAccess(method, attribute);
+        famixAccess.setType("access");
+        return famixAccess;
+    }
+
 
     /**
      * Getter for famixEntites-hashmap
