@@ -83,7 +83,7 @@ public class SpoonToFamix {
         parseAllEncounteredGeneralisations(); //parses all encountered import and extends relationships between classes
         parseAllMethodInvocations(); //parses any and all method invocations
         parseAllAttributeAccesses(); //parses any and all field/attribute accesses (read/write)
-        parseAllCastToAssociations(); //parses any and all cast to associations
+        //parseAllInstanceOfAssociations(); //parses any and all cast to associations
     }
 
 
@@ -707,6 +707,7 @@ public class SpoonToFamix {
         if(caller == null){//TODO - not really possible?
             throw new Exception("Unknown caller in method invocation!");
         }
+
         //if the callee is unknown, create new FamixMethod with this uniqueName and add to entities-hashmap -> possible in cases like calling java.lang.Object() for constructors
         if(callee == null){
             callee = new FamixMethod(uniqueNameCallee);
@@ -759,7 +760,7 @@ public class SpoonToFamix {
         if(method == null){
             throw new Exception("Unknown Method in parsing of attribute access!");
         }else if(attribute == null){
-            System.out.println("Attribute is UNKNOWN!!! -> "+uniqueNameField);
+            //System.out.println("Attribute is UNKNOWN!!! -> "+uniqueNameField);
             return null;
         }
 
@@ -772,7 +773,7 @@ public class SpoonToFamix {
     /**
      * Parses any and all Instance of Associations in the spoon model (CtTypeAccess) into FamixInstanceOf and adds FamixInstanceOf to assocs hashmap
      */
-    private void parseAllCastToAssociations() {
+    private void parseAllInstanceOfAssociations() throws Exception {
         List<CtTypeAccess> accesses = spoonModel.getElements(ctAccess -> ctAccess instanceof CtTypeAccess);
         for (CtTypeAccess access : accesses) {
             addToHashAssociations(createFamixInstanceOf(access));
@@ -780,22 +781,41 @@ public class SpoonToFamix {
     }
 
     /**
-     * Parses one CtTypeAccess into a FamixCastTo object and returns it
-     * @param access
-     * @return
+     * Parses one CtTypeAccess into a FamixCheckInstanceOf object and returns it
+     * @param access the CtTypeAccess that can represent a instanceof-Check
+     * @return a fully parsed FamixCheckInstanceOf, or null, if the access does not represent a instanceof-check
      */
-    private FamixAssociation createFamixInstanceOf(CtTypeAccess access) {
-        System.out.print("\n\n");
-        System.out.println("Accessed Type -> "+access.getAccessedType());
-        System.out.println("Children -> "+access.getDirectChildren());
-        System.out.println("Type Casts-> "+access.getTypeCasts());
-        System.out.println("Parent -> "+access.getParent());
-        System.out.println("Referenced Types -> "+access.getReferencedTypes());
+    private FamixAssociation createFamixInstanceOf(CtTypeAccess access) throws Exception {
+        //System.out.println("Type Casts-> "+access.getTypeCasts());??
+        String uniqueNameMethod = null;
+        String uniqueNameType = access.getAccessedType().getQualifiedName();
 
+        //getting uniqueName of method/constructor that is accessing type
+        CtMethod parentMethod = access.getParent(new TypeFilter<>(CtMethod.class));
+        CtConstructor parentConstructor = access.getParent(new TypeFilter<>(CtConstructor.class));
+        if(parentMethod != null){//parent/caller is a method
+            uniqueNameMethod = parentMethod.getReference().getDeclaringType().getQualifiedName()+DELIMITER_METHOD+parentMethod.getReference();
+        }else if(parentConstructor != null){//parent/caller is a constructor
+            uniqueNameMethod = parentConstructor.getReference().toString();
+        }else {
+            return null;
+        }
 
+        System.out.println(uniqueNameType+" accessed by "+uniqueNameMethod);
 
+        FamixMethod method = (FamixMethod) famixEntities.get(uniqueNameMethod);
+        FamixClass type = (FamixClass) famixEntities.get(uniqueNameType);
+        if(method == null){
+            throw new Exception("Unknown Method in parsing of type access - instance of!");
+        }else if(type == null){
+            System.out.println("Type is UNKNOWN!!! -> "+uniqueNameType);
+            //return null;
+        }
 
-        return null;
+        //creating FamixInstanceOf, setting correct type and returning
+        FamixCheckInstanceOf famixInstanceof = new FamixCheckInstanceOf(method, type);
+        famixInstanceof.setType("instanceOf");
+        return famixInstanceof;
     }
 
 
