@@ -1,12 +1,19 @@
-const MYCOLOUR_BLUE = "#D0DDFF";
-const MYCOLOUR_GREEN = "#C0FFB6";
-const MYCOLOUR_RED = "#FFC6D6";
+//variables for styling
+const MYCOLOUR_GREEN = "#9bf28e";
+const MYCOLOUR_RED = "#ff7575";
+const MYCOLOUR_LIGHTBLUE = "#D0DDFF";
+const MYCOLOUR_DARKBLUE = "#5AADEB";
+const MYCOLOUR_PINK = "#ff97b1";
 const MYCOLOUR_YELLOW = "#FAFFB0";
+const MYCOLOUR_DARKGREEN = "#A1CA45";
 const LABELSTYLE = "";//verticalAlign=top - only needed if style is not swimlane
-const STYLE_CLASS = "autosize=1;fillColor="+MYCOLOUR_BLUE+";"+LABELSTYLE;
 const STYLE_PACKAGE = "autosize=1;fillColor="+MYCOLOUR_YELLOW+";"+LABELSTYLE;
-const STYLE_METHOD = "autosize=1;fillColor="+MYCOLOUR_RED+";"+LABELSTYLE;
-const STYLE_ATTRIBUTE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_GREEN+";"+LABELSTYLE;
+const STYLE_CLASS = "autosize=1;fillColor="+MYCOLOUR_RED+";"+LABELSTYLE;
+const STYLE_METHOD = "autosize=1;fillColor="+MYCOLOUR_LIGHTBLUE+";"+LABELSTYLE;
+const STYLE_CONSTRUCTOR = "autosize=1;fillColor="+MYCOLOUR_DARKBLUE+";"
+const STYLE_ATTRIBUTE = "autosize=1;fillColor="+MYCOLOUR_PINK+";"+LABELSTYLE;
+const STYLE_PARAMETER = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_DARKGREEN+";"+LABELSTYLE;
+const STYLE_LOCALVARIABLE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_GREEN+";"+LABELSTYLE;
 
 //variables for layouting 
 const HEIGHT_LOWESTLEVEL = 30; //determines height of elements that dont have children. Rest is autoresized
@@ -98,17 +105,27 @@ function createGraph(container){
 //returns specific style for vertex as string
 function getStyle(fType, key){
     switch (fType){
-        case "class":
-           return STYLE_CLASS;
-           break;
         case "package":
             return STYLE_PACKAGE;
             break;
+        case "class":
+           return STYLE_CLASS;
+           break;
         case "method":
             return STYLE_METHOD;
             break;
+        case "constructor":
+            return STYLE_CONSTRUCTOR; 
+            break;
         case "attribute":
             return STYLE_ATTRIBUTE;
+            break; 
+        case "parameter": 
+            alert("I found a parameter! -> "+key); 
+            return STYLE_PARAMETER; 
+            break; 
+        case "localVariable":
+            return STYLE_LOCALVARIABLE; 
             break; 
         default:
             alert("Object "+key+" did not have a correclty set type for choosing style");
@@ -165,7 +182,7 @@ function insertVertices(){
 //returns name of elements, cuts away "path" from uniqueName
 function getName(name){
     highestIndex = 0; 
-    let deliminters = [".", "-", "#", "$"]; 
+    let deliminters = [".", "-", "#", "$", "'", "^"]; 
     deliminters.forEach(function(del){
         tempIndex = name.lastIndexOf(del); //find last occurrence of this index in name
         if(tempIndex > highestIndex){

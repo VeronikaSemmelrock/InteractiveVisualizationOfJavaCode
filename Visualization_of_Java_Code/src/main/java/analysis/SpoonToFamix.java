@@ -361,6 +361,7 @@ public class SpoonToFamix {
         famixParameter.setParentString(famixMethod.getUniqueName());
         famixParameter.setType("parameter");
         famixParameter.setModifiers(-1);//a parameter does not have any modifiers
+        famixEntities.put(famixParameter.getUniqueName(), famixParameter);
 
         famixParameter.setDeclaredClass(getDeclaredClass(param.getType().toString()));
 
@@ -776,7 +777,9 @@ public class SpoonToFamix {
     private void parseAllInstanceOfAssociations() throws Exception {
         List<CtTypeAccess> accesses = spoonModel.getElements(ctAccess -> ctAccess instanceof CtTypeAccess);
         for (CtTypeAccess access : accesses) {
-            addToHashAssociations(createFamixInstanceOf(access));
+            if(!access.isImplicit()){//-> is implicit returns true if the access is not really written in the source code but implicit -> maybe this will help me filter out the instanceof-checks -> TODO
+                addToHashAssociations(createFamixInstanceOf(access));
+            }
         }
     }
 
