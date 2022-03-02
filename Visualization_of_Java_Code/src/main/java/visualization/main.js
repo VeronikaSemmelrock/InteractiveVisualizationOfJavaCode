@@ -6,12 +6,12 @@ const MYCOLOUR_DARKBLUE = "#5AADEB";
 const MYCOLOUR_PINK = "#ff97b1";
 const MYCOLOUR_YELLOW = "#FAFFB0";
 const MYCOLOUR_DARKGREEN = "#A1CA45";
-const LABELSTYLE = "";//verticalAlign=top - only needed if style is not swimlane
+const LABELSTYLE = "strokeColor=#000000;fontColor=#000000";//verticalAlign=top - only needed if style is not swimlane
 const STYLE_PACKAGE = "autosize=1;fillColor="+MYCOLOUR_YELLOW+";"+LABELSTYLE;
 const STYLE_CLASS = "autosize=1;fillColor="+MYCOLOUR_RED+";"+LABELSTYLE;
 const STYLE_METHOD = "autosize=1;fillColor="+MYCOLOUR_LIGHTBLUE+";"+LABELSTYLE;
-const STYLE_CONSTRUCTOR = "autosize=1;fillColor="+MYCOLOUR_DARKBLUE+";"
-const STYLE_ATTRIBUTE = "autosize=1;fillColor="+MYCOLOUR_PINK+";"+LABELSTYLE;
+const STYLE_CONSTRUCTOR = "autosize=1;fillColor="+MYCOLOUR_DARKBLUE+";"+LABELSTYLE;
+const STYLE_ATTRIBUTE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_PINK+";"+LABELSTYLE;
 const STYLE_PARAMETER = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_DARKGREEN+";"+LABELSTYLE;
 const STYLE_LOCALVARIABLE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_GREEN+";"+LABELSTYLE;
 
