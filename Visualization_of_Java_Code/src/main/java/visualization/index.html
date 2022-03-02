@@ -22,19 +22,35 @@
         <label for="fileinput">Please select zip-directory to parse:</label>
         <input type="file" id="fileinput" name="file">
         <br><br><br>
-        <span>Filters:</span><br>
+        <span>Show Entities:</span><br>
         <input type="checkbox" id="filterPackages" name="package" checked="checked" onchange="executeFilteroptions()">
         <label for="filterPackages">Packages</label><br>
         <input type="checkbox" id="filterClasses" name="class" checked="checked" onchange="executeFilteroptions()">
         <label for="filterClasses">Classes</label><br>
         <input type="checkbox" id="filterMethods" name="methods" checked="checked" onchange="executeFilteroptions()">
         <label for="filterMethods">Methods</label><br>
+        <input type="checkbox" id="filterConstructors" name="constructors" checked="checked" onchange="executeFilteroptions()">
+        <label for="filterConstructors">Constructors</label><br>
+        <input type="checkbox" id="filterParameters" name="parameter" checked="checked" onchange="executeFilteroptions()">
+        <label for="filterParameter">Parameters</label><br>
         <input type="checkbox" id="filterAttributes" name="attributes" checked="checked" onchange="executeFilteroptions()">
         <label for="filterAttributes">Attributes</label><br>
+        <input type="checkbox" id="filterLocalVariables" name="localVariables" checked="checked" onchange="executeFilteroptions()">
+        <label for="filterLocalVariables">Local Variables</label><br>
+
+        <br>
+        <span>Show Associations:</span><br>
         <input type="checkbox" id="filterImplements" name="implements" checked="checked" onchange="executeFilteroptions()">
-        <label for="filterImplements">Implements relationships</label><br>
+        <label for="filterImplements">Implements Associations</label><br>
         <input type="checkbox" id="filterExtends" name="extends" checked="checked" onchange="executeFilteroptions()">
-        <label for="filterExtends">Extends relationships</label><br>
+        <label for="filterExtends">Extends Associations</label><br>
+        <input type="checkbox" id="filterReturnTypes" name="returnType" onchange="executeFilteroptions()">
+        <label for="filterReturnType">Return Type Associations</label><br>
+        <input type="checkbox" id="filterAccesses" name="access" onchange="executeFilteroptions()">
+        <label for="filterAccess">Access Associations</label><br>
+        <input type="checkbox" id="filterInvocations" name="invocation" onchange="executeFilteroptions()">
+        <label for="filterInvocation">Invocation Associations</label><br>
+
         <br><br><br>
         <span>Layout:</span><br>
         <input type="radio" id="layoutStackVertical" value="stackVertical" name="layout" checked="checked" onchange="executeLayoutoptions(value)">

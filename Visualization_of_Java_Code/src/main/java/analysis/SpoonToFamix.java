@@ -83,7 +83,6 @@ public class SpoonToFamix {
         parseAllEncounteredGeneralisations(); //parses all encountered import and extends relationships between classes
         parseAllMethodInvocations(); //parses any and all method invocations
         parseAllAttributeAccesses(); //parses any and all field/attribute accesses (read/write)
-        //parseAllInstanceOfAssociations(); //parses any and all cast to associations
     }
 
 
@@ -278,7 +277,6 @@ public class SpoonToFamix {
 
         //adding famixMethod to a list of methods whose parsing (and their parameters and local vars parsing) will be finished once all classes were parsed - for declared return class
         encounteredMethods.put(famixMethod, m);
-
         return famixMethod;
     }
 
@@ -294,7 +292,6 @@ public class SpoonToFamix {
         for(CtVariable var : m.getElements(new TypeFilter<>(CtVariable.class))){
             localVars.add(parseLocalVariable(var, famixMethod));
         }
-
         return localVars;
     }
 
@@ -311,9 +308,7 @@ public class SpoonToFamix {
         setVariableModifiers(famixVar, (CtVariable) ctVar);
         famixVar.setParentString(famixMethod.getUniqueName());
         famixEntities.put(famixVar.getUniqueName(), famixVar);
-
         famixVar.setDeclaredClass(getDeclaredClass(ctVar.getType().toString()));
-
         return famixVar;
     }
 
@@ -362,9 +357,7 @@ public class SpoonToFamix {
         famixParameter.setType("parameter");
         famixParameter.setModifiers(-1);//a parameter does not have any modifiers
         famixEntities.put(famixParameter.getUniqueName(), famixParameter);
-
         famixParameter.setDeclaredClass(getDeclaredClass(param.getType().toString()));
-
         return famixParameter;
     }
 
@@ -397,10 +390,8 @@ public class SpoonToFamix {
         famixAttribute.setParentString(famixParent.getUniqueName());
         setVariableModifiers(famixAttribute, (CtVariable) ctField);
         famixEntities.put(famixAttribute.getUniqueName(), famixAttribute);
-
         //adding attribute to a list of attributes whose parsing (setting of declared class (data type)) will be finished once all classes have been parsed
         encounteredAttributes.put(famixAttribute, ctField);
-
         return famixAttribute;
     }
 
@@ -673,7 +664,10 @@ public class SpoonToFamix {
     private void parseAllMethodInvocations() throws Exception {
         List<CtInvocation> invocations = spoonModel.getElements(ctElement -> ctElement instanceof CtInvocation);
         for (CtInvocation invocation : invocations) {
-            addToHashAssociations(createFamixInvocation(invocation));
+            FamixInvocation famixInvocation = createFamixInvocation(invocation);
+            if(famixInvocation != null){
+                addToHashAssociations(createFamixInvocation(invocation));
+            }
         }
     }
 
@@ -700,16 +694,18 @@ public class SpoonToFamix {
             return null;
         }
 
+        if(uniqueNameCallee.contains(".Object()") && parentConstructor != null){//in case of constructors calling java.lang.Object() etc -> do not add to list!
+            return null;
+        }
         //searching for uniqueNames in entities-hashmap, in case it is a known method that was already parsed
         FamixMethod caller = (FamixMethod) famixEntities.get(uniqueNameCaller);
         FamixMethod callee = (FamixMethod) famixEntities.get(uniqueNameCallee);
 
         //if the caller is unknown, throw exception
-        if(caller == null){//TODO - not really possible?
+        if(caller == null){
             throw new Exception("Unknown caller in method invocation!");
         }
-
-        //if the callee is unknown, create new FamixMethod with this uniqueName and add to entities-hashmap -> possible in cases like calling java.lang.Object() for constructors
+        //if the callee is unknown, create new FamixMethod with this uniqueName and add to entities-hashmap
         if(callee == null){
             callee = new FamixMethod(uniqueNameCallee);
             callee.setType("method");
@@ -728,9 +724,8 @@ public class SpoonToFamix {
     private void parseAllAttributeAccesses() throws Exception {
         List<CtFieldAccess> accesses = spoonModel.getElements(ctAccess -> ctAccess instanceof CtFieldAccess);
         for (CtFieldAccess access : accesses) {
-            //System.out.println("Type Casts -> "+access.getTypeCasts()); //maybe helpful later for other assocs
             FamixAccess famixAccess = createFamixAccess(access);
-            if(famixAccess != null ){//only add if no error occurred -> unknown attribute TODO
+            if(famixAccess != null ){
                 addToHashAssociations(famixAccess);
             }
         }
@@ -761,64 +756,15 @@ public class SpoonToFamix {
         if(method == null){
             throw new Exception("Unknown Method in parsing of attribute access!");
         }else if(attribute == null){
-            //System.out.println("Attribute is UNKNOWN!!! -> "+uniqueNameField);
-            return null;
+            attribute = new FamixAttribute(uniqueNameField);
+            attribute.setType("attribute");
+            famixEntities.put(uniqueNameField, attribute);
         }
 
         //creating famixAccess, setting correct type and returning
         FamixAccess famixAccess = new FamixAccess(method, attribute);
         famixAccess.setType("access");
         return famixAccess;
-    }
-
-    /**
-     * Parses any and all Instance of Associations in the spoon model (CtTypeAccess) into FamixInstanceOf and adds FamixInstanceOf to assocs hashmap
-     */
-    private void parseAllInstanceOfAssociations() throws Exception {
-        List<CtTypeAccess> accesses = spoonModel.getElements(ctAccess -> ctAccess instanceof CtTypeAccess);
-        for (CtTypeAccess access : accesses) {
-            if(!access.isImplicit()){//-> is implicit returns true if the access is not really written in the source code but implicit -> maybe this will help me filter out the instanceof-checks -> TODO
-                addToHashAssociations(createFamixInstanceOf(access));
-            }
-        }
-    }
-
-    /**
-     * Parses one CtTypeAccess into a FamixCheckInstanceOf object and returns it
-     * @param access the CtTypeAccess that can represent a instanceof-Check
-     * @return a fully parsed FamixCheckInstanceOf, or null, if the access does not represent a instanceof-check
-     */
-    private FamixAssociation createFamixInstanceOf(CtTypeAccess access) throws Exception {
-        //System.out.println("Type Casts-> "+access.getTypeCasts());??
-        String uniqueNameMethod = null;
-        String uniqueNameType = access.getAccessedType().getQualifiedName();
-
-        //getting uniqueName of method/constructor that is accessing type
-        CtMethod parentMethod = access.getParent(new TypeFilter<>(CtMethod.class));
-        CtConstructor parentConstructor = access.getParent(new TypeFilter<>(CtConstructor.class));
-        if(parentMethod != null){//parent/caller is a method
-            uniqueNameMethod = parentMethod.getReference().getDeclaringType().getQualifiedName()+DELIMITER_METHOD+parentMethod.getReference();
-        }else if(parentConstructor != null){//parent/caller is a constructor
-            uniqueNameMethod = parentConstructor.getReference().toString();
-        }else {
-            return null;
-        }
-
-        System.out.println(uniqueNameType+" accessed by "+uniqueNameMethod);
-
-        FamixMethod method = (FamixMethod) famixEntities.get(uniqueNameMethod);
-        FamixClass type = (FamixClass) famixEntities.get(uniqueNameType);
-        if(method == null){
-            throw new Exception("Unknown Method in parsing of type access - instance of!");
-        }else if(type == null){
-            System.out.println("Type is UNKNOWN!!! -> "+uniqueNameType);
-            //return null;
-        }
-
-        //creating FamixInstanceOf, setting correct type and returning
-        FamixCheckInstanceOf famixInstanceof = new FamixCheckInstanceOf(method, type);
-        famixInstanceof.setType("instanceOf");
-        return famixInstanceof;
     }
 
 

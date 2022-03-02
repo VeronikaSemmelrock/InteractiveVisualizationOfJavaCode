@@ -29,6 +29,12 @@ const LAYOUT_YDISTANCE_CHILDREN = 10; //distance between children of one parent 
 
 const DEFAULT_LAYOUT = "circle"//stackVertical
 
+//variables for name parsing
+const DELIMITER_METHOD = '.';
+const DELIMITER_LOCALVARIABLE = '^';
+const DELIMITER_PARAMETER ='\'';
+const DELIMITER_ATTRIBUTE = '#';
+
 //global variables
 let assocs;
 let entities;
@@ -121,7 +127,6 @@ function getStyle(fType, key){
             return STYLE_ATTRIBUTE;
             break; 
         case "parameter": 
-            alert("I found a parameter! -> "+key); 
             return STYLE_PARAMETER; 
             break; 
         case "localVariable":
@@ -173,22 +178,35 @@ function insertVertices(){
         parent = getParent(entities[key].fParentAsString); //get parent for correct hierarchical structure
         width = getWidth(parent); //get width depending on how deep in hierarchy the element is 
         height = HEIGHT_LOWESTLEVEL; //height is always autoresized, except lowest level (when element has no children)
-        v = graph.insertVertex(parent, entities[key].fUniqueName, getName(entities[key].fUniqueName), 0, 0, width, HEIGHT_LOWESTLEVEL, style); 
+        v = graph.insertVertex(parent, entities[key].fUniqueName, getName(entities[key].fUniqueName, entities[key].fType), 0, 0, width, HEIGHT_LOWESTLEVEL, style); 
         v.collapsed = true;
         vertices.push(v);
     });
 }
 
 //returns name of elements, cuts away "path" from uniqueName
-function getName(name){
-    highestIndex = 0; 
-    let deliminters = [".", "-", "#", "$", "'", "^"]; 
-    deliminters.forEach(function(del){
-        tempIndex = name.lastIndexOf(del); //find last occurrence of this index in name
-        if(tempIndex > highestIndex){
-            highestIndex = tempIndex; 
+function getName(name, type){
+    let highestIndex = 0; 
+    if(type == "method" || type == "constructor"){
+        let maxIndex = name.lastIndexOf("(");  
+        for (let i = 0; i < maxIndex; i++) {
+            if (name.charAt(i) == ".") {
+                highestIndex = i; 
+            }    
+        } 
+    }else if(type == "package" || type == "class" ){
+        highestIndex = name.lastIndexOf("$"); //nested classes
+        if(highestIndex == -1){
+            highestIndex = name.lastIndexOf("."); 
         }
-    })
+    }else if(type == "attribute"){
+        highestIndex = name.lastIndexOf(DELIMITER_ATTRIBUTE); 
+    }else if(type == "parameter"){
+        highestIndex = name.lastIndexOf(DELIMITER_PARAMETER);
+    }else if(type == "localVariable"){
+        highestIndex = name.lastIndexOf(DELIMITER_LOCALVARIABLE); 
+    }
+     
     if(highestIndex == 0){
         return name.substring(highestIndex); //no delimiter, full name is returned
     }else{
@@ -307,14 +325,21 @@ function executeLayoutoptions(layout){
 
 //executes filtering depending on status of checkboxes in UI
 function executeFilteroptions(noReload){
+    
     let filters=[]; 
     filters.push(document.getElementById("filterPackages").checked); 
     filters.push(document.getElementById("filterClasses").checked);
     filters.push(document.getElementById("filterMethods").checked);
+    filters.push(document.getElementById("filterConstructors").checked);
     filters.push(document.getElementById("filterAttributes").checked);
+    filters.push(document.getElementById("filterParameters").checked);
+    filters.push(document.getElementById("filterLocalVariables").checked);
     filters.push(document.getElementById("filterImplements").checked);
     filters.push(document.getElementById("filterExtends").checked); 
- 
+    filters.push(document.getElementById("filterReturnTypes").checked);
+    filters.push(document.getElementById("filterAccesses").checked);
+    filters.push(document.getElementById("filterInvocations").checked);
+    alert("Executing filtering! -> "+filters)
     graph.getModel().beginUpdate();
         try{
             vertices.forEach((value)=>setVisibility(value, filters)); 
@@ -347,23 +372,32 @@ function setVisibility(value, filters){
             case "method": 
                 bool = filters[2]; 
                 break; 
-            case "attribute": 
+            case "constructor": 
                 bool = filters[3]; 
                 break; 
-            case "implements": 
+            case "attribute": 
                 bool = filters[4]; 
                 break; 
-            case "extends": 
+            case "implements": 
                 bool = filters[5]; 
                 break; 
+            case "extends": 
+                bool = filters[6]; 
+                break; 
+            case "returnType": 
+                bool = filters[7]; 
+                break; 
+            case "access": 
+                bool = filters[8]; 
+                break; 
+            case "invocation": 
+                bool = filters[9]; 
+                break; 
             default: 
-                bool = true; 
+                bool = true;
+                break;  
         }
-        if(bool){
-            value.visible = true; 
-        }else{ 
-            value.visible = false;  
-        }
+        value.visible = bool; 
     }
 }
 
