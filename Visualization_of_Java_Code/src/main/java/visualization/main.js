@@ -187,8 +187,11 @@ function insertVertices(){
 //returns name of elements, cuts away "path" from uniqueName
 function getName(name, type){
     let highestIndex = 0; 
-    if(type == "method" || type == "constructor"){
-        let maxIndex = name.lastIndexOf("(");  
+    if(type == "method" || type == "constructor" || name.lastIndexOf("<") > -1){
+        let maxIndex = name.lastIndexOf("(");
+        if(maxIndex == -1){
+            maxIndex = name.lastIndexOf("<"); 
+        }  
         for (let i = 0; i < maxIndex; i++) {
             if (name.charAt(i) == ".") {
                 highestIndex = i; 
@@ -206,7 +209,11 @@ function getName(name, type){
     }else if(type == "localVariable"){
         highestIndex = name.lastIndexOf(DELIMITER_LOCALVARIABLE); 
     }
-     
+
+    if(name.lastIndexOf("<") > -1){
+        console.log(name+" will return from index ->" +highestIndex); 
+    }  
+
     if(highestIndex == 0){
         return name.substring(highestIndex); //no delimiter, full name is returned
     }else{
