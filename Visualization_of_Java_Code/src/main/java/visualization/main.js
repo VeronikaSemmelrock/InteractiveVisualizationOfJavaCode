@@ -339,7 +339,7 @@ function executeFilteroptions(noReload){
     filters.push(document.getElementById("filterReturnTypes").checked);
     filters.push(document.getElementById("filterAccesses").checked);
     filters.push(document.getElementById("filterInvocations").checked);
-    alert("Executing filtering! -> "+filters)
+    filters.push(document.getElementById("filterForeign").checked);//!!
     graph.getModel().beginUpdate();
         try{
             vertices.forEach((value)=>setVisibility(value, filters)); 
@@ -354,8 +354,10 @@ function executeFilteroptions(noReload){
 //sets correct visibility of edge/vertex depending on what filters are applied through checkboxes in UI 
 function setVisibility(value, filters){
     let type; 
+    foreign = false; 
     if(value.isVertex()){
         type = getTypeViaName(value.id);
+        foreign = getForeignViaName(value.id); 
     }else{
         type = value.value; //in edges type is set in value
     }
@@ -378,24 +380,35 @@ function setVisibility(value, filters){
             case "attribute": 
                 bool = filters[4]; 
                 break; 
-            case "implements": 
+            case "parameter": 
                 bool = filters[5]; 
-                break; 
-            case "extends": 
+                break;
+            case "LocalVariable": 
                 bool = filters[6]; 
-                break; 
-            case "returnType": 
+                break;
+            case "implements": 
                 bool = filters[7]; 
                 break; 
-            case "access": 
+            case "extends": 
                 bool = filters[8]; 
                 break; 
-            case "invocation": 
+            case "returnType": 
                 bool = filters[9]; 
+                break; 
+            case "access": 
+                bool = filters[10]; 
+                break; 
+            case "invocation": 
+                bool = filters[11]; 
                 break; 
             default: 
                 bool = true;
                 break;  
+        }
+        //for filtering of foreign objects
+        let allowForeign = filters[12]; 
+        if(!allowForeign && foreign){
+            bool = false; 
         }
         value.visible = bool; 
     }
@@ -413,5 +426,20 @@ function getTypeViaName(uniqueName){
     });
     if(res) {
         return res.fType
+    }
+}
+
+//receives a uniquename of a vertex, checks whether the entity behind the vertex is foreign or not 
+function getForeignViaName(uniqueName){
+    let entity;
+    let res
+    Object.keys(entities).forEach(function(key){//looping through each association
+        if(entities[key].fUniqueName == uniqueName){
+            res = entities[key]
+            return key; 
+        }
+    });
+    if(res) {
+        return res.fForeign
     }
 }

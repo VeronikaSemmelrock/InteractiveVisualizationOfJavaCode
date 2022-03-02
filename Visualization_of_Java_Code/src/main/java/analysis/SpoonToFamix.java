@@ -446,6 +446,7 @@ public class SpoonToFamix {
         if(returnType == null){//returnType does not exist as FamixClass in hashmap -> must create (like int, boolean ...) and only set specific name
             returnType = new FamixClass(uniqueName);
             returnType.setType("class");
+            returnType.setForeign(true);//it is an unknown entity -> setting necessary for visualisation later
             famixEntities.put(uniqueName, returnType);
         }
         return returnType;
@@ -601,6 +602,7 @@ public class SpoonToFamix {
                 }else{//could be first encounter of interface like "JavaCompiler" -> Spoonparser did not parse this class
                     fAssoc = new FamixClass(i.getQualifiedName());
                     fAssoc.setType("class");
+                    fAssoc.setForeign(true);//necessary to be able to filter it away in visualisation
                     fsub = new FamixSubtyping(fClass, fAssoc);
                     fsub.setType("implements");
                     famixEntities.put(i.getQualifiedName(), fAssoc);
@@ -628,6 +630,7 @@ public class SpoonToFamix {
             }else{
                 fAssoc = new FamixClass(superclass.getQualifiedName());
                 fAssoc.setType("class");
+                fAssoc.setForeign(true);//necessary to be able to filter it away in visualisation
                 finh = new FamixInheritance(fClass, fAssoc);
                 famixEntities.put(superclass.getQualifiedName(), fAssoc); //adding unknown class to entities for visualisation
             }
@@ -709,6 +712,7 @@ public class SpoonToFamix {
         if(callee == null){
             callee = new FamixMethod(uniqueNameCallee);
             callee.setType("method");
+            callee.setForeign(true);//necessary to be able to filter it away in visualisation
             famixEntities.put(uniqueNameCallee, callee);
         }
 
@@ -758,6 +762,7 @@ public class SpoonToFamix {
         }else if(attribute == null){
             attribute = new FamixAttribute(uniqueNameField);
             attribute.setType("attribute");
+            attribute.setForeign(true);//necessary to be able to filter it away in visualisation
             famixEntities.put(uniqueNameField, attribute);
         }
 

@@ -139,6 +139,11 @@ public abstract class AbstractFamixEntity extends AbstractFamixObject{
     private int fModifiers;
 
     /**
+     * Boolean that represents whether an entity is "foreign" so its source code is not in the project -> for visualisation
+     */
+    private boolean fForeign = false;
+
+    /**
      * Source code of the FAMIX entity.
 
     private Content fContent = new Content();
@@ -474,5 +479,9 @@ public abstract class AbstractFamixEntity extends AbstractFamixObject{
     @Transient
     public boolean isFinal() {
         return (getModifiers() & AbstractFamixEntity.MODIFIER_FINAL) == AbstractFamixEntity.MODIFIER_FINAL;
+    }
+
+    public void setForeign(boolean foreign){
+        this.fForeign = foreign;
     }
 }
