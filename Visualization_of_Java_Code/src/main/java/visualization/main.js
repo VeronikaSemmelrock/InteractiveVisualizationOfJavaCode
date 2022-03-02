@@ -6,7 +6,7 @@ const MYCOLOUR_DARKBLUE = "#5AADEB";
 const MYCOLOUR_PINK = "#ff97b1";
 const MYCOLOUR_YELLOW = "#FAFFB0";
 const MYCOLOUR_DARKGREEN = "#A1CA45";
-const LABELSTYLE = "strokeColor=#000000;fontColor=#000000";//verticalAlign=top - only needed if style is not swimlane
+const LABELSTYLE = "whitespace=wrap;strokeColor=#000000;fontColor=#000000";//verticalAlign=top - only needed if style is not swimlane
 const STYLE_PACKAGE = "autosize=1;fillColor="+MYCOLOUR_YELLOW+";"+LABELSTYLE;
 const STYLE_CLASS = "autosize=1;fillColor="+MYCOLOUR_RED+";"+LABELSTYLE;
 const STYLE_METHOD = "autosize=1;fillColor="+MYCOLOUR_LIGHTBLUE+";"+LABELSTYLE;
@@ -17,11 +17,11 @@ const STYLE_LOCALVARIABLE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_GREEN
 
 //variables for layouting 
 const HEIGHT_LOWESTLEVEL = 30; //determines height of elements that dont have children. Rest is autoresized
-const STANDARD_WIDTH = 250; //determines width of elements of upper layer 
+const STANDARD_WIDTH = 330; //determines width of elements of upper layer 
 const GRAPH_BORDER = 20; //determines, how far away child is from parent border (how small child is inside of parent) - works together with standard width
 
 const LAYOUT_PARENTBORDER = 10;//border size between children of parent and parent border
-const LAYOUT_INTRACELLSPACING = 20; 
+const LAYOUT_INTRACELLSPACING = 30; 
 const LAYOUT_INTERRANKCELLSPACING = 0; 
 const LAYOUT_INTERHIERARCHYSPACING = 13; //spacing between seperate hierarchies
 const LAYOUT_XDISTANCE_PARENTS = 50; //distance of parents between each other (x)
