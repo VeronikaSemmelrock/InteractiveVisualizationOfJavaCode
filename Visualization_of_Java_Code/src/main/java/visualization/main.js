@@ -6,14 +6,13 @@ const MYCOLOUR_DARKBLUE = "#5AADEB";
 const MYCOLOUR_PINK = "#ff97b1";
 const MYCOLOUR_YELLOW = "#FAFFB0";
 const MYCOLOUR_DARKGREEN = "#A1CA45";
-const LABELSTYLE = "whitespace=wrap;strokeColor=#000000;fontColor=#000000";//verticalAlign=top - only needed if style is not swimlane
-const STYLE_PACKAGE = "autosize=1;fillColor="+MYCOLOUR_YELLOW+";"+LABELSTYLE;
-const STYLE_CLASS = "autosize=1;fillColor="+MYCOLOUR_RED+";"+LABELSTYLE;
-const STYLE_METHOD = "autosize=1;fillColor="+MYCOLOUR_LIGHTBLUE+";"+LABELSTYLE;
-const STYLE_CONSTRUCTOR = "autosize=1;fillColor="+MYCOLOUR_DARKBLUE+";"+LABELSTYLE;
-const STYLE_ATTRIBUTE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_PINK+";"+LABELSTYLE;
-const STYLE_PARAMETER = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_DARKGREEN+";"+LABELSTYLE;
-const STYLE_LOCALVARIABLE = "autosize=1;shape=ellipse;fillColor="+MYCOLOUR_GREEN+";"+LABELSTYLE;
+const STYLE_PACKAGE = "fillColor="+MYCOLOUR_YELLOW+";";
+const STYLE_CLASS = "fillColor="+MYCOLOUR_RED+";";
+const STYLE_METHOD = "fillColor="+MYCOLOUR_LIGHTBLUE+";";
+const STYLE_CONSTRUCTOR = "fillColor="+MYCOLOUR_DARKBLUE+";";
+const STYLE_ATTRIBUTE = "shape=ellipse;fillColor="+MYCOLOUR_PINK+";";
+const STYLE_PARAMETER = "shape=ellipse;fillColor="+MYCOLOUR_DARKGREEN+";";
+const STYLE_LOCALVARIABLE = "shape=ellipse;fillColor="+MYCOLOUR_GREEN+";";
 
 //variables for layouting 
 const HEIGHT_LOWESTLEVEL = 30; //determines height of elements that dont have children. Rest is autoresized
@@ -27,7 +26,8 @@ const LAYOUT_INTERHIERARCHYSPACING = 13; //spacing between seperate hierarchies
 const LAYOUT_XDISTANCE_PARENTS = 50; //distance of parents between each other (x)
 const LAYOUT_YDISTANCE_CHILDREN = 10; //distance between children of one parent (y) in stack
 
-const DEFAULT_LAYOUT = "circle"//stackVertical
+//default layout
+const DEFAULT_LAYOUT = "stackVertical"//circle
 
 //variables for name parsing
 const DELIMITER_METHOD = '.';
@@ -178,14 +178,17 @@ function insertVertices(){
         parent = getParent(entities[key].fParentAsString); //get parent for correct hierarchical structure
         width = getWidth(parent); //get width depending on how deep in hierarchy the element is 
         height = HEIGHT_LOWESTLEVEL; //height is always autoresized, except lowest level (when element has no children)
-        v = graph.insertVertex(parent, entities[key].fUniqueName, getName(entities[key].fUniqueName, entities[key].fType), 0, 0, width, HEIGHT_LOWESTLEVEL, style); 
+        v = graph.insertVertex(parent, entities[key].fUniqueName, getName(entities[key].fUniqueName, entities[key].fType, entities[key].fForeign), 0, 0, width, HEIGHT_LOWESTLEVEL, style); 
         v.collapsed = true;
         vertices.push(v);
     });
 }
 
 //returns name of elements, cuts away "path" from uniqueName
-function getName(name, type){
+function getName(name, type, foreign){
+    if(foreign){
+        return name; 
+    }
     let highestIndex = 0; 
     if(type == "method" || type == "constructor" || name.lastIndexOf("<") > -1){
         let maxIndex = name.lastIndexOf("(");
@@ -266,6 +269,10 @@ function setVertexStyle(){
     let style = graph.getStylesheet().getDefaultVertexStyle();
     style[mxConstants.STYLE_SHAPE] = 'swimlane';
     style[mxConstants.STYLE_STARTSIZE] = 30;
+    style[mxConstants.STYLE_WHITE_SPACE] = 'wrap'; 
+    style[mxConstants.STYLE_STROKECOLOR] ='#000000'; //black
+    style[mxConstants.STYLE_FONTCOLOR] = '#000000'; 
+    style[mxConstants.STYLE_AUTOSIZE] ='1'; 
     
     //invisible parent
     style = [];
