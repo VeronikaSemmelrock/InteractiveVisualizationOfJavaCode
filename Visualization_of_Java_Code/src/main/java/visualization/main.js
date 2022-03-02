@@ -26,8 +26,6 @@ const LAYOUT_INTERHIERARCHYSPACING = 13; //spacing between seperate hierarchies
 const LAYOUT_XDISTANCE_PARENTS = 50; //distance of parents between each other (x)
 const LAYOUT_YDISTANCE_CHILDREN = 10; //distance between children of one parent (y) in stack
 
-//default layout
-const DEFAULT_LAYOUT = "stackVertical"//circle
 
 //variables for name parsing
 const DELIMITER_METHOD = '.';
@@ -46,7 +44,6 @@ var circleLayout;
 var stackLayout; 
 var layoutManager; 
 var invisibleParent; 
-var globalLayout = DEFAULT_LAYOUT; 
 
 //calling of main function
 const body = document.getElementById('root');
@@ -64,7 +61,7 @@ async function loadFiles(){
 }
 
 //because loadFiles() (async method) is called, main() must be async (to be able to call await)
-async function main(container){
+async function main(container){ 
     let parent;
     let width;
     let height;
@@ -74,7 +71,6 @@ async function main(container){
     }else{
         graph = createGraph(container);
         createLayouts();
-        installLayoutManager(); 
         setVertexStyle();
         setEdgeStyle();  
         graph.getModel().beginUpdate();
@@ -82,7 +78,7 @@ async function main(container){
             insertVertices();
             insertEdges(); 
             executeFilteroptions(true); 
-            //executeLayoutoptions(); 
+            executeLayoutoptions(getLayoutOption(), true); 
         } finally{
             graph.getModel().endUpdate();
         }
@@ -213,10 +209,6 @@ function getName(name, type, foreign){
         highestIndex = name.lastIndexOf(DELIMITER_LOCALVARIABLE); 
     }
 
-    if(name.lastIndexOf("<") > -1){
-        console.log(name+" will return from index ->" +highestIndex); 
-    }  
-
     if(highestIndex == 0){
         return name.substring(highestIndex); //no delimiter, full name is returned
     }else{
@@ -292,12 +284,11 @@ function createLayouts(){
 }
 
 //installs layoutManager - called everytime a change is made to graph - used to set different layouts for different cells
-function installLayoutManager(){
+function installLayoutManager(layout){
     layoutManager = new mxLayoutManager(graph);
 
     layoutManager.getLayout = function(cell)
     {   
-        layout = globalLayout;  
         //sets different layouts on different parent cells. 
         //attention -> layout is applied on children of parent cell, not parent itself
         if(cell.parent === graph.getDefaultParent()){//selects invisible parent - layout is applied on all children so first visible layer
@@ -329,12 +320,19 @@ function installLayoutManager(){
     };
 
 }
+
+function getLayoutOption(){
+    return document.querySelector('input[name="layout"]:checked').value
+}
+
+
+
 //executes the specific layout that is given through UI radio buttons - TODO calling of getLayout does not work 
-function executeLayoutoptions(layout){
-    console.log("executing Layout with value "+layout)
-    globalLayout = layout; 
+function executeLayoutoptions(layout, noReload){
     //layoutManager.getLayout(cell); //only gets layout i think.. does not actually execute..
-    installLayoutManager(); 
+    installLayoutManager(layout); 
+    //undefined is false 
+    if(!noReload) window.location.reload() //only reloads if method is called because of changing state of checkboxes
 }
 
 //executes filtering depending on status of checkboxes in UI
