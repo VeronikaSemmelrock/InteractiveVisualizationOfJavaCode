@@ -19,7 +19,7 @@ const HEIGHT_LOWESTLEVEL = 30; //determines height of elements that dont have ch
 const STANDARD_WIDTH = 330; //determines width of elements of upper layer 
 const GRAPH_BORDER = 20; //determines, how far away child is from parent border (how small child is inside of parent) - works together with standard width
 
-const LAYOUT_PARENTBORDER = 10;//border size between children of parent and parent border
+const LAYOUT_PARENTBORDER = 100;//border size between children of parent and parent border
 const LAYOUT_INTRACELLSPACING = 30; 
 const LAYOUT_INTERRANKCELLSPACING = 0; 
 const LAYOUT_INTERHIERARCHYSPACING = 13; //spacing between seperate hierarchies
@@ -41,7 +41,8 @@ const edges = [];
 const parents=[];
 let graph;
 var circleLayout; 
-var stackLayout; 
+var stackLayout;
+var fastOrganicLayout;  
 var layoutManager; 
 var invisibleParent; 
 
@@ -78,7 +79,7 @@ async function main(container){
             insertVertices();
             insertEdges(); 
             executeFilteroptions(true); 
-            executeLayoutoptions(getLayoutOption(), true); 
+            executeLayoutoptions(getLayoutOption(), true);
         } finally{
             graph.getModel().endUpdate();
         }
@@ -279,13 +280,16 @@ function setVertexStyle(){
 function createLayouts(){
     stackLayout = new mxStackLayout(graph, true);
     circleLayout = new mxCircleLayout(graph, 5);
+    fastOrganicLayout = new mxFastOrganicLayout(graph); 
     stackLayout.border = graph.border; 
     circleLayout.border=graph.border;
+    fastOrganicLayout.border = graph.border; 
 }
 
 //installs layoutManager - called everytime a change is made to graph - used to set different layouts for different cells
 function installLayoutManager(layout){
     layoutManager = new mxLayoutManager(graph);
+    //arrangeGroups method in mxGraphLayout? 
 
     layoutManager.getLayout = function(cell)
     {   
@@ -304,6 +308,12 @@ function installLayoutManager(layout){
             }else if(layout =="stackHorizontal"){
                 stackLayout.horizontal = true;
                 return stackLayout; 
+            }else if(layout =="fastOrganic"){
+                //fastOrganicLayout.minDistanceLimit = 500;  
+                //fastOrganicLayout.maxDistanceLimit = 500; 
+                //fastOrganicLayout.initialTemp = 10;  
+                //arrangeGroups()? 
+                return fastOrganicLayout; 
             }
         }else{//all cells except invisible parent
             if(cell.collapsed){//if cell is collapsed children are not visible so no layout is necessary
