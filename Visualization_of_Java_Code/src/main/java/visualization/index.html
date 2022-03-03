@@ -18,11 +18,10 @@
 <body id='root'>
     <div id="graphContainer"></div>
     <div id="optionsContainer">
-        <br>
         <label for="fileinput">Please select zip-directory to parse:</label>
         <input type="file" id="fileinput" name="file">
-        <br><br><br>
-        <span>Show Entities:</span><br>
+        <br>
+        <div>Show Entities:</div><br>
         <input type="checkbox" id="filterPackages" name="package" checked="checked" onchange="executeFilteroptions()">
         <label for="filterPackages">Packages</label><br>
         <input type="checkbox" id="filterClasses" name="class" checked="checked" onchange="executeFilteroptions()">
@@ -39,7 +38,7 @@
         <label for="filterLocalVariables">Local Variables</label><br>
 
         <br>
-        <span>Show Associations:</span><br>
+        <div>Show Associations:</div>
         <input type="checkbox" id="filterImplements" name="implements" onchange="executeFilteroptions()">
         <label for="filterImplements">Implements Associations</label><br>
         <input type="checkbox" id="filterExtends" name="extends" onchange="executeFilteroptions()">
@@ -52,20 +51,20 @@
         <label for="filterInvocation">Invocation Associations</label><br>
 
         <br>
-        <span>Show Foreign Entities:</span><br>
+        <div>Show Foreign Entities:</div>
         <input type="checkbox" id="filterForeign" name="foreign" onchange="executeFilteroptions()">
         <label for="filterForeign">Foreign Entities</label><br>
 
 
-        <br><br><br>
-        <span>Layout:</span><br>
+        <br>
+        <div>Layout:</div>
         <input type="radio" id="layoutStackVertical" value="stackVertical" name="layout" checked="checked" onchange="executeLayoutoptions(value, false)">
         <label for="layoutStack">Stack Layout Vertical</label><br>
         <input type="radio" id="layoutStackHorizontal" value="stackHorizontal" name="layout" onchange="executeLayoutoptions(value, false)">
         <label for="layoutHierarchicalWest">Stack Layout Horizontal</label><br>
         <input type="radio" id="layoutCircle" value ="circle" name="layout" onchange="executeLayoutoptions(value, false)">
         <label for="layoutCircle">Circle Layout</label><br>
-        <br><br><br>
+        <br>
     </div>
 </body>
 </html>
