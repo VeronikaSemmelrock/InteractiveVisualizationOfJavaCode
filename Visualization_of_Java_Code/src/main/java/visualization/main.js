@@ -46,6 +46,8 @@ var fastOrganicLayout;
 var layoutManager; 
 var invisibleParent; 
 
+let LAYOUT = 'stackVertical' //f
+
 //calling of main function
 const body = document.getElementById('root');
 const graphContainer = document.getElementById('graphContainer');
@@ -296,6 +298,8 @@ function installLayoutManager(layout){
         //sets different layouts on different parent cells. 
         //attention -> layout is applied on children of parent cell, not parent itself
         if(cell.parent === graph.getDefaultParent()){//selects invisible parent - layout is applied on all children so first visible layer
+            LAYOUT = layout //f
+            zoom()//f
             if(layout == "circle"){
                 //TODO - maybe small adjustmenst - radius is big
                 //TODO - edges do not filter properly!

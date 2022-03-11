@@ -12,16 +12,27 @@
 
     <!-- "calls" (imports) code in main, while body loads (async) -->
     <script async defer src="./main.js"></script>
+    <script async defer src="./zoom.js"></script>
+
     <!-- linking stylesheet-->
     <link rel="stylesheet" href="style.css">
 </head>
 <body id='root'>
-    <div id="graphContainer"></div>
+    <section id="graphScrollContainer" class="positionCenter">
+        <div id="graphContainer"></div>
+    </section>
     <div id="optionsContainer">
         <label for="fileinput">Please select zip-directory to parse:</label>
         <input type="file" id="fileinput" name="file">
+        <br><br>
+        <div>
+            <button onclick="changeZoom(-20)">-</button>
+            <button onclick="changeZoom(20)">+</button>
+            <input type="number" id="zoomInput" value="100" onchange="zoom()" min="1" max="100"><span>%</span>
+            <button onclick="fitToView()">Fit to View</button>
+        </div>
         <br>
-        <div>Show Entities:</div><br>
+        <div>Show Entities:</div>
         <input type="checkbox" id="filterPackages" name="package" checked="checked" onchange="executeFilteroptions()">
         <label for="filterPackages">Packages</label><br>
         <input type="checkbox" id="filterClasses" name="class" checked="checked" onchange="executeFilteroptions()">
@@ -31,7 +42,7 @@
         <input type="checkbox" id="filterConstructors" name="constructors" checked="checked" onchange="executeFilteroptions()">
         <label for="filterConstructors">Constructors</label><br>
         <input type="checkbox" id="filterParameters" name="parameter" checked="checked" onchange="executeFilteroptions()">
-        <label for="filterParameter">Parameters</label><br>
+        <label for="filterParameters">Parameters</label><br>
         <input type="checkbox" id="filterAttributes" name="attributes" checked="checked" onchange="executeFilteroptions()">
         <label for="filterAttributes">Attributes</label><br>
         <input type="checkbox" id="filterLocalVariables" name="localVariables" checked="checked" onchange="executeFilteroptions()">
@@ -44,11 +55,11 @@
         <input type="checkbox" id="filterExtends" name="extends" onchange="executeFilteroptions()">
         <label for="filterExtends">Extends Associations</label><br>
         <input type="checkbox" id="filterReturnTypes" name="returnType" onchange="executeFilteroptions()">
-        <label for="filterReturnType">Return Type Associations</label><br>
+        <label for="filterReturnTypes">Return Type Associations</label><br>
         <input type="checkbox" id="filterAccesses" name="access" onchange="executeFilteroptions()">
-        <label for="filterAccess">Access Associations</label><br>
+        <label for="filterAccesses">Access Associations</label><br>
         <input type="checkbox" id="filterInvocations" name="invocation" onchange="executeFilteroptions()">
-        <label for="filterInvocation">Invocation Associations</label><br>
+        <label for="filterInvocations">Invocation Associations</label><br>
 
         <br>
         <div>Show Foreign Entities:</div>
@@ -59,9 +70,9 @@
         <br>
         <div>Layout:</div>
         <input type="radio" id="layoutStackVertical" value="stackVertical" name="layout" checked="checked" onchange="executeLayoutoptions(value, false)">
-        <label for="layoutStack">Stack Layout Vertical</label><br>
+        <label for="layoutStackVertical">Stack Layout Vertical</label><br>
         <input type="radio" id="layoutStackHorizontal" value="stackHorizontal" name="layout" onchange="executeLayoutoptions(value, false)">
-        <label for="layoutHierarchicalWest">Stack Layout Horizontal</label><br>
+        <label for="layoutStackHorizontal">Stack Layout Horizontal</label><br>
         <input type="radio" id="layoutCircle" value ="circle" name="layout" onchange="executeLayoutoptions(value, false)">
         <label for="layoutCircle">Circle Layout</label><br>
         <br>
