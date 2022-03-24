@@ -14,6 +14,8 @@ function changeZoom(factor){//changes Zoom factor and sets it
     const currentValue = parseInt(zoomInput.value)
     const zoomLevel = currentValue + parseInt(factor)
     fitSanityCheck(zoomLevel)
+
+    centerScrollPosition(zoomLevel)
 }
 
 function fitSanityCheck(zoomLevel) {
@@ -23,13 +25,14 @@ function fitSanityCheck(zoomLevel) {
     zoom()
 }
 
+
 function zoom() {//executes changed zoom factor
     const zoomLevel = parseInt(zoomInput.value) / 100
     // const zoomDifference = Math.round( ( Math.pow ((zoomLevel - 1), 2) * -1500 ) / 2 )
-    // console.log(zoomDifference)
-    graphContainer.style.transform = `scale(${zoomLevel}) translateX(-0px)`
+    if(LAYOUT === "circle") graphContainer.style.transform = `scale(${zoomLevel}) translateX(${graphContainer.clientWidth}px) translateY(${graphContainer.clientHeight}px)` // scaling doesnt move graph to center, so if size is adjusted, translate moves graph by its size difference
+    else graphContainer.style.transform = `scale(${zoomLevel}) translateY(${graphContainer.clientHeight}px`
+    // else graphContainer.style.transform = `scale(${zoomLevel})`
     try {
-        // console.log(LAYOUT)
         if (LAYOUT === 'stackHorizontal') {//stackHorizontal needs only centerY centering class
             if(graphScrollContainer.classList.contains(center)) graphScrollContainer.classList.replace(center, centerY)
         }
@@ -38,6 +41,7 @@ function zoom() {//executes changed zoom factor
     } catch (error) {
         if(graphScrollContainer.classList.contains(centerY)) graphScrollContainer.classList.replace(centerY, center)
     }
+    // centerScrollPosition(zoomLevel)
 }
 
 function fitToView() {
@@ -54,17 +58,21 @@ function fitToView() {
     if (graphContainerHeight > graphScrollContainerHeight) {
         // lower zoom level further because height doesnt fit to view
         const newZoomLevel = ((graphScrollContainerHeight / graphContainerHeight) - 0.02) * 100
-        if(newZoomLevel < zoomLevel) fitSanityCheck(newZoomLevel)
-    }
-    // console.log(graphContainerHeight, graphScrollContainerHeight)
-    if (LAYOUT === 'stackHorizontal') {
-        graphContainer.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'center'
-        });
+        if(newZoomLevel < zoomLevel) {
+            zoomLevel = newZoomLevel
+            fitSanityCheck(zoomLevel)
+        }
     }
 
+    centerScrollPosition(zoomLevel)
+}
+function centerScrollPosition(zoomLevel){
+    if (LAYOUT === "circle") graphScrollContainer.scrollTo(graphContainer.clientWidth*(zoomLevel)/100,graphContainer.clientHeight*(zoomLevel)/100)
+    else graphContainer.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'center'
+    });
 }
 
 function viewportConvert(px = 0, vw = 0, vh = 0){ // from https://stackoverflow.com/questions/28295072/how-can-i-convert-px-to-vw-in-javascript
