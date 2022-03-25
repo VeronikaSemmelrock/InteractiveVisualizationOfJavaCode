@@ -45,7 +45,7 @@ var stackLayout;
 var fastOrganicLayout;  
 var layoutManager; 
 var invisibleParent; 
-let LAYOUT = 'stackVertical'
+let LAYOUT = 'circle'
 
 //calling of main function
 const body = document.getElementById('root');
@@ -71,8 +71,9 @@ async function main(container){
         try{
             insertVertices();
             insertEdges(); 
-            executeFilteroptions(true); 
             executeLayoutoptions(getLayoutOption(), true);
+            executeFilteroptions(true); 
+            
         } finally{
             graph.getModel().endUpdate();
         }

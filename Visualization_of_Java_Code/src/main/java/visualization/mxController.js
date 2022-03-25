@@ -100,12 +100,9 @@ function installLayoutManager(layout){
         //attention -> layout is applied on children of parent cell, not parent itself
         if(cell.parent === graph.getDefaultParent()){//selects invisible parent - layout is applied on all children so first visible layer
             if(layout == "circle"){
-                //TODO - maybe small adjustmenst - radius is big
-                //TODO - edges do not filter properly!
                 circleLayout.moveCircle = true;
                 return circleLayout;                         
             }else if(layout == "stackVertical"){
-                //TODO - edges do not filter properly
                 stackLayout.horizontal = false;
                 return stackLayout; 
             }else if(layout =="stackHorizontal"){
@@ -153,7 +150,8 @@ function executeFilteroptions(noReload){
     graph.getModel().beginUpdate();
         try{
             vertices.forEach((value)=>setVisibility(value, filters)); 
-            edges.forEach((value)=>setVisibility(value, filters));
+            edges.forEach((value)=>setVisibility(value, filters)); 
+            //edges.forEach((value)=>layoutManager.getLayout(value));
         } finally{
             graph.getModel().endUpdate();
         }

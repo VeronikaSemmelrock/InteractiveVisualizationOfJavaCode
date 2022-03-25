@@ -40,7 +40,11 @@ function getWidth(parent){
             parent = parent.parent;//go one layer higher, trying to find defaultParent to determine on which layer this element is 
             sub += GRAPH_BORDER*2;//for each step subtract more from width
         }
-        return width - sub; 
+        if(width - sub <=0){
+            return 6; 
+        }else{
+           return width - sub; 
+        }
     }
 }
 //returns name of elements, cuts away "path" from uniqueName
@@ -177,6 +181,11 @@ function setVisibility(value, filters){
             if(value.source.visible === false || value.target.visible === false){
                 bool = false; 
             }
+            //only allow edges if it is in circle layout -> temporary? 
+            /*if(getLayoutOption() !== "circle"){
+                bool = false; 
+            }
+            */
         }
         value.visible = bool; 
     }
