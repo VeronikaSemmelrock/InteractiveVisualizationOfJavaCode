@@ -65,8 +65,9 @@ function insertEdges(){
     let from; 
     Object.keys(assocs).forEach(function(key){//looping through each association
         from = getVertex(assocs[key].fFromEntity.fUniqueName);
+        to = getVertex(assocs[key].fToEntity.fUniqueName);
         //parent, id (just index), value (type) - what is written, from, to (style - set already in stylesheet)
-        e = graph.insertEdge(from, key, assocs[key].fType, from, getVertex(assocs[key].fToEntity.fUniqueName));//changed parent of edge!! it was defaultParent()!!
+        e = graph.insertEdge(from, key, assocs[key].fType, from, to);//changed parent of edge!! it was defaultParent()!!
         edges.push(e);
     });
 }

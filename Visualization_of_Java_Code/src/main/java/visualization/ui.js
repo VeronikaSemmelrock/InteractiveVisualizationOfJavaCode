@@ -173,6 +173,11 @@ function setVisibility(value, filters){
         if(!allowForeign && foreign){
             bool = false; 
         }
+        if(value.isEdge()){//if it is an edge, and from or to are not visible -> set invisible!
+            if(value.source.visible === false || value.target.visible === false){
+                bool = false; 
+            }
+        }
         value.visible = bool; 
     }
 }
