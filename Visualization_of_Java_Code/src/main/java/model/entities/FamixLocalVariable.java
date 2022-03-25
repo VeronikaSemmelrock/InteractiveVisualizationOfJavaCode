@@ -15,7 +15,7 @@
  */
 package model.entities;
 
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.persistence.Entity;
 import javax.persistence.Transient;
@@ -26,6 +26,7 @@ import javax.persistence.Transient;
  * @author pinzger
  */
 @Entity
+@Slf4j
 public class FamixLocalVariable extends AbstractFamixVariable {
 
     /**
@@ -73,8 +74,8 @@ public class FamixLocalVariable extends AbstractFamixVariable {
         if (getSourceAnchor() != null) {
             return getSourceAnchor().equals(((FamixLocalVariable) obj).getSourceAnchor());
         } else {
-            //sLogger.warn("EQUALS: " + this.getClass().getName() + HASH_STRING_DELIMITER + getUniqueName()
-              //      + " has no SourceAnchor");
+            log.warn("EQUALS: " + this.getClass().getName() + HASH_STRING_DELIMITER + getUniqueName()
+                    + " has no SourceAnchor");
             return true;
         }
     }
@@ -87,8 +88,8 @@ public class FamixLocalVariable extends AbstractFamixVariable {
         String hashString = this.getClass().getName() + HASH_STRING_DELIMITER + getUniqueName();
 
         if (getSourceAnchor() == null) {
-            //sLogger.warn("HASHCODE: " + this.getClass().getName() + HASH_STRING_DELIMITER + getUniqueName()
-              //      + " has no SourceAnchor");
+            log.warn("HASHCODE: " + this.getClass().getName() + HASH_STRING_DELIMITER + getUniqueName()
+                    + " has no SourceAnchor");
         } else {
             hashString += getSourceAnchor().getFile() + HASH_STRING_DELIMITER + getSourceAnchor().getEndPos();
         }

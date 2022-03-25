@@ -15,7 +15,8 @@
  */
 package model.entities;
 
-import org.apache.log4j.Logger;
+
+import lombok.extern.slf4j.Slf4j;
 
 import javax.persistence.*;
 
@@ -25,6 +26,7 @@ import javax.persistence.*;
  * @author pinzger
  */
 @Entity
+@Slf4j
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public class FamixAssociation extends AbstractFamixObject {
 
@@ -133,13 +135,13 @@ public class FamixAssociation extends AbstractFamixObject {
                 this.getClass().getName() + HASH_STRING_DELIMITER + getFromEntity().getUniqueName() + HASH_STRING_DELIMITER
                         + getToEntity().getUniqueName();
 
-        /**if (getSourceAnchor() == null) {
-            sLogger.warn("HASHCODE: " + this.getClass().getName() + " association from " + getFromEntity().getUniqueName()
+        if (getSourceAnchor() == null) {
+            log.warn("HASHCODE: " + this.getClass().getName() + " association from " + getFromEntity().getUniqueName()
                     + " to " + getToEntity().getUniqueName() + " has no SourceAnchor");
         } else {
             hashString += getSourceAnchor().getFile() + HASH_STRING_DELIMITER + getSourceAnchor().getEndPos();
         }
-         */
+
         return hashString.hashCode();
 
     }
@@ -167,8 +169,8 @@ public class FamixAssociation extends AbstractFamixObject {
         if (getSourceAnchor() != null) {
             return getSourceAnchor().equals(((FamixAssociation) obj).getSourceAnchor());
         } else {
-            //sLogger.warn("EQUALS: " + this.getClass().getName() + " association fFromEntity " + getFromEntity().getUniqueName()
-              //      + " fToEntity " + getToEntity().getUniqueName() + " has no SourceAnchor");
+            log.warn("EQUALS: " + this.getClass().getName() + " association fFromEntity " + getFromEntity().getUniqueName()
+                    + " fToEntity " + getToEntity().getUniqueName() + " has no SourceAnchor");
             return true;
         }
     }

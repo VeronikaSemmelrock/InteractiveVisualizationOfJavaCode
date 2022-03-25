@@ -15,7 +15,7 @@
  */
 package model.entities;
 
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.persistence.*;
 import java.util.*;
@@ -27,6 +27,7 @@ import java.util.*;
  * @author pinzger
  */
 @Entity
+@Slf4j
 public class FamixModel {
     /**
      * The logger. 
@@ -320,11 +321,11 @@ public class FamixModel {
         AbstractFamixEntity lFamixEntityTo = getElement(association.getToEntity());
 
         if (lFamixEntityFrom == null) {
-            //sLogger.error("From entity not found: " + association.getType());
+            log.error("From entity not found: " + association.getType());
             return;
         }
         if (lFamixEntityTo == null) {
-            //sLogger.error("To entity not found: " + association.getType());
+            log.error("To entity not found: " + association.getType());
             return;
         }
 
