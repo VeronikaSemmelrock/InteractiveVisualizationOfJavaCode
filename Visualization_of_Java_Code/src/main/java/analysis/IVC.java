@@ -6,9 +6,12 @@ import spoon.reflect.declaration.CtPackage;
 import java.io.IOException;
 
 public class IVC {
+    private static String PROJECT_PATH = "C:\\Users\\semme\\Documents\\IVJC\\InteractiveVisualizationOfJavaCode\\Sample_Inputcode";
     public static void main(String args[]) throws Exception {
-        final String PROJECT_PATH = "C:\\Users\\semme\\Documents\\IVJC\\InteractiveVisualizationOfJavaCode\\Sample_Inputcode";
+        startIVC();
+    }
 
+    public static void startIVC() throws Exception {
         //creating a model of the project via spoon - returns ctModel
         SpoonModel spoonModel = new SpoonModel(PROJECT_PATH);
         CtModel model = spoonModel.getSpoonModel();
@@ -21,6 +24,8 @@ public class IVC {
         ExportJSON jsonExport = new ExportJSON();
         jsonExport.exportEntitiesToFile(spoonToFamix.getFamixEntities(), "entities");
         jsonExport.exportAssociationsToFile(spoonToFamix.getFamixAssociations(), "assocs");
-
+    }
+    public static void setProjectPath(String projectPath) {
+        PROJECT_PATH = projectPath;
     }
 }
