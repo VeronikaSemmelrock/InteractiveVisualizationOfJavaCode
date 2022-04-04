@@ -9,12 +9,12 @@ public class Testclass1 implements TestInterface {
     @Override
     public void run() {
         class anonymClass{
-           private static String anonymClassString = "First part of String";
            public void changeString(){
                anonymClassString = anonymClassString+" rest of String";
            }
         }
     }
+
 
 
     public void testClass1Method(String param1, int param2){

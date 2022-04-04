@@ -173,6 +173,10 @@ public abstract class AbstractFamixObject implements Cloneable {
         this.fType = type;
     }
 
+    public String getfType() {
+        return fType;
+    }
+
     /**
      * Sets the unique name of the parent of the entitiy as fParentAsString.
      */

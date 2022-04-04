@@ -1,15 +1,27 @@
 package analysis;
 
+import model.entities.AbstractFamixEntity;
+import model.entities.FamixAssociation;
 import spoon.reflect.CtModel;
-import spoon.reflect.declaration.CtPackage;
 
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Scanner;
 
 public class IVC {
-    private static String PROJECT_PATH = "C:\\Users\\semme\\Documents\\IVJC\\InteractiveVisualizationOfJavaCode\\Sample_Inputcode";
+    private static String PROJECT_PATH = System.getProperty("user.dir")+"\\src\\test\\resources\\IntegrationTestInputProject";
+    //C:\Users\semme\Documents\IVJC\InteractiveVisualizationOfJavaCode\Sample_Inputcode
 
+    private static HashMap<String, AbstractFamixEntity> famixEntities = new LinkedHashMap<>();
+
+    private static HashMap<Integer, FamixAssociation> famixAssociations = new LinkedHashMap<>();
 
     public static void main(String args[]) throws Exception {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Please enter the full path to the Java project that should be parsed!");
+        PROJECT_PATH = scanner.nextLine();
+        setProjectPath(PROJECT_PATH);
+        System.out.println("Thank you! System is now starting!");
         startIVC();
     }
 
@@ -24,10 +36,19 @@ public class IVC {
 
         //exporting both hashmaps
         ExportJSON jsonExport = new ExportJSON();
-        jsonExport.exportEntitiesToFile(spoonToFamix.getFamixEntities(), "entities");
-        jsonExport.exportAssociationsToFile(spoonToFamix.getFamixAssociations(), "assocs");
+        famixEntities = spoonToFamix.getFamixEntities();
+        famixAssociations = spoonToFamix.getFamixAssociations();
+        jsonExport.exportEntitiesToFile(famixEntities, "entities");
+        jsonExport.exportAssociationsToFile(famixAssociations, "assocs");
     }
     public static void setProjectPath(String projectPath) {
         PROJECT_PATH = projectPath;
+    }
+    public static HashMap<String, AbstractFamixEntity> getEntities(){
+        return famixEntities;
+    }
+
+    public static HashMap<Integer, FamixAssociation> getAssociations(){
+        return famixAssociations;
     }
 }
