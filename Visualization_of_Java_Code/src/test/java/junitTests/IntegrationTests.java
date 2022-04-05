@@ -6,7 +6,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.Assert.assertEquals;
@@ -174,6 +173,7 @@ public class IntegrationTests {
         //Tests whether an innerclass is contained in hashmap of entities,
         // has correctly set type, parent, uniqueName, modifiers and
         // inner classes, methods (constructors) and attributes
+        // have extra "1" in name after $ -> added by spoonparser to signal anonymous class
 
         assertTrue(famixEntities.containsKey("testpackage1.Testclass1$1anonymClass"));
         FamixClass parsed = (FamixClass) famixEntities.get("testpackage1.Testclass1$1anonymClass");

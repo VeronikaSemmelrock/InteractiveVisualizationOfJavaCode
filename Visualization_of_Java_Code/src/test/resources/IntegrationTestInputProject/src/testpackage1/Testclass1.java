@@ -13,6 +13,9 @@ public class Testclass1 implements TestInterface {
                anonymClassString = anonymClassString+" rest of String";
            }
         }
+        class anonymClass2{
+
+        }
     }
 
 

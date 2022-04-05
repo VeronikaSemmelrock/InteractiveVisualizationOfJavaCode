@@ -1,11 +1,9 @@
 package analysis;
 
 import model.entities.*;
+import org.eclipse.jdt.core.util.IModifierConstants;
 import spoon.reflect.CtModel;
-import spoon.reflect.code.CtFieldAccess;
-import spoon.reflect.code.CtInvocation;
-import spoon.reflect.code.CtTypeAccess;
-import spoon.reflect.code.CtVariableAccess;
+import spoon.reflect.code.*;
 import spoon.reflect.declaration.*;
 
 import java.util.*;
@@ -196,7 +194,7 @@ public class SpoonToFamix {
         famixClass.setType("class");
         famixClass.setParentString(famixParent.getUniqueName());
         famixEntities.put(famixClass.getUniqueName(), famixClass);
-        setModifiers(famixClass, ctEntity);
+        famixClass.setModifiers(getModifiers((CtNamedElement) ctEntity));
 
         //checking whether class has generalization relationship, then adding it to a list for further parsing of the relationship
         if(hasGeneralisation(ctEntity)){
@@ -271,7 +269,7 @@ public class SpoonToFamix {
         }
         //parsing of method and all its anonymous inner classes
         famixMethod.setParentString(famixParent.getUniqueName());
-        setMethodModifiers(famixMethod, m);
+        famixMethod.setModifiers(getModifiers((CtNamedElement) m));
         famixEntities.put(famixMethod.getUniqueName(), famixMethod);
         famixMethod.setAnonymClasses(parseAllAnonymousClasses(m, famixMethod));
 
@@ -305,7 +303,7 @@ public class SpoonToFamix {
         //basic parsing of FamixLocalVariable
         FamixLocalVariable famixVar = new FamixLocalVariable(famixMethod.getUniqueName()+DELIMITER_LOCALVARIABLE+ctVar.getSimpleName(), famixMethod);
         famixVar.setType("localVariable");
-        setVariableModifiers(famixVar, (CtVariable) ctVar);
+        famixVar.setModifiers(getModifiers((CtNamedElement) ctVar));
         famixVar.setParentString(famixMethod.getUniqueName());
         famixEntities.put(famixVar.getUniqueName(), famixVar);
         famixVar.setDeclaredClass(getDeclaredClass(ctVar.getType().toString()));
@@ -388,7 +386,7 @@ public class SpoonToFamix {
         FamixAttribute famixAttribute = new FamixAttribute(ctField.getReference().getQualifiedName(), famixParent); //unique name
         famixAttribute.setType("attribute");
         famixAttribute.setParentString(famixParent.getUniqueName());
-        setVariableModifiers(famixAttribute, (CtVariable) ctField);
+        famixAttribute.setModifiers(getModifiers((CtNamedElement) ctField));
         famixEntities.put(famixAttribute.getUniqueName(), famixAttribute);
         //adding attribute to a list of attributes whose parsing (setting of declared class (data type)) will be finished once all classes have been parsed
         encounteredAttributes.put(famixAttribute, ctField);
@@ -452,96 +450,41 @@ public class SpoonToFamix {
         return returnType;
     }
 
-    /**
-     * Sets the correct modifiers of a famix object, depending on the modifiers of the corresponding ctEntity
-     * The ctEntity is of type CtType
-     * @param famixEntity the famix entity of which the modifiers are set
-     * @param ctEntity the corresponding ctEntity
-     */
-    private void setModifiers(AbstractFamixEntity famixEntity, CtType ctEntity) {
-        int famixModifier = 0;
-
-        for(ModifierKind modifier : ctEntity.getModifiers()) {
-            if(modifier.toString().equals("public")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_PUBLIC;
-            }else if(modifier.toString().equals("private")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_PRIVATE;
-            }else if(modifier.toString().equals("protected")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_PROTECTED;
-            }else if(modifier.toString().equals("static")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_STATIC;
-            }else if(modifier.toString().equals("final")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_FINAL;
-            }else if(modifier.toString().equals("abstract")) {
-                famixModifier += AbstractFamixEntity.MODIFIER_ABSTRACT;
-            }
-        }
-        if(ctEntity.isInterface()){
-            famixModifier += AbstractFamixEntity.MODIFIER_INTERFACE;
-        }else if(ctEntity.isEnum()) {
-            famixModifier += AbstractFamixEntity.MODIFIER_ENUM;
-        }
-
-        famixEntity.setModifiers(famixModifier);
-    }
 
     /**
      * Sets the correct modifiers of a famix object, depending on the modifiers of the corresponding ctEntity
      * The ctEntity is of type CtMethod
-     * @param famixEntity the famix entity of which the modifiers are set
      * @param ctEntity the corresponding ctEntity
      */
-    private void setMethodModifiers(AbstractFamixEntity famixEntity, CtExecutable ctEntity) {
-        int famixModifier = 0;
+    private int getModifiers(CtNamedElement ctEntity) {
+        Set<ModifierKind> modifiers = new HashSet<ModifierKind>();
+        int typeModifier = 0;
 
-        if(ctEntity instanceof CtConstructor){
+        if (ctEntity instanceof CtConstructor){
             CtConstructor c = (CtConstructor) ctEntity;
-            for(ModifierKind modifier : c.getModifiers()) {
-                if(modifier.toString().equals("public")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_PUBLIC;
-                }else if(modifier.toString().equals("private")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_PRIVATE;
-                }else if(modifier.toString().equals("protected")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_PROTECTED;
-                }else if(modifier.toString().equals("static")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_STATIC;
-                }else if(modifier.toString().equals("final")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_FINAL;
-                }else if(modifier.toString().equals("abstract")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_ABSTRACT;
-                }
-            }
-        }else {
+            modifiers = c.getModifiers();
+        }else if(ctEntity instanceof CtMethod){
             CtMethod m = (CtMethod) ctEntity;
-            for(ModifierKind modifier : m.getModifiers()) {
-                if(modifier.toString().equals("public")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_PUBLIC;
-                }else if(modifier.toString().equals("private")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_PRIVATE;
-                }else if(modifier.toString().equals("protected")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_PROTECTED;
-                }else if(modifier.toString().equals("static")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_STATIC;
-                }else if(modifier.toString().equals("final")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_FINAL;
-                }else if(modifier.toString().equals("abstract")) {
-                    famixModifier += AbstractFamixEntity.MODIFIER_ABSTRACT;
-                }
+            modifiers = m.getModifiers();
+        }else if(ctEntity instanceof CtClass || ctEntity instanceof CtInterface){
+            CtType c = (CtType) ctEntity;
+            modifiers = c.getModifiers();
+            if(c.isEnum()){
+                typeModifier += AbstractFamixEntity.MODIFIER_ENUM;
             }
+            if(c.isInterface()){
+                typeModifier += AbstractFamixEntity.MODIFIER_INTERFACE;
+            }
+        }else if(ctEntity instanceof CtField || ctEntity instanceof CtVariable){
+            CtVariable v = (CtVariable) ctEntity;
+            modifiers = v.getModifiers();
         }
-        famixEntity.setModifiers(famixModifier);
+
+        return calculateModifiers(modifiers, typeModifier);
     }
 
-    /**
-     * Sets the correct modifiers of a famix variable, depending on the modifiers of the corresponding ctEntity
-     * The ctEntity is of type CtVariable
-     * @param famixVar the famix entity of which the modifiers are set
-     * @param ctVar the corresponding ctEntity
-     */
-    private void setVariableModifiers(AbstractFamixVariable famixVar, CtVariable ctVar) {
-        int famixModifier = 0;
-
-        for(ModifierKind modifier : ctVar.getModifiers()) {
+    private int calculateModifiers(Set<ModifierKind> modifiers, int famixModifier) {
+        for(ModifierKind modifier : modifiers) {
             if(modifier.toString().equals("public")) {
                 famixModifier += AbstractFamixEntity.MODIFIER_PUBLIC;
             }else if(modifier.toString().equals("private")) {
@@ -556,9 +499,9 @@ public class SpoonToFamix {
                 famixModifier += AbstractFamixEntity.MODIFIER_ABSTRACT;
             }
         }
-
-        famixVar.setModifiers(famixModifier);
+        return famixModifier;
     }
+
 
     /**
      * Starts parsing of all generalisations that were encountered when the entities were being parsed
