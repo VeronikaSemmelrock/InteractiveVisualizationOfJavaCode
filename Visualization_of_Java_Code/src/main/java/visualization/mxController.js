@@ -124,17 +124,26 @@ function installLayoutManager(layout){
     };
 
 }
+// const mxUtils = {
+//     bind: function(scope, function)
+// }
 //executes the specific layout that is given through UI radio buttons
 function executeLayoutoptions(layout, noReload){
-    installLayoutManager(layout);     
-    //undefined is false 
-    if(!noReload) window.location.reload() //only reloads if method is called because of changing state of checkboxes
+    installLayoutManager(layout);
+
+    // graph.getModel().beginUpdate()
+    layoutManager.executeLayout(invisibleParent, true)
+    // graph.getModel().endUpdate()
+
+    // fitToView()
+    //undefined is false
+    // if(!noReload) window.location.reload() //only reloads if method is called because of changing state of checkboxes
 }
 
 //executes filtering depending on status of checkboxes in UI
 function executeFilteroptions(noReload){
-    let filters=[]; 
-    filters.push(document.getElementById("filterPackages").checked); 
+    let filters=[];
+    filters.push(document.getElementById("filterPackages").checked);
     filters.push(document.getElementById("filterClasses").checked);
     filters.push(document.getElementById("filterMethods").checked);
     filters.push(document.getElementById("filterConstructors").checked);
@@ -142,19 +151,23 @@ function executeFilteroptions(noReload){
     filters.push(document.getElementById("filterParameters").checked);
     filters.push(document.getElementById("filterLocalVariables").checked);
     filters.push(document.getElementById("filterImplements").checked);
-    filters.push(document.getElementById("filterExtends").checked); 
+    filters.push(document.getElementById("filterExtends").checked);
     filters.push(document.getElementById("filterReturnTypes").checked);
     filters.push(document.getElementById("filterAccesses").checked);
     filters.push(document.getElementById("filterInvocations").checked);
     filters.push(document.getElementById("filterForeign").checked);//!!
     graph.getModel().beginUpdate();
-        try{
-            vertices.forEach((value)=>setVisibility(value, filters)); 
-            edges.forEach((value)=>setVisibility(value, filters)); 
-            //edges.forEach((value)=>layoutManager.getLayout(value));
-        } finally{
-            graph.getModel().endUpdate();
-        }
-    //undefined is false 
-    if(!noReload) window.location.reload() //only reloads if method is called because of changing state of checkboxes 
+    try{
+        vertices.forEach((value)=>setVisibility(value, filters));
+        edges.forEach((value)=>setVisibility(value, filters));
+        //edges.forEach((value)=>layoutManager.getLayout(value));
+    } finally{
+        graph.getModel().endUpdate();
+    }
+    //undefined is false
+    // if(!noReload) window.location.reload() //only reloads if method is called because of changing state of checkboxes
+    layoutManager.executeLayout(invisibleParent, true)
+    // graph.getModel().endUpdate()
+
+    // fitToView()
 }

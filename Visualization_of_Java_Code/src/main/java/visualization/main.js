@@ -74,11 +74,32 @@ async function main(container){
             executeLayoutoptions(getLayoutOption(), true);
             executeFilteroptions(true); 
             
+            graph.addMouseListener({
+                mouseDown: function (sender, event) {
+                    // console.log('mouse event', LAYOUT)
+                    // // console.log(sender, event)
+                    // // console.log()
+                    // const cell = event.getCell()
+                    // if(cell.getParent() === invisibleParent || cell.getParent().getParent() === invisibleParent) fitToView()
+                    // fitToView()
+                    const zoomLevel = zoomInput.value
+                    setTimeout(() => {
+                        centerScrollPosition(zoomLevel)
+                    }, 100)
+                },
+                mouseUp: function(sender, event) {
+                    // console.log('mouse event') // disabled
+                },
+                mouseMove: function (sender, event) {
+                    // console.log('mouse event') // disabled
+                }
+            })
         } finally{
             graph.getModel().endUpdate();
         }
     }
     fitToView()
+
 };
 
 //method that loads files (json-Strings) into global variables
@@ -90,6 +111,7 @@ async function loadFiles(){
         alert("Couldn´t load files!")
     }
 }
+
 
 
 
