@@ -80,8 +80,6 @@ function viewportConvert(px = 0, vw = 0, vh = 0){ // from https://stackoverflow.
     }
 }
 
-
-
 function calculateOffset(zoomLevel, axis) {
     if (axis === 'x') return Math.round(graphContainer.clientWidth * zoomLevel / 100 / 2)
     else return Math.round(graphContainer.clientHeight * zoomLevel / 100 / 2)

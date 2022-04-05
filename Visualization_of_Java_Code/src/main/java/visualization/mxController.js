@@ -138,7 +138,6 @@ function installLayoutManager(layout){
 //executes the specific layout that is given through UI radio buttons
 function executeLayoutoptions(layout, noReload){
     installLayoutManager(layout);
-
     layoutManager.executeLayout(invisibleParent, true)
 }
 
@@ -163,9 +162,10 @@ function executeFilteroptions(noReload){
         vertices.forEach((value)=>setVisibility(value, filters));
         edges.forEach((value)=>setVisibility(value, filters));
     } finally{
+        //layoutManager.executeLayout(invisibleParent, true)
         graph.getModel().endUpdate();
     }
     //undefined is false
-    // if(!noReload) window.location.reload() //only reloads if method is called because of changing state of checkboxes
+    //if(!noReload) window.location.reload() //only reloads if method is called because of changing state of checkboxes
     layoutManager.executeLayout(invisibleParent, true)
 }

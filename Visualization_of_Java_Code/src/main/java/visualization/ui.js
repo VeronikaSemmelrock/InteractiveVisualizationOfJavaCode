@@ -179,7 +179,8 @@ function setVisibility(value, filters){
                 bool = false; 
             }
         }
-        value.visible = bool; 
+        value.visible = bool;
+        //mxGraphModel.prototype.visibleStateForCellChanged(value, bool); //??
     }
 }
 //sets global edge style once
