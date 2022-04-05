@@ -452,9 +452,9 @@ public class SpoonToFamix {
 
 
     /**
-     * Sets the correct modifiers of a famix object, depending on the modifiers of the corresponding ctEntity
-     * The ctEntity is of type CtMethod
+     * Returns the correct modifiers of a famix object, depending on the modifiers of the corresponding ctEntity
      * @param ctEntity the corresponding ctEntity
+     * @return modifiers to be set in a famix Object
      */
     private int getModifiers(CtNamedElement ctEntity) {
         Set<ModifierKind> modifiers = new HashSet<ModifierKind>();
@@ -483,6 +483,12 @@ public class SpoonToFamix {
         return calculateModifiers(modifiers, typeModifier);
     }
 
+    /**
+     * Calculates and returns the correct modifier from a list of modifiers
+     * @param modifiers the corresponding modifier-list of a ctEntity
+     * @param famixModifier already calculated offset (depending on whether ctEntity is of Type interface or enum)
+     * @return calculated modifiers
+     */
     private int calculateModifiers(Set<ModifierKind> modifiers, int famixModifier) {
         for(ModifierKind modifier : modifiers) {
             if(modifier.toString().equals("public")) {

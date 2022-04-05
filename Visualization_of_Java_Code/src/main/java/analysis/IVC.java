@@ -10,7 +10,6 @@ import java.util.Scanner;
 
 public class IVC {
     private static String PROJECT_PATH = System.getProperty("user.dir")+"\\src\\test\\resources\\IntegrationTestInputProject";
-    //C:\Users\semme\Documents\IVJC\InteractiveVisualizationOfJavaCode\Sample_Inputcode
 
     private static HashMap<String, AbstractFamixEntity> famixEntities = new LinkedHashMap<>();
 
@@ -47,7 +46,6 @@ public class IVC {
     public static HashMap<String, AbstractFamixEntity> getEntities(){
         return famixEntities;
     }
-
     public static HashMap<Integer, FamixAssociation> getAssociations(){
         return famixAssociations;
     }
