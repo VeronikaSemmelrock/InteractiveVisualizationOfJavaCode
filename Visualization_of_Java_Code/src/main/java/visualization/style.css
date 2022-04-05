@@ -49,11 +49,9 @@ body{
     overflow-x: hidden;
 }
 
-
 #zoomInput{
     width: 5vw;
 }
-
 
 .positionCenter{/*centers content of applied on container on x and y axis*/
     display: flex;

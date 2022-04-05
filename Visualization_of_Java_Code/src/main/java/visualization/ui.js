@@ -1,4 +1,3 @@
-
 //returns specific style for vertex as string
 function getStyle(fType, key){
     switch (fType){
@@ -47,6 +46,7 @@ function getWidth(parent){
         }
     }
 }
+
 //returns name of elements, cuts away "path" from uniqueName
 function getName(name, type, foreign){
     if(foreign){
@@ -84,7 +84,6 @@ function getName(name, type, foreign){
 }
 
 
-///////// GET ENTITIES BY NAME
 //receives a uniquename of a vertex, checks what type this vertex has (class, method, package) from corresponding element in entities.json
 function getTypeViaName(uniqueName){
     let entity;
@@ -116,8 +115,6 @@ function getForeignViaName(uniqueName){
 }
 
 
-
-/////////EDGES - VERTICES
 //sets correct visibility of edge/vertex depending on what filters are applied through checkboxes in UI 
 function setVisibility(value, filters){
     let type; 
@@ -181,11 +178,6 @@ function setVisibility(value, filters){
             if(value.source.visible === false || value.target.visible === false){
                 bool = false; 
             }
-            //only allow edges if it is in circle layout -> temporary? 
-            /*if(getLayoutOption() !== "circle"){
-                bool = false; 
-            }
-            */
         }
         value.visible = bool; 
     }
@@ -198,14 +190,6 @@ function setEdgeStyle(){
     edgeStyle[mxConstants.STYLE_FONTCOLOR] = "black"; 
     edgeStyle[mxConstants.STYLE_ROUNDED]=true; //depends on taste
     edgeStyle[mxConstants.STYLE_EDGE] = mxEdgeStyle.EntityRelation;
-    //other options
-    //edgeStyle[mxConstants.STYLE_EDGE]=mxConstants.EDGESTYLE_ENTITY_RELATION; //good
-    //edgeStyle[mxConstants.STYLE_EDGE]=mxConstants.EDGESTYLE_SIDETOSIDE;//good 
-    //edgeStyle[mxConstants.STYLE_EDGE]=mxConstants.EDGESTYLE_ORTHOGONAL; 
-    //edgeStyle[mxConstants.STYLE_EDGE]=mxConstants.EDGESTYLE_SEGMENT; 
-    //edgeStyle[mxConstants.STYLE_EDGE]=mxConstants.EDGESTYLE_TOPTOBOTTOM; 
-    //edgeStyle[mxConstants.STYLE_EDGE] = mxEdgeStyle.ElbowConnector; 
-
 }
 
 //sets default vertex style and registers own "invisible" style for parent 
@@ -226,9 +210,6 @@ function setVertexStyle(){
     style[mxConstants.STYLE_FOLDABLE] = false;
     graph.getStylesheet().putCellStyle('invisible', style);
 }
-
-
-
 
 function getLayoutOption(){
     return document.querySelector('input[name="layout"]:checked').value

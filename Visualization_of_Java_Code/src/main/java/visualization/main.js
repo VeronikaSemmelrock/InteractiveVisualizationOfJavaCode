@@ -26,7 +26,6 @@ const LAYOUT_INTERHIERARCHYSPACING = 13; //spacing between seperate hierarchies
 const LAYOUT_XDISTANCE_PARENTS = 50; //distance of parents between each other (x)
 const LAYOUT_YDISTANCE_CHILDREN = 10; //distance between children of one parent (y) in stack
 
-
 //variables for name parsing
 const DELIMITER_METHOD = '.';
 const DELIMITER_LOCALVARIABLE = '^';
@@ -52,8 +51,6 @@ const body = document.getElementById('root');
 const graphContainer = document.getElementById('graphContainer');
 body.onload = main(graphContainer); //calls main when body is finished loading
 
-
-
 //because loadFiles() (async method) is called, main() must be async (to be able to call await)
 async function main(container){ 
     let parent;
@@ -73,33 +70,11 @@ async function main(container){
             insertEdges(); 
             executeLayoutoptions(getLayoutOption(), true);
             executeFilteroptions(true); 
-            
-            graph.addMouseListener({
-                mouseDown: function (sender, event) {
-                    // console.log('mouse event', LAYOUT)
-                    // // console.log(sender, event)
-                    // // console.log()
-                    // const cell = event.getCell()
-                    // if(cell.getParent() === invisibleParent || cell.getParent().getParent() === invisibleParent) fitToView()
-                    // fitToView()
-                    const zoomLevel = zoomInput.value
-                    setTimeout(() => {
-                        centerScrollPosition(zoomLevel)
-                    }, 100)
-                },
-                mouseUp: function(sender, event) {
-                    // console.log('mouse event') // disabled
-                },
-                mouseMove: function (sender, event) {
-                    // console.log('mouse event') // disabled
-                }
-            })
         } finally{
             graph.getModel().endUpdate();
         }
     }
     fitToView()
-
 };
 
 //method that loads files (json-Strings) into global variables

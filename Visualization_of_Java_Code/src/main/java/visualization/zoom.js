@@ -2,24 +2,19 @@ const zoomInput = document.getElementById("zoomInput")
 
 const graphScrollContainer = document.getElementById('graphScrollContainer')
 
-
 const centerY = 'positionCenterY'
 const center = 'positionCenter'
-
 
 const graphScrollContainerWidth = (window.innerWidth)*0.75 // because of 75vw width -> width of visible view
 const oneVw = viewportConvert(0, 1, 0)
 const oneHundredVh = viewportConvert(0, 0, 100)
 const graphScrollContainerHeight = oneHundredVh - oneVw // because height is 100vh - 1vw
 
-
-
-function changeZoom(factor){//changes Zoom factor and sets it
-    // change zoom level in input
+//changes Zoom factor and sets it
+function changeZoom(factor){
     const currentValue = parseInt(zoomInput.value)
     const zoomLevel = currentValue + parseInt(factor)
     fitSanityCheck(zoomLevel)
-
     centerScrollPosition(zoomLevel)
 }
 
@@ -30,33 +25,21 @@ function fitSanityCheck(zoomLevel) {
     zoom()
 }
 
-
-function zoom() {//executes changed zoom factor
+//executes changed zoom factor
+function zoom() {
     const zoomLevel = parseInt(zoomInput.value) / 100
     const offsetX = calculateOffset(zoomLevel, 'x')
     const offsetY = calculateOffset(zoomLevel, 'y')
 
     if(LAYOUT === "circle") graphContainer.style.transform = `scale(${zoomLevel}) translateX(${offsetX}px) translateY(${offsetY}px)` // scaling doesnt move graph to center, so if size is adjusted, translate moves graph by its size difference
     else graphContainer.style.transform = `scale(${zoomLevel}) translateY(${graphContainer.clientHeight * zoomLevel / 100}px`
-    // else graphContainer.style.transform = `scale(${zoomLevel})`
-    // try {
-    //     if (LAYOUT === 'stackHorizontal') {//stackHorizontal needs only centerY centering class
-    //         if(graphScrollContainer.classList.contains(center)) graphScrollContainer.classList.replace(center, centerY)
-    //     }
-    //     // else if (LAYOUT === 'fastOrganic') { }
-    //     else throw Error()
-    // } catch (error) {
-    //     if(graphScrollContainer.classList.contains(centerY)) graphScrollContainer.classList.replace(centerY, center)
-    // }
-    // centerScrollPosition(zoomLevel)
 }
 
+// fit width to view
 function fitToView() {
     const graphContainerWidth = parseInt(graphContainer.style.width)// -> width of graph
-    // fit width to view
     let zoomLevel = (( graphScrollContainerWidth / graphContainerWidth ) - 0.02) * 100// -> calculates zoomlevel to be set, so that graph is exactly visible inside view, 0.02 padding
     fitSanityCheck(zoomLevel)
-
 
     const graphContainerHeight = parseInt(graphContainer.style.height)
     if (graphContainerHeight > graphScrollContainerHeight) {
@@ -67,7 +50,6 @@ function fitToView() {
             fitSanityCheck(zoomLevel)
         }
     }
-
     centerScrollPosition(zoomLevel)
 }
 function centerScrollPosition(zoomLevel) {
@@ -104,6 +86,3 @@ function calculateOffset(zoomLevel, axis) {
     if (axis === 'x') return Math.round(graphContainer.clientWidth * zoomLevel / 100 / 2)
     else return Math.round(graphContainer.clientHeight * zoomLevel / 100 / 2)
 }
-
-// document.body.onload = zoom()
-// on expand I need to call fitToView

@@ -14,6 +14,23 @@ function createGraph(container){
     graph.border = GRAPH_BORDER;
     graph.setResizeContainer(true);
     new mxRubberband(graph);
+
+    //adds mouse listener for more automatic zooming
+    graph.addMouseListener({
+        mouseDown: function (sender, event) {
+            const zoomLevel = zoomInput.value
+            setTimeout(() => {
+                centerScrollPosition(zoomLevel)
+            }, 100)
+        },
+        mouseUp: function(sender, event) {
+            // console.log('mouse event') // disabled
+        },
+        mouseMove: function (sender, event) {
+            // console.log('mouse event') // disabled
+        }
+    })
+
     return graph;
 }
 
@@ -21,7 +38,6 @@ function createGraph(container){
 
 //returns correct parent for hierarchy (folding)
 function getParent(parentString){
-    //getting correct parent for hierarchical structure
     if(parentString == "null"){
         parent = invisibleParent;//for layouting of first layer 
     }else{
@@ -72,12 +88,7 @@ function insertEdges(){
     });
 }
 
-
-
-
-
 /////////FILTERING AND LAYOUTING
-
 
 //creates and sets global layouts
 function createLayouts(){
@@ -91,7 +102,6 @@ function createLayouts(){
 //installs layoutManager - called everytime a change is made to graph - used to set different layouts for different cells
 function installLayoutManager(layout){
     layoutManager = new mxLayoutManager(graph);
-    //arrangeGroups method in mxGraphLayout? 
 
     layoutManager.getLayout = function(cell){
         LAYOUT = layout
@@ -124,20 +134,12 @@ function installLayoutManager(layout){
     };
 
 }
-// const mxUtils = {
-//     bind: function(scope, function)
-// }
+
 //executes the specific layout that is given through UI radio buttons
 function executeLayoutoptions(layout, noReload){
     installLayoutManager(layout);
 
-    // graph.getModel().beginUpdate()
     layoutManager.executeLayout(invisibleParent, true)
-    // graph.getModel().endUpdate()
-
-    // fitToView()
-    //undefined is false
-    // if(!noReload) window.location.reload() //only reloads if method is called because of changing state of checkboxes
 }
 
 //executes filtering depending on status of checkboxes in UI
@@ -160,14 +162,10 @@ function executeFilteroptions(noReload){
     try{
         vertices.forEach((value)=>setVisibility(value, filters));
         edges.forEach((value)=>setVisibility(value, filters));
-        //edges.forEach((value)=>layoutManager.getLayout(value));
     } finally{
         graph.getModel().endUpdate();
     }
     //undefined is false
     // if(!noReload) window.location.reload() //only reloads if method is called because of changing state of checkboxes
     layoutManager.executeLayout(invisibleParent, true)
-    // graph.getModel().endUpdate()
-
-    // fitToView()
 }
