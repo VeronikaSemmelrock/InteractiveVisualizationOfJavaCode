@@ -138,6 +138,7 @@ function installLayoutManager(layout){
 //executes the specific layout that is given through UI radio buttons
 function executeLayoutoptions(layout, noReload){
     installLayoutManager(layout);
+    graph.refresh(); 
     layoutManager.executeLayout(invisibleParent, true)
 }
 
@@ -165,6 +166,7 @@ function executeFilteroptions(noReload){
         //layoutManager.executeLayout(invisibleParent, true)
         graph.getModel().endUpdate();
     }
+    graph.refresh()
     //undefined is false
     //if(!noReload) window.location.reload() //only reloads if method is called because of changing state of checkboxes
     layoutManager.executeLayout(invisibleParent, true)

@@ -130,7 +130,7 @@ function setVisibility(value, filters){
         let bool; 
         switch (type){
             case "package": 
-                bool = filters[0]; 
+                bool = filters[0]; //set as always true -> filtering of packages is disabled
                 break;
             case "class": 
                 bool = filters[1]; 
@@ -180,7 +180,8 @@ function setVisibility(value, filters){
             }
         }
         value.visible = bool;
-        //mxGraphModel.prototype.visibleStateForCellChanged(value, bool); //??
+        // graph.getModel().setValue(value.visible, bool)
+        // graph.getModel().visibleStateForCellChanged(value, bool); //??
     }
 }
 //sets global edge style once
