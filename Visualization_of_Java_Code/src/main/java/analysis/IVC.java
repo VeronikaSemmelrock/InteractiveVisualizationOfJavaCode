@@ -18,7 +18,7 @@ public class IVC {
     public static void main(String args[]) throws Exception {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Please enter the full path to the Java project that should be parsed!");
-        PROJECT_PATH = scanner.nextLine();
+        //PROJECT_PATH = scanner.nextLine(); //enable to be able to input project path via scanner
         setProjectPath(PROJECT_PATH);
         System.out.println("Thank you! System is now starting!");
         startIVC();
