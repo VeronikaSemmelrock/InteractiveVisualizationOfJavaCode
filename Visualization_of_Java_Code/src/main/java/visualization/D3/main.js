@@ -117,9 +117,9 @@ d3.select("section").append("svg").selectAll().data(data)
         // Initialize the links
         var link = svg
           .selectAll("line")
-          .data(data.links)
-          .enter()
-          .append("line")
+          .data(data.links)//readies data 
+          .enter()//because of enter the following code is applied to each data individually 
+          .append("line")//so basically in this case adding a line-element for each link in dataset 
           .style("stroke", "#aaa")
 
         // Initialize the nodes
@@ -144,7 +144,7 @@ d3.select("section").append("svg").selectAll().data(data)
         // This function is run at each iteration of the force algorithm, updating the nodes position.
         function ticked() {
           link
-              .attr("x1", function(d) { return d.source.x; })
+              .attr("x1", function(d) { return d.source.x; })// -> syntax means: function(d) gets value of data (like in for each?), then returns d.source.x
               .attr("y1", function(d) { return d.source.y; })
               .attr("x2", function(d) { return d.target.x; })
               .attr("y2", function(d) { return d.target.y; });
