@@ -76,8 +76,9 @@
     }
   ],
   "groups": [
-    { "name": "myfirstgroup", "leaves": [0], "groups": [1] },
+    { "name": "myfirstgroup", "leaves": [0], "groups": [2] },
     { "name": "mysecondgroup", "leaves": [1, 7, 2] },
-    { "name": "mythirdgroup", "leaves": [3, 4] }
+    { "name": "mythirdgroup", "leaves": [3, 4] },
+    { "name": "myfourthgroup", "leaves": [5, 6] }
   ]
 }

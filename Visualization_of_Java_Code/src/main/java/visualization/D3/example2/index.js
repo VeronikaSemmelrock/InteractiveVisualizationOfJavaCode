@@ -1,20 +1,96 @@
-//example for hierarchical grouped layout - https://codesandbox.io/s/cola-js-layout-with-hierarchical-grouping-and-arrows-forked-ommvvi?file=/src/index.js
-//https://codesandbox.io/s/vnr1244q30?file=/src/index.js
-//but groups have to be declared in json, and groups are only boxes, not nodes themselves, and labels are not visible of boxes yet -> maybe adapt?
-//hiding/showing also not possible yet but with setting children (instead of plain boxes) possible with code from here - https://stackoverflow.com/questions/15927671/collapsible-hierarchical-and-force-directed-graph-in-d3-js
+//import * as d3 from "d3";
+//import * as cola from "webcola";
+//import graph from "./smallgrouped.json";
 
-//look into d3 hierarchical layout (https://github.com/d3/d3-hierarchy) :( no good example, anscheinend nur mit cola so gut dann - https://www.d3indepth.com/hierarchies/ treemap but with edges between?
+//import "./style-base.css";
 
-//https://stackoverflow.com/questions/30534589/d3-js-network-graph-using-force-directed-layout-and-rectangles-for-nodes
-//https://ialab.it.monash.edu/webcola/doc/classes/_layout_.layout.html
+//https://codesandbox.io/s/cola-js-layout-with-hierarchical-grouping-and-arrows-forked-z7pshj?file=/src/index.js:374-403
+//https://github.com/tgdwyer/WebCola/wiki/Constraints
+var graph = {
+      "nodes": [
+        {
+          "name": "a",
+          "width": 60,
+          "height": 40
+        },
+        {
+          "name": "b",
+          "width": 60,
+          "height": 40
+        },
+        {
+          "name": "c",
+          "width": 60,
+          "height": 40
+        },
+        {
+          "name": "d",
+          "width": 60,
+          "height": 40
+        },
+        {
+          "name": "e",
+          "width": 60,
+          "height": 40
+        },
+        {
+          "name": "f",
+          "width": 60,
+          "height": 40
+        },
+        {
+          "name": "g",
+          "width": 60,
+          "height": 40
+        },
+        {
+          "name": "b-to-c",
+          "width": 60,
+          "height": 10
+        }
+      ],
+      "links": [
+        {
+          "source": 1,
+          "target": 7
+        },
+        {
+          "source": 7,
+          "target": 2
+        },
+        {
+          "source": 2,
+          "target": 3
+        },
+        {
+          "source": 3,
+          "target": 4
+        },
+        {
+          "source": 0,
+          "target": 1
+        },
+        {
+          "source": 2,
+          "target": 0
+        },
+        {
+          "source": 3,
+          "target": 5
+        },
+        {
+          "source": 0,
+          "target": 5
+        }
+      ],
+      "groups": [
+        { "name": "myfirstgroup", "leaves": [0], "groups": [2] },
+        { "name": "mysecondgroup", "leaves": [1, 7, 2] },
+        { "name": "mythirdgroup", "leaves": [3, 4] },
+        { "name": "myfourthgroup", "leaves": [5, 6] }
+      ]
+    }
 
-
-import * as d3 from "d3";
-import * as cola from "webcola";
-import graph from "./smallgrouped.json";
-
-import "./style-base.css";
-import "./style-diagram.css";
 
 var width = 500,
   height = 500;
@@ -27,6 +103,7 @@ var d3Cola = cola
   .linkDistance(80)
   .avoidOverlaps(true)
   .handleDisconnected(false)
+  .symmetricDiffLinkLengths(51)
   .size([width, height]);
 
 var svg = d3
@@ -72,6 +149,11 @@ var group = svg
   .attr("class", "group")
   .style("fill", function (d, i) {
     return color(i);
+  })
+  .call(d3Cola.drag)
+  .on("mouseup", function (d) {
+    d.fixed = 0;
+    d3Cola.alpha(1); // fire it off again to satify gridify
   });
 
 var link = svg
@@ -116,13 +198,15 @@ var label = svg
   })
   .call(d3Cola.drag);
 
+//if mouse hovers - title
 node.append("title").text(function (d) {
   return d.name;
 });
-
+group.append("title").text(function (d) {
+  return d.name;
+});
 //my code
 /*var labelOfGroups = svg
-  .selectAll(".label")
   .data(graph.groups)
   .enter()
   .append("text")
@@ -131,12 +215,7 @@ node.append("title").text(function (d) {
     return d.name;
   })
   .call(d3Cola.drag);
-
-group.append("title").text(function (d) {
-  return d.name;
-});
 */
-
 var lineFunction = d3
   .line()
   .x(function (d) {
@@ -170,7 +249,7 @@ d3Cola.on("tick", function () {
       var route = cola.makeEdgeBetween(
         d.source.innerBounds,
         d.target.innerBounds,
-        5
+        2
       );
       return lineFunction([route.sourceIntersection, route.arrowStart]);
     })
@@ -207,6 +286,7 @@ d3Cola.on("tick", function () {
     .attr("height", function (d) {
       return d.bounds.height();
     });
+
   label
     .attr("x", function (d) {
       return d.x;
