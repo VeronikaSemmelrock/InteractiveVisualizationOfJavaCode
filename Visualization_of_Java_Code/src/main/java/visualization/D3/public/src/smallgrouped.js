@@ -1,4 +1,4 @@
-{
+const graph = {
   "nodes": [
     {
       "name": "a",
@@ -43,42 +43,51 @@
   ],
   "links": [
     {
+      "name": "test",
       "source": 1,
       "target": 7
     },
     {
+      "name": "test",
       "source": 7,
       "target": 2
     },
     {
+      "name": "test",
       "source": 2,
       "target": 3
     },
     {
+      "name": "test",
       "source": 3,
       "target": 4
     },
     {
+      "name": "test",
       "source": 0,
       "target": 1
     },
     {
+      "name": "test",
       "source": 2,
       "target": 0
     },
     {
+      "name": "test",
       "source": 3,
       "target": 5
     },
     {
+      "name": "test",
       "source": 0,
       "target": 5
     }
   ],
   "groups": [
-    { "name": "myfirstgroup", "leaves": [0], "groups": [2] },
+    { "name": "myfirstgroup", "leaves": [0], "groups": [1] },
     { "name": "mysecondgroup", "leaves": [1, 7, 2] },
-    { "name": "mythirdgroup", "leaves": [3, 4] },
-    { "name": "myfourthgroup", "leaves": [5, 6] }
+    { "name": "mythirdgroup", "leaves": [3, 4] }
   ]
 }
+
+export default graph
