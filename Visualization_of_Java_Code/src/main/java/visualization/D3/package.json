@@ -5,9 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon index.js",
-    "build": "parcel build ./veroProject/index.html",
-    "startBundle": "parcel /index.html --open"
+    "start": "nodemon index.js"
   },
   "author": "",
   "license": "ISC",
@@ -18,7 +16,6 @@
     "webcola": "^3.4.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20",
-    "parcel": "^2.8.0"
+    "nodemon": "^2.0.20"
   }
 }

@@ -19,5 +19,5 @@ app.use(express.static('node_modules'))
 const port =  3002
 
 app.listen(port, () => {
-    console.log('Serving veroProj on', port)
+    console.log('Serving IVJC on', port)
 })
