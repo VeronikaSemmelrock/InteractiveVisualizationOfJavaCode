@@ -7,6 +7,18 @@ var width = 700,
 var margin = 20,
     pad = 8;
 
+
+
+//for filtering Test 
+var ds1 = [{x:0,y:12,color:"#123456"},{x:0,y:45, color:"#999999"}, {x:0, y:50, color:"#000000"}];
+var ds2 = [{x:0,y:72, color:"#999999"},{x:0,y:28, color:"#000000"}];
+var ds3 = [{x:0,y:82, color:"#000000"},{x:0,y:18, color:"#999999"}];
+
+var i = 0; 
+var datasamples = [ds1, ds2, ds3];
+var drawingsamples = ds3;  
+
+
 //setting colour scheme
 var color = d3.scaleOrdinal(d3.schemeSet3);
 
@@ -52,7 +64,9 @@ var svg = d3
     .select("#diagram")
     .append("svg")
     .attr("width", width)
-    .attr("height", height);
+    .attr("height", height)
+    .append('g');
+
 
 //configuring appended svg  
 svg
@@ -76,6 +90,7 @@ data.nodes.forEach(function (v) {
 data.groups.forEach(function (g) {
     g.padding = 5; //changed from 0.05
 });
+
 
 //update lists so nodes and links only holds data that should be drawn (e.g. visibility true) 
 var nodes = updateData(data.nodes); 
@@ -120,7 +135,7 @@ function setNodeVisibility(nodeId){
 //handles click by setting visibility of node to false and redrawing 
 function handleNodeClick(nodeId){
     setNodeVisibility(nodeId)//sets node visibility of node in data-list to false 
-    nodes = updateData(graph.nodes);//updates node list that is used for drawing because data list of nodes changed 
+    nodes = updateData(data.nodes);//updates node list that is used for drawing because data list of nodes changed 
     redraw(); 
 }
 
@@ -145,12 +160,13 @@ function redraw(){
         .groups(data.groups)
         .start(50, 0, 50);
 
+    
     //inserting groups into svg 
     var group = svg
         .selectAll(".group")
-        .data(data.groups)
+        .data(data.groups)//binding data 
         .enter()
-        .append("rect")
+        .append("rect")//adding elements 
         .attr("rx", 8) //how much rounding
         .attr("ry", 8) //how much rounding
         .attr("class", "group")
@@ -172,11 +188,11 @@ function redraw(){
         .attr("class", "link"); 
 
     var pad = 20;
+        
+
+
     //inserting nodes into svg 
-    var node = svg
-        .selectAll(".node")
-        .data(nodes)
-        .enter()
+    var node = svg.selectAll(".node").data(nodes).enter()
         .append("rect")
         .attr("class", "node")
         .attr("width", function (d) {
@@ -185,8 +201,8 @@ function redraw(){
         .attr("height", function (d) {
             return d.height - 2 * pad;
         })
-        .attr("rx", 5) //rounding
-        .attr("ry", 5)
+        .attr("rx", 10) //rounding
+        .attr("ry", 10)
         .style("fill", function (d) {
             return "#00000" 
             //color(graph.groups.length);
@@ -197,13 +213,18 @@ function redraw(){
             d3Cola.alpha(1); // fire it off again to satify gridify
         })
         .on("click", function(d){
+            console.log("Works!")
             handleNodeClick(d.id);  
         });
+    
 
-    //trying to remove nodes that have changed in node list for drawing...
-    console.log("Now removing nodes! \nnode.exit() --> ",node.exit())
-    console.log("\nnode.exit().remove() --> ", node.exit().remove())
-    //node.exit().remove()
+    /*node.transition()
+        .duration(0)
+        .style("fill", function(d,i){return d.color;})
+        .attr("width",function (d) {return d.y; })//d.y;})
+        .attr("height",19);
+    */
+        const exitNode = svg.selectAll(".node").data(nodes).exit().remove()
 
     //inserting labels for nodes into svg
     var label = svg
