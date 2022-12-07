@@ -52,20 +52,13 @@ const graph = {
     {
       "id": 8, 
       "visibility": true,
-      "name": "b-to-c",
-      "width": 60,
-      "height": 10
-    }, 
-    {
-      "id": 404, 
-      "visibility": true,
-      "name": "MyVisibilityTest",
+      "name": "bc",
       "width": 60,
       "height": 10
     }
   ],
   "links": [
-    /*{
+    {
       "id": 9,
       "name": "test",
       "source": 1,
@@ -120,12 +113,12 @@ const graph = {
       "source": 0,
       "target": 5,
       "visibility": true
-    }*/
+    }
   ],
-  "groups": [/*
+  "groups": [
     { "id": 17, "visibility": true, "name": "myfirstgroup", "leaves": [0], "groups": [1] },
     { "id": 18, "visibility": true, "name": "mysecondgroup", "leaves": [1, 7, 2] },
-    { "id": 19, "visibility": true, "name": "mythirdgroup", "leaves": [3, 4] }*/
+    { "id": 19, "visibility": true, "name": "mythirdgroup", "leaves": [3, 4] }
   ]
 }
 
