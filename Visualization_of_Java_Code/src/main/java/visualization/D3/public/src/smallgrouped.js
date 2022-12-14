@@ -57,7 +57,7 @@ const graph = {
       "height": 10
     }
   ],
-  "links": [
+  "links": [/*
     {
       "id": 9,
       "name": "test",
@@ -113,7 +113,7 @@ const graph = {
       "source": 0,
       "target": 5,
       "visibility": true
-    }
+    }*/
   ],
   "groups": [
     { "id": 17, "visibility": true, "name": "myfirstgroup", "leaves": [0], "groups": [1] },

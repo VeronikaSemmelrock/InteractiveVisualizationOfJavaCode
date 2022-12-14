@@ -58,12 +58,11 @@ var svg = d3
 
 var linksGroup = svg.append("g").attr("class", "links") 
 var nodesGroup = svg.append("g").attr("class", "nodes") 
-//var groupsGroup = svg.append("g").attr("class", "groups")
+var groupsGroup = svg.append("g").attr("class", "groups")
 
 
-
-//configuring appended svg  
-/*svg
+/*//configuring appended svg  
+svg
     .append("svg:defs")
     .append("svg:marker")
     .attr("id", "end-arrow")
@@ -77,6 +76,7 @@ var nodesGroup = svg.append("g").attr("class", "nodes")
     .attr("stroke-width", "0px")
     .attr("fill", "#000");
     */
+    
     
 
 //setting width and height of each node in 
@@ -226,7 +226,7 @@ function redraw(redraw){
             d3Cola.alpha(1); // fire it off again to satify gridify
         })
         .on("click", function(d){
-            testFunc(d); 
+            //testFunc(d); 
         })
 
     var label = insertNodeLabel(); 
@@ -282,6 +282,7 @@ function redraw(redraw){
             });
             
 
+        
         link
             .attr("d", function (d) {
                 var route = cola.makeEdgeBetween(
@@ -303,8 +304,9 @@ function redraw(redraw){
             .attr("y2", function (d) {
                 return d.target.y;
             });
+            
 
-        enterSelection
+        enterSelection 
             .attr("x", function (d) {
                 return d.x - d.width / 2 + pad;
             })
@@ -324,6 +326,7 @@ function redraw(redraw){
             .attr("height", function (d) {
                 return d.bounds.height();
             });
+            
         label
             .attr("x", function (d) {
                 return d.x;
@@ -332,6 +335,7 @@ function redraw(redraw){
                 var h = this.getBBox().height;
                 return d.y + h / 4;
             });
+            
         groupLabel
             .attr("x", function (d) {
                 return d.bounds.x + d.bounds.width() / 2; // calculate x offset by dividing through group width
