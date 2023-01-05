@@ -2,8 +2,8 @@ import data from "./smallgrouped.js"
 const d3 = window.d3
 
 //for window
-var width = 700,
-    height = 700;
+var width = window.innerWidth, // set width to window width
+    height = window.innerHeight; // set height to window height
 var margin = 20,
     pad = 8;
 
@@ -112,13 +112,56 @@ function handleNodeClick(nodeId){
 
 
 function testFunc(d){
+    //working
     var nodesList = d3.selectAll(".node")
     var foundNode = nodesList.filter(function(x){
         return x.name === d.name; 
     })
-    foundNode.remove()
-    console.log("Removed!!!")
-    var enteringNode = d3.select("#diagram").data([{"id": 10, 
+    console.log('global_data', global_data)
+    //foundNode.remove()
+    // foundNode.append("rect").attr("class", "node")
+    // .attr("width", function (d) {
+    //     return d.width - 2 * pad;
+    // })
+    // .attr("height", function (d) {
+    //     return d.height - 2 * pad;
+    // })
+    // .attr("rx", 10) //rounding
+    // .attr("ry", 10)
+    // .style("fill", function (d) {
+    //     return color(d.id);
+    //     //return "00000"; 
+    // })
+    // .attr("name", function(d){//adding id to svg element
+    //     return d.name; 
+    // })
+    // .call(d3Cola.drag)
+    // .on("mouseup", function (d) {
+    //     d.fixed = 0;
+    //     d3Cola.alpha(1); // fire it off again to satify gridify
+    // })
+    // .on("click", function(d){
+    //     testFunc(d); 
+    // })
+
+
+    console.log("Working??!!!")
+
+
+    //does not work at all - call of enter() makes it not work
+    /*var enteringNodeElement = d3.select("#diagram").data([{"id": 10, 
+    "visibility": true,
+    "name": "test",
+    "width": 6,
+    "height": 4}])
+    var enteringNodeSelection = enteringNodeElement.enter().append("rect").style("fill", function (d) {
+        console.log("Working!!!")
+        //return color(d.id);
+        return "00000"; 
+    })*/
+
+    //console.log is calles but styling is wrong
+    /*var enteringNode = d3.select("#diagram").data([{"id": 10, 
     "visibility": true,
     "name": "test",
     "width": 6,
@@ -126,9 +169,44 @@ function testFunc(d){
         console.log("Working!!!")
         //return color(d.id);
         return "00000"; 
-    })
+    })*/
+
+    /*var enteringNode = d3.select("#diagram").data([
+        {"id": 60, 
+        "visibility": true,
+        "name": "test",
+        "width": 95,
+        "height": 95}]).append("rect")
+        .attr("class", "node")
+        .attr("width", function (d) {
+            return d.width - 2 * pad;
+        })
+        .attr("height", function (d) {
+            return d.height - 2 * pad;
+        })
+        .attr("rx", 10) //rounding
+        .attr("ry", 10)
+        .style("fill", function (d) {
+            return color(d.id);
+            //return "00000"; 
+        })
+        .attr("name", function(d){//adding id to svg element
+            return d.name; 
+        })
+        .call(d3Cola.drag)
+        .on("mouseup", function (d) {
+            d.fixed = 0;
+            d3Cola.alpha(1); // fire it off again to satify gridify
+        })
+        .on("click", function(d){
+            console.log("New node is clickable!!") 
+        })*/
+
+
 }
 
+
+// This is the initialize function of the graph
 //(re)drawing of graph 
 function redraw(redraw){
     
@@ -144,13 +222,13 @@ function redraw(redraw){
     //inserting groups into svg 
     var group = svg
         .selectAll(".group")
-        .data(global_data.groups)//binding global_data 
-        .enter()
-        .append("rect")//adding elements 
-        .attr("rx", 8) //how much rounding
-        .attr("ry", 8) //how much rounding
-        .attr("class", "group")
-        .style("fill", function (d, i) {
+        .data(global_data.groups) // adding global_data.groups 
+        .enter() // enter all groups
+        .append("rect")// adding group elements as rects
+        .attr("rx", 8) // set border rounding
+        .attr("ry", 8) // set border rounding
+        .attr("class", "group") // adding group style from style-diagram.css
+        .style("fill", function (d, i) { // adding group file color
             return color(i);
         })
         .call(d3Cola.drag)
@@ -173,7 +251,6 @@ function redraw(redraw){
 
     // WORKING, but exit does not remove proper node, just last node instead of removed node 
     //inserting nodes into svg 
-    
     var nodeElements = svg.selectAll(".node")
     .data(global_data.nodes, function(d) { return d.name })
 
@@ -321,6 +398,7 @@ function redraw(redraw){
         })
         .curve(d3.curveLinear);
 
+    
     //layouting of webcola
     d3Cola.on("tick", function () {
         
