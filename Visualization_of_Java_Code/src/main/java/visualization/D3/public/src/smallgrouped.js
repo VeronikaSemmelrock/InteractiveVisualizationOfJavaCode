@@ -117,8 +117,12 @@ const graph = {
   ],
   "groups": [
     { "id": 17, "visibility": true, "name": "myfirstgroup", "leaves": [0], "groups": [1] },
-    { "id": 18, "visibility": true, "name": "mysecondgroup", "leaves": [1, 7, 2] },
-    { "id": 19, "visibility": true, "name": "mythirdgroup", "leaves": [3, 4] }
+    { "id": 18, "visibility": true, "name": "mysecondgroup", "leaves": [2] },
+    { "id": 19, "visibility": true, "name": "mythirdgroup", "leaves": [3] },
+    { "id": 20, "visibility": true, "name": "myfirstgroup", "leaves": [4] },
+    { "id": 21, "visibility": true, "name": "mysecondgroup", "leaves": [5], "groups": [2, 5, 6] },
+    { "id": 22, "visibility": true, "name": "mythirdgroup", "leaves": [6] },
+    { "id": 23, "visibility": true, "name": "mythirdgroup", "leaves": [7] },
   ]
 }
 
