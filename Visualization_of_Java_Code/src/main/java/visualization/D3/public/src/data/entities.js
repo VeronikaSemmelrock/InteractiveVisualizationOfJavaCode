@@ -1,4 +1,4 @@
-{
+const entities = {
   "testpackage1": {
     "fClasses": [
       {
@@ -5895,3 +5895,5 @@
     "fParentAsString": "null"
   }
 }
+
+export default JSON.parse(entities)
