@@ -12,7 +12,11 @@ function parseAssociationsToLinks(associations, entities){
 }
 
 function parseEntitiesToNodes(entities){
-
+    let groups = []; 
+    let count = 0; 
+    for(let i = 0; i< entities.length; i++){
+        //switch(entities[i].fType)
+    }
 }
 
 export default {parseAssociationsToLinks, parseEntitiesToNodes}

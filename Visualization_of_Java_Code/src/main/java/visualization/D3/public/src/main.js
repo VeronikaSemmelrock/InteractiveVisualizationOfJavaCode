@@ -11,12 +11,10 @@ function parseAssociationsToLinks(associations, entities){
 
     for(let i = 0; i < associationKeys.length; i++){
         const association = associations[associationKeys[i]]
-        // console.log(i)
-        // console.log(association.fFromEntity)
         result.push({
             "id" : i, 
-            "source": entityKeys.findIndex(key => key === association.fFromEntity),
-            "target": entityKeys.findIndex(key => key === association.fToEntitiy),
+            "source": entityKeys.findIndex(key => key === association.fFromEntity.fUniqueName),
+            "target": entityKeys.findIndex(key => key === association.fToEntity.fUniqueName),
             "type" : association.fType}
         ); 
     }
