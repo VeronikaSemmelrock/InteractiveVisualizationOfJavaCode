@@ -5896,4 +5896,4 @@ const entities = {
   }
 }
 
-export default JSON.parse(entities)
+export default entities

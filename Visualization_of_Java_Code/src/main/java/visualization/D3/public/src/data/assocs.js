@@ -5603,4 +5603,4 @@ const associations = {
     }
 }
 
-export default JSON.parse(associations)
+export default associations

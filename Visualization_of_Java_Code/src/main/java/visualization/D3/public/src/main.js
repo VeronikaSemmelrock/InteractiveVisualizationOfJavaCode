@@ -1,5 +1,32 @@
 import data from "./smallgrouped.js"
+//import {parseAssociationsToLinks, parseEntitiesToNodes} from "./parse.js"
+import associations from "./data/assocs.js"
+import entities from "./data/entities.js"
 const d3 = window.d3
+
+function parseAssociationsToLinks(associations, entities){
+    let result = []; 
+    console.log(associations.length)
+    for(let i = 0; i < associations.length; i++){
+        console.log(i)
+        console.log(associations[i].fFromEntity)
+        result.push({
+            "id" : i, 
+            "source": Object.keys(entities).findIndex(key => key === associations[i].fFromEntity),
+            "target": Object.keys(entities).findIndex(key => key === associations[i].fToEntitiy),
+            "type" : associations[i].fType}
+        ); 
+    }
+    return result; 
+}
+
+
+//testcall
+console.log(parseAssociationsToLinks(associations, entities)); 
+
+
+
+
 
 //for window
 var width = window.innerWidth, // set width to window width
@@ -23,6 +50,31 @@ var d3Cola = cola
     // with a minimum spacing set to 150. Specifying the 'x' axis achieves a left-to-right flow layout. The default is top-to-bottom flow layout
     .size([width, height]);
 
+/*
+//for zoom and panning later 
+var container = d3
+    .select("#diagram")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("pointer-events", "all");
+
+container.append('rect')
+    .attr('class', 'background')
+    .attr('width', "100%")
+    .attr('height', "100%")
+    .call(d3.behavior.zoom().on("zoom", redraw));    
+
+var svg = container.append("g"); 
+
+//for zooming panning
+var nodeMouseDown = false;
+
+function redraw() {
+    if (nodeMouseDown) return;
+    svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+}
+*/
 
 //appending svg to container "diagram"
 var svg = d3
@@ -93,6 +145,91 @@ function testFunc(d){
         return x.name === d.name; 
     })
     console.log('global_data', global_data)
+    //foundNode.remove()
+    // foundNode.append("rect").attr("class", "node")
+    // .attr("width", function (d) {
+    //     return d.width - 2 * pad;
+    // })
+    // .attr("height", function (d) {
+    //     return d.height - 2 * pad;
+    // })
+    // .attr("rx", 10) //rounding
+    // .attr("ry", 10)
+    // .style("fill", function (d) {
+    //     return color(d.id);
+    //     //return "00000"; 
+    // })
+    // .attr("name", function(d){//adding id to svg element
+    //     return d.name; 
+    // })
+    // .call(d3Cola.drag)
+    // .on("mouseup", function (d) {
+    //     d.fixed = 0;
+    //     d3Cola.alpha(1); // fire it off again to satify gridify
+    // })
+    // .on("click", function(d){
+    //     testFunc(d); 
+    // })
+
+
+    console.log("Working??!!!")
+
+
+    //does not work at all - call of enter() makes it not work
+    /*var enteringNodeElement = d3.select("#diagram").data([{"id": 10, 
+    "visibility": true,
+    "name": "test",
+    "width": 6,
+    "height": 4}])
+    var enteringNodeSelection = enteringNodeElement.enter().append("rect").style("fill", function (d) {
+        console.log("Working!!!")
+        //return color(d.id);
+        return "00000"; 
+    })*/
+
+    //console.log is calles but styling is wrong
+    /*var enteringNode = d3.select("#diagram").data([{"id": 10, 
+    "visibility": true,
+    "name": "test",
+    "width": 6,
+    "height": 4}]).append("rect").style("fill", function (d) {
+        console.log("Working!!!")
+        //return color(d.id);
+        return "00000"; 
+    })*/
+
+    /*var enteringNode = d3.select("#diagram").data([
+        {"id": 60, 
+        "visibility": true,
+        "name": "test",
+        "width": 95,
+        "height": 95}]).append("rect")
+        .attr("class", "node")
+        .attr("width", function (d) {
+            return d.width - 2 * pad;
+        })
+        .attr("height", function (d) {
+            return d.height - 2 * pad;
+        })
+        .attr("rx", 10) //rounding
+        .attr("ry", 10)
+        .style("fill", function (d) {
+            return color(d.id);
+            //return "00000"; 
+        })
+        .attr("name", function(d){//adding id to svg element
+            return d.name; 
+        })
+        .call(d3Cola.drag)
+        .on("mouseup", function (d) {
+            d.fixed = 0;
+            d3Cola.alpha(1); // fire it off again to satify gridify
+        })
+        .on("click", function(d){
+            console.log("New node is clickable!!") 
+        })*/
+
+
 }
 
 
@@ -169,6 +306,78 @@ function redraw(redraw){
             testFunc(d);
             //handleNodeClick(d.id);
         });
+    
+    //const exitNode = svg.selectAll(".node").data(global_data.nodes).exit().remove()
+    //console.log("exit -- ", svg.selectAll(".node").global_data(nodes).exit())
+    //console.log("remove -- ", svg.selectAll(".node").global_data(nodes).remove())
+
+
+    /*node.transition()
+        .duration(0)
+        .style("fill", function(d,i){return d.color;})
+        .attr("width",function (d) {return d.y; })//d.y;})
+        .attr("height",19);
+    */
+
+    /*
+    //TRIAL
+    var node = svg.selectAll(".node").global_data(global_data.nodes).enter()//changed to default global_data.nodes from nodes
+        .append("rect")
+        .attr("class", "node")
+        .attr("width", function (d) {
+            return d.width - 2 * pad;
+        })
+        .attr("height", function (d) {
+            return d.height - 2 * pad;
+        })
+        .attr("rx", 10) //rounding
+        .attr("ry", 10)
+        .style("fill", function (d) {
+            return color(d.id);
+            //return "00000"; 
+        })
+        .call(d3Cola.drag)
+        .on("mouseup", function (d) {
+            d.fixed = 0;
+            d3Cola.alpha(1); // fire it off again to satify gridify
+        })
+        .on("click", function(d){
+            console.log("Works!")
+            handleNodeClick(d.id);  
+    });  
+    
+    if(redraw){
+        console.log("Redrawing!!")
+        console.log("Full dataset - ", global_data.nodes)
+        console.log("Dataset for drawing -- ", nodes)
+        node = node.global_data(nodes)//updated new dataset
+        node.enter().append("rect")
+        .attr("class", "node")
+        .attr("width", function (d) {
+            return d.width - 2 * pad;
+        })
+        .attr("height", function (d) {
+            return d.height - 2 * pad;
+        })
+        .attr("rx", 10) //rounding
+        .attr("ry", 10)
+        .style("fill", function (d) {
+            //return color(d.id);
+            return "00000"; 
+        })
+        .call(d3Cola.drag)
+        .on("mouseup", function (d) {
+            d.fixed = 0;
+            d3Cola.alpha(1); // fire it off again to satify gridify
+        })
+        .on("click", function(d){
+            console.log("Works!")
+            handleNodeClick(d.id);  
+        });
+        
+        node.exit().remove()
+
+    }*/
     
 
     //inserting labels for nodes into svg
