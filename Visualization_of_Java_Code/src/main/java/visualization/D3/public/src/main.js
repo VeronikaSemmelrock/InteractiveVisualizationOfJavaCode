@@ -9,16 +9,6 @@ var margin = 20,
 
 var global_data = data
 
-//for filtering Test 
-var ds1 = [{x:0,y:12,color:"#123456"},{x:0,y:45, color:"#999999"}, {x:0, y:50, color:"#000000"}];
-var ds2 = [{x:0,y:72, color:"#999999"},{x:0,y:28, color:"#000000"}];
-var ds3 = [{x:0,y:82, color:"#000000"},{x:0,y:18, color:"#999999"}];
-
-var i = 0; 
-var datasamples = [ds1, ds2, ds3];
-var drawingsamples = ds3;  
-
-
 //setting colour scheme
 var color = d3.scaleOrdinal(d3.schemeSet3);
 
@@ -92,30 +82,8 @@ global_data.groups.forEach(function (g) {
 });
 
 
-//update lists so nodes and links only holds global_data that should be drawn (e.g. visibility true) 
-var nodes = updateData(global_data.nodes); 
-var links = updateData(global_data.links);
-//var groups = updateData(graph.groups, nodes);
-//console.log("Groups --> ", groups)
-//start drawing process with global_data 
 redraw(false); 
 
-    
-/* Poosible ways to filter
-.attr("visibility", "hidden");//possibility for hiding/showing, but layout stays the same (not compressed) and labels are still visible 
-.join(//define enter, update and exit functions/behaviour
-    /*function(enter) {
-        return enter.append('circle')
-        .style('opacity', 0.25);
-    },
-
-    function(update) {
-        return update.style('opacity', 1);
-    }, 
-    function(exit) {
-        return exit.remove();
-        }
-)*/
 
 //returns a list of all global_data that should be drawn (nodes or links that have visibility set to true)
 function updateData(datalist){
@@ -135,23 +103,31 @@ function setNodeVisibility(nodeId){
 //handles click by setting visibility of node to false and redrawing 
 function handleNodeClick(nodeId){
     console.log(global_data.nodes);
+
     setNodeVisibility(nodeId)//sets node visibility of node in global_data-list to false 
     global_data.nodes = updateData(global_data.nodes);//updates node list that is used for drawing because global_data list of nodes changed 
     console.log(global_data.nodes);
     // redraw(true); 
 }
 
-/*
-//first incomplete version for setting and updating groups correctly 
-function updateGroups(datalist, nodelist){
-    let result = []; 
-    datalist.forEach(group => {
-        if(group.visibility === true){
-            //check if all leaves in group exist 
-            group.leaves.forEach(leaf )
-        }    
-    });
-}*/
+
+function testFunc(d){
+    var nodesList = d3.selectAll(".node")
+    var foundNode = nodesList.filter(function(x){
+        return x.name === d.name; 
+    })
+    foundNode.remove()
+    console.log("Removed!!!")
+    var enteringNode = d3.select("#diagram").data([{"id": 10, 
+    "visibility": true,
+    "name": "test",
+    "width": 6,
+    "height": 4}]).append("rect").style("fill", function (d) {
+        console.log("Working!!!")
+        //return color(d.id);
+        return "00000"; 
+    })
+}
 
 //(re)drawing of graph 
 function redraw(redraw){
@@ -198,7 +174,10 @@ function redraw(redraw){
     // WORKING, but exit does not remove proper node, just last node instead of removed node 
     //inserting nodes into svg 
     
-    var node = svg.selectAll(".node").data(global_data.nodes).enter()
+    var nodeElements = svg.selectAll(".node")
+    .data(global_data.nodes, function(d) { return d.name })
+
+    var enterSelection = nodeElements.enter()
         .append("rect")
         .attr("class", "node")
         .attr("width", function (d) {
@@ -219,8 +198,9 @@ function redraw(redraw){
             d3Cola.alpha(1); // fire it off again to satify gridify
         })
         .on("click", function(d){
-            console.log("Works!")
-            handleNodeClick(d.id);
+            console.log("WORKS!!!")
+            testFunc(d);
+            //handleNodeClick(d.id);
         });
     
     //const exitNode = svg.selectAll(".node").data(global_data.nodes).exit().remove()
@@ -309,7 +289,7 @@ function redraw(redraw){
         .call(d3Cola.drag);
     
     //appending title to node so when mouse hovers over node title is displayed
-    node.append("title").text(function (d) {
+    enterSelection.append("title").text(function (d) {
         return d.name;
     });
 
@@ -344,7 +324,7 @@ function redraw(redraw){
     //layouting of webcola
     d3Cola.on("tick", function () {
         
-        node
+        enterSelection
             .each(function (d) {
                 d.innerBounds = d.bounds.inflate(-margin);
             })
@@ -384,7 +364,7 @@ function redraw(redraw){
                 return d.target.y;
             });
 
-        node
+        enterSelection
             .attr("x", function (d) {
                 return d.x - d.width / 2 + pad;
             })
