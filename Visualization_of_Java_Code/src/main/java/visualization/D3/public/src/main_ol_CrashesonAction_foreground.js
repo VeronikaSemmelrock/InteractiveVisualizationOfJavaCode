@@ -134,11 +134,10 @@ function setNodeVisibility(nodeId){
 
 //handles click by setting visibility of node to false and redrawing 
 function handleNodeClick(nodeId){
-    console.log(global_data.nodes);
     setNodeVisibility(nodeId)//sets node visibility of node in global_data-list to false 
     global_data.nodes = updateData(global_data.nodes);//updates node list that is used for drawing because global_data list of nodes changed 
     console.log(global_data.nodes);
-    // redraw(true); 
+    redraw(true); 
 }
 
 /*
@@ -197,9 +196,10 @@ function redraw(redraw){
 
     // WORKING, but exit does not remove proper node, just last node instead of removed node 
     //inserting nodes into svg 
-    
-    var node = svg.selectAll(".node").data(global_data.nodes).enter()
-        .append("rect")
+    var nodeElements = svg.selectAll(".node").data(global_data.nodes, function(d) { return d.name })
+
+    // var node = svg.selectAll(".node").data(global_data.nodes).enter()
+    var enterSelection = nodeElements.enter().append("rect")
         .attr("class", "node")
         .attr("width", function (d) {
             return d.width - 2 * pad;
@@ -309,9 +309,9 @@ function redraw(redraw){
         .call(d3Cola.drag);
     
     //appending title to node so when mouse hovers over node title is displayed
-    node.append("title").text(function (d) {
+    /*enterSelection.append("title").text(function (d) {
         return d.name;
-    });
+    });*/
 
     //inserting labels for groups into svg
     var groupLabel = svg
@@ -344,7 +344,7 @@ function redraw(redraw){
     //layouting of webcola
     d3Cola.on("tick", function () {
         
-        node
+        enterSelection
             .each(function (d) {
                 d.innerBounds = d.bounds.inflate(-margin);
             })
@@ -384,7 +384,7 @@ function redraw(redraw){
                 return d.target.y;
             });
 
-        node
+        enterSelection
             .attr("x", function (d) {
                 return d.x - d.width / 2 + pad;
             })
