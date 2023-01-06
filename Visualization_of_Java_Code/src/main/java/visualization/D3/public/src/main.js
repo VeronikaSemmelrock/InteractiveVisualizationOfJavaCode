@@ -114,6 +114,7 @@ function redraw(nodes, links, groups) {
         .on("mouseup", function (d) {
             d.fixed = 0;
             d3Cola.alpha(1); // fire it off again to satify gridify
+        })
         .on('click', function (g) {
             redraw(Node.nodes, Link.links, Node.groups.filter(_g => _g.id !== g.id))
 
