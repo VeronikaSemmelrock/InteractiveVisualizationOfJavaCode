@@ -59,56 +59,56 @@ const graph = {
   ],
   "links": [
     {
-      "id": 9,
+      "id": 0,
       "name": "test",
       "source": 1,
       "target": 7,
       "visibility": true
     },
     {
-      "id": 10,
+      "id": 1,
       "name": "test",
       "source": 7,
       "target": 2,
       "visibility": true
     },
     {
-      "id": 11,
+      "id": 2,
       "name": "test",
       "source": 2,
       "target": 3,
       "visibility": true
     },
     {
-      "id": 12,
+      "id": 3,
       "name": "test",
       "source": 3,
       "target": 4,
       "visibility": true
     },
     {
-      "id": 13,
+      "id": 4,
       "name": "test",
       "source": 0,
       "target": 1,
       "visibility": true
     },
     {
-      "id": 14,
+      "id": 5,
       "name": "test",
       "source": 2,
       "target": 0,
       "visibility": true
     },
     {
-      "id": 15,
+      "id": 6,
       "name": "test",
       "source": 3,
       "target": 5,
       "visibility": true
     },
     {
-      "id": 16,
+      "id": 7,
       "name": "test",
       "source": 0,
       "target": 5,

@@ -7,12 +7,13 @@ import { Node, Link } from "./classes.js"
 
 // importJsonToD3(JSON.stringify({associations, entities}))
 // Load data
-console.log(data.groups)
 data.groups.forEach(group => new Node(group.id, group.name, group.visibility, 'testType', group.leaves, group.groups))
 data.links.forEach(link => new Link(link.id, link.name, link.visibility, link.source, link.target))
 console.log('all data', {
+    internalNodes: Node.internalNodes,
     nodes: Node.nodes,
     groups: Node.groups,
+    internalLinks: Link.internalLinks,
     links: Link.links
 })
 
@@ -70,8 +71,7 @@ svg
 
 
 
-
-redraw(Node.nodes, Link.links, Node.groups)
+redraw(Node.getD3Data())
 
 
 
@@ -88,7 +88,10 @@ redraw(Node.nodes, Link.links, Node.groups)
 
 
 //(re)drawing of graph 
-function redraw(nodes, links, groups) {
+function redraw(D3Data) {
+    console.log("D3 redraw data --> ", D3Data)
+    const { nodes, links, groups } = D3Data
+
     svg.selectAll(".node").remove()
     svg.selectAll(".group").remove()
     svg.selectAll(".link").remove()
@@ -96,7 +99,6 @@ function redraw(nodes, links, groups) {
     svg.selectAll(".grouplabel").remove()
 
 
-    console.log("Nodes in redraw --> ", nodes)
     d3Cola //setting global data in  d3Cola
         .nodes(nodes)
         .links(links)
@@ -122,12 +124,11 @@ function redraw(nodes, links, groups) {
             d3Cola.alpha(1); // fire it off again to satify gridify
         })
         .on('click', function (g) {
-            const initialData = Node.getD3Data()
             console.log('group clicked', g.id)
 
-            const { nodes, links, groups } = Node.hideChildren(g.id)
-            console.log({ nodes, links, groups }, initialData)
-            redraw(nodes, links, groups)
+            const D3Data = Node.hideChildren(g.id)
+            console.log("D3 redraw data --> ", D3Data)
+            // redraw(D3Data)
         })
 
 

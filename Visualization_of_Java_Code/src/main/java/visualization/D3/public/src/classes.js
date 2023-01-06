@@ -15,25 +15,43 @@ export class Link extends Base {
         this.target = target
 
         Link.internalLinks.push(this)
-
-
-        const linkObj = {
-            id,
-            name,
-            source,
-            target
-        }
-        Link.links.push(linkObj)
+        Link.links.push(this.getD3Link())
     }
 
-    static hideLinks(associatedNodeId) {
-        const internalLinks = Link.internalLinks
+    getD3Link() {
+        const visibleD3Nodes = Node.getVisible().visibleNodes
+        const linkObj = {
+            id: this.id,
+            name: this.name,
+            source: Node.getVisibleIndexById(visibleD3Nodes, this.source),
+            target: Node.getVisibleIndexById(visibleD3Nodes, this.target)
+        }
 
-        for (let i = 0; i < internalLinks; i++) {
+        return linkObj
+    }
+
+    static getVisible() {
+        const d3links = []
+        for (const link of Link.internalLinks) {
+            if (link.visibility) {
+                d3links.push(link.getD3Link())
+            }
+        }
+
+        return d3links
+    }
+
+    static hideInternalLinks(associatedNodeId) {
+        const internalLinks = Link.internalLinks
+        // console.log('removing links associated with', associatedNodeId)
+
+        for (let i = 0; i < internalLinks.length; i++) {
             const link = internalLinks[i]
+            // console.log(link, link.source, link.target, associatedNodeId)
+
             if (link.source === associatedNodeId || link.target === associatedNodeId) {
+                // console.log('associated link', link)
                 Link.internalLinks[i].visibility = false // set invisible in link array
-                Link.links.splice(i, 1) // remove link from D3 links
             }
         }
     }
@@ -54,10 +72,10 @@ export class Node extends Base {
         this.type = type
 
         Node.internalNodes.push(this) // data objs for instance methods
-        Node.nodes.push(this.getNodeObj()) // data objs for d3cola
-        Node.groups.push(this.getGroupObj()) // data objs for d3cola
+        Node.nodes.push(this.getD3Node()) // data objs for d3cola
+        Node.groups.push(this.getD3Group()) // data objs for d3cola
     }
-    getNodeObj() {
+    getD3Node() {
         const node = {
             id: this.id,
             name: this.name,
@@ -74,78 +92,92 @@ export class Node extends Base {
 
         return node
     }
-    getGroupObj() {
+    getD3Group() {
+        const visibleD3Nodes = Node.getVisible().visibleNodes
         const group = {
             id: this.id,
             name: this.name,
             visibility: this.visibility,
-            leaves: this.leaves,
-            groups: this.groups
+            leaves: this.leaves.map(leave => Node.getVisibleIndexById(visibleD3Nodes, leave)),
+            groups: this.groups.map(group => Node.getVisibleIndexById(visibleD3Nodes, group))
         }
         // Additional props
         group.padding = 5
 
         return group
     }
+
+    // this function is necessary because D3Cola expects the indices in the link source and target to be the indices of the nodes instead of their ids
+    static getVisibleIndexById(visibleD3Nodes, nodeId){
+        return visibleD3Nodes.findIndex(n => n.id === nodeId)
+    }
     static getD3Data() {
-        return {
-            nodes: Node.nodes,
-            links: Link.links,
-            groups: Node.groups
-        }
+        const obj = Object.create(null)
+        const { visibleNodes, visibleGroups } = Node.getVisible()
+        obj.nodes = visibleNodes.map(n => n.getD3Node())
+        obj.groups = visibleGroups.map(g => g.getD3Group())
+        obj.links = Link.getVisible()
+        return obj
     }
 
     showChildren(nodeId) {
 
     }
     static hideChildren(nodeId) {
-        console.log(Node.internalNodes[nodeId].groups)
-        for (const groupId of Node.internalNodes[nodeId].groups) {
-            Node.hideRecursive(groupId)
+        // console.log(Node.internalNodes[nodeId].groups)
+        // hide internNodes(children)
+        for (const groupNode of Node.internalNodes[nodeId].groups) {
+            Node.hideInternalNodesRecursive(groupNode)
         }
+
         return Node.getD3Data()
     }
     // Recursive function for hiding children of a group
-    static hideRecursive(nodeId) {
-        console.log('internalNodes', Node.internalNodes, nodeId)
+    static hideInternalNodesRecursive(nodeId) {
+        // console.log('internalNodes', Node.internalNodes, nodeId)
         const node = Node.internalNodes[nodeId]
 
         Node.internalNodes[nodeId].visibility = false // hide internal node
-        Node.nodes.splice(nodeId, 1) // remove node from D3 nodes
-        Node.groups.splice(nodeId, 1) // remove group from D3 groups
-        Link.hideLinks(nodeId) // remove links from D3 links
+        Link.hideInternalLinks(nodeId)
 
         // Do the same for all the groups recursively
         const nodeGroups = node.groups
         if (nodeGroups.length !== 0) {
-            for (const groupNodeId of nodeGroups) {
-                Node.hideRecursive(groupNodeId)
+            for (const groupNode of nodeGroups) {
+                Node.hideInternalNodesRecursive(groupNode)
             }
         }
     }
-    // // sets node visibility of node in d3 to false 
-    // setVisible(nodeId) {
-    //     const i = this.getIndexById(nodeId)
-    //     if (i !== -1) {
-    //         this.nodes[i].visibility = false
-    //         this.groups[i].visibility = false
-    //     }
-    //     return this
-    // }
-    // // sets node visibility of node in d3 to true
-    // setInvisible(nodeId) {
-    //     const i = this.getIndexById(nodeId)
-    //     if (i !== -1) {
-    //         this.nodes[i].visibility = true
-    //         this.groups[i].visibility = true
-    //     }
-    //     return this
-    // }
 
-    // //returns a list of all data that should be drawn (nodes or links that have visibility set to true)
-    // static getVisible() {
-    //     const nodes = this.nodes.filter(node => node.visibility)
-    //     const groups = this.groups.filter(group => group.visibility)
-    //     return { nodes, groups }
-    // }
+    //returns a list of all data that should be drawn (nodes or links that have visibility set to true)
+    static getVisible() {
+        const visibleNodes = []
+        const visibleGroups = []
+        const invisibleInternalNodes = []
+        const internalNodes = Node.internalNodes 
+
+        for (const node of internalNodes) {
+            if (node.visibility) {
+                visibleNodes.push(node)
+                visibleGroups.push(node)
+            }
+            else invisibleInternalNodes.push(node)
+        }
+
+        // console.log('invisibleInternalNodes', invisibleInternalNodes, visibleGroups)
+        // remove group array content because otherwise we will get a index undefined error after removing the node
+        for(let i = 0; i < visibleGroups.length; i++){
+            const group = visibleGroups[i]
+            // console.log('unfiltered groups of', group.id, group.groups)
+            // remove groups that dont exist in the array
+            visibleGroups[i].groups = group.groups.filter(group => {
+                const found = invisibleInternalNodes.find(internalNode => group.id === internalNode.id) ? false : true
+                // console.log(group, found)
+                return found
+            })
+            // console.log('filtered groups of', group.id, visibleGroups[i].groups)
+        }
+
+        return { visibleNodes, visibleGroups }
+    }
 }
