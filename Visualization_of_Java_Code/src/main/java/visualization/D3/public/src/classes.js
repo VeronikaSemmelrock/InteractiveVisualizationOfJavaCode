@@ -103,7 +103,7 @@ export class Node extends Base {
         Node.internalNodes[nodeId].visibility = false // hide internal node
         Node.nodes.splice(nodeId, 1) // remove node from D3 nodes
         Node.groups.splice(nodeId, 1) // remove group from D3 groups
-        Link.internalLinks = Link.internalLinks.filter(link => link.source)
+        Link.hideLinks()
 
         const nodeGroups = node.groups
         if(nodeGroups.length !== 0 ){

@@ -1,18 +1,11 @@
 import data from "./smallgrouped.js"
-import { parseAssociationsToLinks, parseEntitiesToNodes } from "./parse.js"
+import importJsonToD3 from "./parse.js"
 import associations from "./data/associations.js"
 import entities from "./data/entities.js"
 import { Node, Link } from "./classes.js"
-const d3 = window.d3
 
 
-
-//for window
-var width = window.innerWidth, // set width to window width
-    height = window.innerHeight; // set height to window height
-var margin = 20,
-    pad = 8;
-
+// importJsonToD3(JSON.stringify({associations, entities}))
 // Load data
 data.groups.forEach(group => new Node(group.id, group.name, group.visibility, 'testType', group.leaves, group.groups))
 data.links.forEach(link => new Link(link.id, link.name, link.visibility, link.source, link.target))
@@ -21,6 +14,18 @@ console.log('all data', {
     groups: Node.groups,
     links: Link.links
 })
+
+
+
+const d3 = window.d3
+
+//for window
+var width = window.innerWidth, // set width to window width
+    height = window.innerHeight; // set height to window height
+var margin = 20,
+    pad = 8;
+
+
 
 //setting colour scheme
 var color = d3.scaleOrdinal(d3.schemeSet3);

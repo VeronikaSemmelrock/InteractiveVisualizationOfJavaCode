@@ -1,4 +1,6 @@
-export function parseAssociationsToLinks(associations, entities){
+import { Link, Node } from "./classes.js";
+
+function parseAssociationsToLinks(associations, entities){
     let result = []; 
     const associationKeys = Object.keys(associations)
     const entityKeys = Object.keys(entities)
@@ -89,4 +91,21 @@ function replaceUniqueNamesWithIndex(list){
     return list; 
 }
 
-export default {parseAssociationsToLinks, parseEntitiesToNodes}
+
+function importJsonToD3(jsonServerData){
+    const {associations, entities} = JSON.parse(jsonServerData)
+
+    const links = parseAssociationsToLinks(associations, entities)
+    const nodes = parseEntitiesToNodes(entities)
+
+    nodes.forEach(node => new Node(node.id, node.name, node.visibility, node.type, node.leaves, node.groups))
+    links.forEach(link => new Link(link.id, link.name, link.visibility, link.source, link.target))
+
+    console.log('successfully imported JSON data', {
+        nodes: Node.nodes,
+        groups: Node.groups,
+        links: Link.links
+    })
+}
+
+export default importJsonToD3
