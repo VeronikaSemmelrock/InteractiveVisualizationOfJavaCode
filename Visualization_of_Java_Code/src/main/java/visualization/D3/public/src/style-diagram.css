@@ -3,6 +3,15 @@
     stroke-width: 1.5px;
     cursor: move;
 }
+.label {
+    fill: white;
+    font-family: Verdana;
+    font-size: 25px;
+    text-anchor: middle;
+    cursor: move;
+}
+
+
 .group {
     stroke: #fff;
     stroke-width: 1.5px;
@@ -15,13 +24,7 @@
     stroke-opacity: 1;
     marker-end: url(#end-arrow);
 }
-.label {
-    fill: white;
-    font-family: Verdana;
-    font-size: 25px;
-    text-anchor: middle;
-    cursor: move;
-}
+
 
 .grouplabel {
     fill: black;

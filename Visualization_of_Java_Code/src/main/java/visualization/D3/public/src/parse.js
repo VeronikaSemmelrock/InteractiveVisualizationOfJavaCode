@@ -1,18 +1,22 @@
-function parseAssociationsToLinks(associations, entities){
+export function parseAssociationsToLinks(associations, entities){
     let result = []; 
-    for(let i = 0; i < associations.length; i++){
+    const associationKeys = Object.keys(associations)
+    const entityKeys = Object.keys(entities)
+
+    for(let i = 0; i < associationKeys.length; i++){
+        const association = associations[associationKeys[i]]
+        // console.log(i)
+        // console.log(association.fFromEntity)
         result.push({
             "id" : i, 
-            "source": Object.keys(entities).findIndex(key => key === associations[i].fFromEntity),
-            "target": Object.keys(entities).findIndex(key => key === associations[i].fToEntitiy),
-            "type" : associations[i].fType}
+            "source": entityKeys.findIndex(key => key === association.fFromEntity),
+            "target": entityKeys.findIndex(key => key === association.fToEntitiy),
+            "type" : association.fType}
         ); 
     }
     return result; 
 }
 
-function parseEntitiesToNodes(entities){
+export function parseEntitiesToNodes(entities){
 
 }
-
-export default {parseAssociationsToLinks, parseEntitiesToNodes}

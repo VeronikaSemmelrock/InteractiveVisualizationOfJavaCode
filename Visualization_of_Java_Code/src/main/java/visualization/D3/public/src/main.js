@@ -1,33 +1,9 @@
 import data from "./smallgrouped.js"
-//import {parseAssociationsToLinks, parseEntitiesToNodes} from "./parse.js"
+import { parseAssociationsToLinks, parseEntitiesToNodes } from "./parse.js"
 import associations from "./data/associations.js"
 import entities from "./data/entities.js"
+import { Node, Link } from "./classes.js"
 const d3 = window.d3
-
-function parseAssociationsToLinks(associations, entities){
-    let result = []; 
-    const associationKeys = Object.keys(associations)
-    const entityKeys = Object.keys(entities)
-
-    for(let i = 0; i < associationKeys.length; i++){
-        const association = associations[associationKeys[i]]
-        // console.log(i)
-        // console.log(association.fFromEntity)
-        result.push({
-            "id" : i, 
-            "source": entityKeys.findIndex(key => key === association.fFromEntity),
-            "target": entityKeys.findIndex(key => key === association.fToEntitiy),
-            "type" : association.fType}
-        ); 
-    }
-    return result; 
-}
-
-
-//testcall
-console.log(parseAssociationsToLinks(associations, entities)); 
-
-
 
 
 
@@ -37,7 +13,14 @@ var width = window.innerWidth, // set width to window width
 var margin = 20,
     pad = 8;
 
-var global_data = data
+// Load data
+data.groups.forEach(group => new Node(group.id, group.name, group.visibility, 'testType', group.leaves, group.groups))
+data.links.forEach(link => new Link(link.id, link.name, link.visibility, link.source, link.target))
+console.log('all data', {
+    nodes: Node.nodes,
+    groups: Node.groups,
+    links: Link.links
+})
 
 //setting colour scheme
 var color = d3.scaleOrdinal(d3.schemeSet3);
@@ -53,31 +36,6 @@ var d3Cola = cola
     // with a minimum spacing set to 150. Specifying the 'x' axis achieves a left-to-right flow layout. The default is top-to-bottom flow layout
     .size([width, height]);
 
-/*
-//for zoom and panning later 
-var container = d3
-    .select("#diagram")
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("pointer-events", "all");
-
-container.append('rect')
-    .attr('class', 'background')
-    .attr('width', "100%")
-    .attr('height', "100%")
-    .call(d3.behavior.zoom().on("zoom", redraw));    
-
-var svg = container.append("g"); 
-
-//for zooming panning
-var nodeMouseDown = false;
-
-function redraw() {
-    if (nodeMouseDown) return;
-    svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
-}
-*/
 
 //appending svg to container "diagram"
 var svg = d3
@@ -103,156 +61,47 @@ svg
     .attr("stroke-width", "0px")
     .attr("fill", "#000");
 
-//setting width and height of each node in 
-global_data.nodes.forEach(function (v) {
-    v.width = v.height = 95;
-});
-global_data.groups.forEach(function (g) {
-    g.padding = 5; //changed from 0.05
-});
 
 
-redraw(false);
 
 
-//returns a list of all global_data that should be drawn (nodes or links that have visibility set to true)
-function updateData(datalist) {
-    return datalist.filter(global_data => global_data.visibility)
-}
-
-//sets node visibility of node in global_data-list to false 
-function setNodeVisibility(nodeId) {
-    global_data.nodes.forEach(node => {
-        if (node.id === nodeId) {
-            node.visibility = false;
-        }
-    });
-    //let node = graph.nodes.filter(node => node.id ===nodeId)
-}
-
-//handles click by setting visibility of node to false and redrawing 
-function handleNodeClick(nodeId) {
-    console.log(global_data.nodes);
-
-    setNodeVisibility(nodeId)//sets node visibility of node in global_data-list to false 
-    global_data.nodes = updateData(global_data.nodes);//updates node list that is used for drawing because global_data list of nodes changed 
-    console.log(global_data.nodes);
-    // redraw(true); 
-}
+redraw(Node.nodes, Link.links, Node.groups)
 
 
-function testFunc(d) {
-    //working
-    var nodesList = d3.selectAll(".node")
-    var foundNode = nodesList.filter(function (x) {
-        return x.name === d.name;
-    })
-    console.log('global_data', global_data)
-    //foundNode.remove()
-    // foundNode.append("rect").attr("class", "node")
-    // .attr("width", function (d) {
-    //     return d.width - 2 * pad;
-    // })
-    // .attr("height", function (d) {
-    //     return d.height - 2 * pad;
-    // })
-    // .attr("rx", 10) //rounding
-    // .attr("ry", 10)
-    // .style("fill", function (d) {
-    //     return color(d.id);
-    //     //return "00000"; 
-    // })
-    // .attr("name", function(d){//adding id to svg element
-    //     return d.name; 
-    // })
-    // .call(d3Cola.drag)
-    // .on("mouseup", function (d) {
-    //     d.fixed = 0;
-    //     d3Cola.alpha(1); // fire it off again to satify gridify
-    // })
-    // .on("click", function(d){
-    //     testFunc(d); 
-    // })
 
 
-    console.log("Working??!!!")
+
+// function testFunc(d) {
+//     //working
+//     var nodesList = d3.selectAll(".node")
+//     var foundNode = nodesList.filter(function (x) {
+//         return x.name === d.name;
+//     })
+//     console.log('global_data', global_data)
+// }
 
 
-    //does not work at all - call of enter() makes it not work
-    /*var enteringNodeElement = d3.select("#diagram").data([{"id": 10, 
-    "visibility": true,
-    "name": "test",
-    "width": 6,
-    "height": 4}])
-    var enteringNodeSelection = enteringNodeElement.enter().append("rect").style("fill", function (d) {
-        console.log("Working!!!")
-        //return color(d.id);
-        return "00000"; 
-    })*/
-
-    //console.log is calles but styling is wrong
-    /*var enteringNode = d3.select("#diagram").data([{"id": 10, 
-    "visibility": true,
-    "name": "test",
-    "width": 6,
-    "height": 4}]).append("rect").style("fill", function (d) {
-        console.log("Working!!!")
-        //return color(d.id);
-        return "00000"; 
-    })*/
-
-    /*var enteringNode = d3.select("#diagram").data([
-        {"id": 60, 
-        "visibility": true,
-        "name": "test",
-        "width": 95,
-        "height": 95}]).append("rect")
-        .attr("class", "node")
-        .attr("width", function (d) {
-            return d.width - 2 * pad;
-        })
-        .attr("height", function (d) {
-            return d.height - 2 * pad;
-        })
-        .attr("rx", 10) //rounding
-        .attr("ry", 10)
-        .style("fill", function (d) {
-            return color(d.id);
-            //return "00000"; 
-        })
-        .attr("name", function(d){//adding id to svg element
-            return d.name; 
-        })
-        .call(d3Cola.drag)
-        .on("mouseup", function (d) {
-            d.fixed = 0;
-            d3Cola.alpha(1); // fire it off again to satify gridify
-        })
-        .on("click", function(d){
-            console.log("New node is clickable!!") 
-        })*/
-
-
-}
-
-
-// This is the initialize function of the graph
 //(re)drawing of graph 
-function redraw(redraw) {
+function redraw(nodes, links, groups) {
+    svg.selectAll(".node").remove()
+    svg.selectAll(".group").remove()
+    svg.selectAll(".link").remove()
+    svg.selectAll(".label").remove()
+    svg.selectAll(".grouplabel").remove()
 
 
-    console.log("Nodes in redraw --> ", global_data.nodes)
-    d3Cola //setting global_data into d3Cola
-        .nodes(global_data.nodes)
-        .links(global_data.links)
-        .groups(global_data.groups)
+    console.log("Nodes in redraw --> ", nodes)
+    d3Cola //setting global data in  d3Cola
+        .nodes(nodes)
+        .links(links)
+        .groups(groups)
         .start(50, 0, 50);
 
 
     //inserting groups into svg 
     var group = svg
         .selectAll(".group")
-        .data(global_data.groups) // adding global_data.groups 
+        .data(groups) // adding Node.groups 
         .enter() // enter all groups
         .append("rect")// adding group elements as rects
         .attr("rx", 8) // set border rounding
@@ -265,13 +114,18 @@ function redraw(redraw) {
         .on("mouseup", function (d) {
             d.fixed = 0;
             d3Cola.alpha(1); // fire it off again to satify gridify
-        });
+        })
+        .on('click', function (g) {
+            redraw(Node.nodes, Link.links, Node.groups.filter(_g => _g.id !== g.id))
+
+            console.log('group clicked', g)
+        })
 
 
     //inserting links into svg
     var link = svg
         .selectAll(".link")
-        .data(global_data.links)
+        .data(links)
         .enter()
         .append("path") //arrows, line would make lines
         .attr("class", "link");
@@ -283,7 +137,7 @@ function redraw(redraw) {
     //inserting nodes into svg 
     var nodeElements = svg
         .selectAll(".node")
-        .data(global_data.nodes, function (d) { return d.name })
+        .data(nodes, function (d) { return d.name })
 
     var enterSelection = nodeElements.enter()
         .append("rect")
@@ -297,32 +151,33 @@ function redraw(redraw) {
         .attr("rx", 10) //rounding
         .attr("ry", 10)
         .style("fill", function (d) {
-            return color(d.id);
-            //return "00000"; 
+            // return color(d.id);
+            return "transparent";
         })
         .call(d3Cola.drag)
-        .on("mouseup", function (d) {
-            d.fixed = 0;
-            d3Cola.alpha(1); // fire it off again to satify gridify
-        })
-        .on("click", function (d) {
-            console.log("WORKS!!!")
-            testFunc(d);
-            //handleNodeClick(d.id);
-        });
+    // .on("mouseup", function (d) {
+    //     d.fixed = 0;
+    //     d3Cola.alpha(1); // fire it off again to satify gridify
+    // })
+    // .on("click", function (d) {
+    //     console.log("WORKS!!!")
+    //     testFunc(d);
+    //     //handleNodeClick(d.id);
+    // });
 
 
     //inserting labels for nodes into svg
     var label = svg
         .selectAll(".label")
-        .data(global_data.nodes)
+        .data(nodes)
         .enter()
         .append("text")
         .attr("class", "label")
         .text(function (d) {
             return d.name;
         })
-        .call(d3Cola.drag);
+        .call(d3Cola.drag); // text also triggers drag event
+
 
     //appending title to node so when mouse hovers over node title is displayed
     enterSelection
@@ -334,14 +189,14 @@ function redraw(redraw) {
     //inserting labels for groups into svg
     var groupLabel = svg
         .selectAll(".grouplabel")
-        .data(global_data.groups)
+        .data(groups)
         .enter()
         .append("text")
         .attr("class", "grouplabel")
         .text(function (d) {
             return d.name;
         })
-        .call(d3Cola.drag);
+        .call(d3Cola.drag); // text also triggers drag event
 
     //appending title to group so when mouse hovers over node title is displayed
     group
@@ -370,7 +225,9 @@ function redraw(redraw) {
                 d.innerBounds = d.bounds.inflate(-margin);
             })
             .attr("x", function (d) {
+                // console.log('enterSelection x', d)
                 return d.innerBounds.x;
+                // return d.parent
             })
             .attr("y", function (d) {
                 return d.innerBounds.y;
@@ -433,6 +290,8 @@ function redraw(redraw) {
                 var h = this.getBBox().height;
                 return d.y + h / 4;
             });
+
+
         groupLabel
             .attr("x", function (d) {
                 return d.bounds.x + d.bounds.width() / 2; // calculate x offset by dividing through group width

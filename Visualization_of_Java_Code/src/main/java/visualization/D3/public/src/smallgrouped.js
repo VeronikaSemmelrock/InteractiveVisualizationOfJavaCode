@@ -1,60 +1,60 @@
 const graph = {
   "nodes": [
     {
-      "id": 1, 
+      "id": 0, 
       "visibility": true,
       "name": "a",
-      "width": 60,
-      "height": 40
+      "width": 200,
+      "height": 100
+    },
+    {
+      "id": 1, 
+      "visibility": true,
+      "name": "b",
+      "width": 200,
+      "height": 100
     },
     {
       "id": 2, 
       "visibility": true,
-      "name": "b",
-      "width": 60,
-      "height": 40
+      "name": "c",
+      "width": 200,
+      "height": 100
     },
     {
       "id": 3, 
       "visibility": true,
-      "name": "c",
-      "width": 60,
-      "height": 40
+      "name": "d",
+      "width": 200,
+      "height": 100
     },
     {
-      "id": 4, 
+      "id": 4,  
       "visibility": true,
-      "name": "d",
-      "width": 60,
-      "height": 40
+      "name": "e",
+      "width": 200,
+      "height": 100
     },
     {
       "id": 5,  
       "visibility": true,
-      "name": "e",
-      "width": 60,
-      "height": 40
+      "name": "f",
+      "width": 200,
+      "height": 100
     },
     {
       "id": 6,  
       "visibility": true,
-      "name": "f",
-      "width": 60,
-      "height": 40
-    },
-    {
-      "id": 7,  
-      "visibility": true,
       "name": "g",
-      "width": 60,
-      "height": 40
+      "width": 200,
+      "height": 100
     },
     {
-      "id": 8, 
+      "id": 7, 
       "visibility": true,
       "name": "bc",
-      "width": 60,
-      "height": 10
+      "width": 200,
+      "height": 100
     }
   ],
   "links": [
@@ -116,13 +116,14 @@ const graph = {
     }
   ],
   "groups": [
-    { "id": 17, "visibility": true, "name": "myfirstgroup", "leaves": [0], "groups": [1] },
-    { "id": 18, "visibility": true, "name": "mysecondgroup", "leaves": [2] },
-    { "id": 19, "visibility": true, "name": "mythirdgroup", "leaves": [3] },
-    { "id": 20, "visibility": true, "name": "myfirstgroup", "leaves": [4] },
-    { "id": 21, "visibility": true, "name": "mysecondgroup", "leaves": [5], "groups": [2, 5, 6] },
-    { "id": 22, "visibility": true, "name": "mythirdgroup", "leaves": [6] },
-    { "id": 23, "visibility": true, "name": "mythirdgroup", "leaves": [7] },
+    { "id": 0, "visibility": true, "name": "group0", "leaves": [0], "groups": [1] },
+    { "id": 1, "visibility": true, "name": "group1", "leaves": [1] },
+    { "id": 2, "visibility": true, "name": "group2", "leaves": [2] },
+    { "id": 3, "visibility": true, "name": "group3", "leaves": [3] },
+    { "id": 4, "visibility": true, "name": "group4", "leaves": [4], "groups": [2, 5, 6] },
+    { "id": 5, "visibility": true, "name": "group5", "leaves": [5] },
+    { "id": 6, "visibility": true, "name": "group6", "leaves": [6] },
+    { "id": 7, "visibility": true, "name": "group7", "leaves": [7] },
   ]
 }
 
