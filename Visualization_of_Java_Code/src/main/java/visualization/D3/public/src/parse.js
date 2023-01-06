@@ -1,4 +1,4 @@
-function parseAssociationsToLinks(associations, entities){
+export function parseAssociationsToLinks(associations, entities){
     let result = []; 
     const associationKeys = Object.keys(associations)
     const entityKeys = Object.keys(entities)
