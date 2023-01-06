@@ -117,13 +117,13 @@ const graph = {
   ],
   "groups": [
     { "id": 0, "visibility": true, "name": "group0", "leaves": [0], "groups": [1] },
-    { "id": 1, "visibility": true, "name": "group1", "leaves": [1] },
-    { "id": 2, "visibility": true, "name": "group2", "leaves": [2] },
-    { "id": 3, "visibility": true, "name": "group3", "leaves": [3] },
+    { "id": 1, "visibility": true, "name": "group1", "leaves": [1], "groups": [] },
+    { "id": 2, "visibility": true, "name": "group2", "leaves": [2], "groups": [] },
+    { "id": 3, "visibility": true, "name": "group3", "leaves": [3], "groups": [] },
     { "id": 4, "visibility": true, "name": "group4", "leaves": [4], "groups": [2, 5, 6] },
-    { "id": 5, "visibility": true, "name": "group5", "leaves": [5] },
-    { "id": 6, "visibility": true, "name": "group6", "leaves": [6] },
-    { "id": 7, "visibility": true, "name": "group7", "leaves": [7] },
+    { "id": 5, "visibility": true, "name": "group5", "leaves": [5], "groups": [] },
+    { "id": 6, "visibility": true, "name": "group6", "leaves": [6], "groups": [] },
+    { "id": 7, "visibility": true, "name": "group7", "leaves": [7], "groups": [] },
   ]
 }
 

@@ -7,6 +7,7 @@ import { Node, Link } from "./classes.js"
 
 // importJsonToD3(JSON.stringify({associations, entities}))
 // Load data
+console.log(data.groups)
 data.groups.forEach(group => new Node(group.id, group.name, group.visibility, 'testType', group.leaves, group.groups))
 data.links.forEach(link => new Link(link.id, link.name, link.visibility, link.source, link.target))
 console.log('all data', {
@@ -121,9 +122,12 @@ function redraw(nodes, links, groups) {
             d3Cola.alpha(1); // fire it off again to satify gridify
         })
         .on('click', function (g) {
-            redraw(Node.nodes, Link.links, Node.groups.filter(_g => _g.id !== g.id))
+            const initialData = Node.getD3Data()
+            console.log('group clicked', g.id)
 
-            console.log('group clicked', g)
+            const { nodes, links, groups } = Node.hideChildren(g.id)
+            console.log({ nodes, links, groups }, initialData)
+            redraw(nodes, links, groups)
         })
 
 
