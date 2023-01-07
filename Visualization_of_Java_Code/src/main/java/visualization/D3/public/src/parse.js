@@ -1,4 +1,5 @@
-import { Link, Node } from "./classes.js";
+import Node from "./classes/Node.js";
+import Link from "./classes/Link.js";
 
 function parseAssociationsToLinks(associations, entities){
     let result = []; 

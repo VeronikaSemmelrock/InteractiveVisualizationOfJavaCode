@@ -1,83 +1,9 @@
-class Base {
-    constructor(id, name, visibility) {
-        this.id = id
-        this.name = name
-        this.visibility = visibility
-    }
-}
-export class Link extends Base {
-    static internalLinks = [] // class-based link array for changing links array with class methods
-    static links = [] // D3cola link array
-
-    constructor(id, name, visibility, source, target) {
-        super(id, name, visibility)
-        this.source = source
-        this.target = target
-
-        Link.internalLinks.push(this)
-        Link.links.push(this.getD3Link())
-    }
-
-    getD3Link(newVisibleD3Nodes) {
-        const linkObj = {
-            id: this.id,
-            name: this.name,
-        }
-        if (newVisibleD3Nodes) {
-            linkObj.source = Node.getVisibleIndexById(newVisibleD3Nodes, this.source)
-            linkObj.target = Node.getVisibleIndexById(newVisibleD3Nodes, this.target)
-        }
-        else {
-            linkObj.source = this.source
-            linkObj.target = this.target
-        }
-
-        return linkObj
-    }
-
-    static resetInternalLinks() {
-        const oldInternalLinks = Link.internalLinks.slice(0) // create new array
-        Link.internalLinks = []
-        oldInternalLinks.forEach(l => new Link(
-            l.id,
-            l.name,
-            l.visibility,
-            l.source.id,
-            l.target.id
-        ))
-    }
-    static getVisibleD3Links(visibleD3Nodes) {
-        const d3links = []
-        for (const link of Link.internalLinks) {
-            if (link.visibility) {
-                // console.log('link is visible', link)
-                d3links.push(link.getD3Link(visibleD3Nodes))
-            }
-        }
-
-        console.log('visibleD3Links', d3links)
-        return d3links
-    }
-
-    static hideInternalLinks(associatedNodeId) {
-        const internalLinks = Link.internalLinks
-        // console.log('removing links associated with', associatedNodeId)
-
-        for (let i = 0; i < internalLinks.length; i++) {
-            const link = internalLinks[i]
-            // console.log(link, link.source, link.target, associatedNodeId)
-
-            if (link.source === associatedNodeId || link.target === associatedNodeId) {
-                // console.log('associated link', link)
-                Link.internalLinks[i].visibility = false // set invisible in link array
-            }
-        }
-    }
-}
+import Base from "./Base.js"
+import Link from "./Link.js"
 
 // This class represents a group and its node in the context of webcola
 // webcola nodes can have links but only groups can group nodes or other groups, thus a group always only contains one node for the link
-export class Node extends Base {
+export default class Node extends Base {
     static internalNodes = [] // class-based node array for changing groups and nodes arrays with class methods
     static nodes = [] // D3cola nodes array
     static groups = [] // D3cola groups array
@@ -145,28 +71,43 @@ export class Node extends Base {
     }
 
 
-    showChildren(nodeId) {
-
-    }
     static resetInternalNodes() {
         // normalize all internalNodes because D3 fucks with the array
         const oldInternalNodes = Node.internalNodes.slice(0) // create new array
         Node.internalNodes = []
+        function getPotentialObjId(numberOrObj){
+            if(typeof numberOrObj === 'number') return numberOrObj
+            else return numberOrObj.id
+        }
 
         oldInternalNodes.forEach(n => new Node(
             n.id,
             n.name,
             n.visibility,
             n.type,
-            n.leaves.map(l => l.id),
-            n.groups.map(g => g.id)
+            n.leaves.map(getPotentialObjId),
+            n.groups.map(getPotentialObjId)
         ))
     }
+    static resetInternalData(){
+        Node.resetInternalNodes()
+        Link.resetInternalLinks()
+        // console.log('internalNodes', Node.internalNodes)
+        // console.log('internalLinks', Link.internalLinks)
+    }
+
+
+    showChildren(nodeId) {
+        Node.resetInternalData()
+    }
+
+
+
+
     static hideChildren(nodeId) {
         // console.log(Node.internalNodes[nodeId].groups)
-        Node.resetInternalNodes()
-        // Link.resetInternalLinks() // links do not have to be reset because they dont get reset by D3 for some reason
-        
+        Node.resetInternalData()
+
         // hide internNodes(children)
         for (const groupNode of Node.internalNodes[nodeId].groups) {
             Node.hideInternalDataRecursive(groupNode)
@@ -204,9 +145,8 @@ export class Node extends Base {
         const visibleD3Nodes = []
         const visibleInternalNodes = []
         const invisibleInternalNodes = []
-        const internalNodes = Node.internalNodes
 
-        for (const node of internalNodes) {
+        for (const node of Node.internalNodes) {
             if (node.visibility) {
                 visibleD3Nodes.push(node.getD3Node())
                 visibleInternalNodes.push(node) // save as internalNode because we need the getD3Group after we filtered the invisible groups from it

@@ -2,8 +2,8 @@ import data from "./smallgrouped.js"
 import importJsonToD3 from "./parse.js"
 import associations from "./data/associations.js"
 import entities from "./data/entities.js"
-import { Node, Link } from "./classes.js"
-
+import Node from "./classes/Node.js"
+import Link from "./classes/Link.js"
 
 // importJsonToD3(JSON.stringify({associations, entities}))
 // Load data
