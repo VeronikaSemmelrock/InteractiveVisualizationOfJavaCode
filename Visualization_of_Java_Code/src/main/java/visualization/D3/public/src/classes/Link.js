@@ -54,7 +54,9 @@ export default class Link extends Base {
         return d3links
     }
 
-    static hideInternalLinks(associatedNodeId) {
+    // When setting visiblity to hidden this function filters all links
+    // Not taking into account links that have connections to outside --> they have to be repathed with the below functions
+    static setInternalLinksVisibility(associatedNodeId, visibility) {
         const internalLinks = Link.internalLinks
         // console.log('removing links associated with', associatedNodeId)
 
@@ -64,8 +66,26 @@ export default class Link extends Base {
 
             if (link.source === associatedNodeId || link.target === associatedNodeId) {
                 // console.log('associated link', link)
-                Link.internalLinks[i].visibility = false // set invisible in link array
+                Link.internalLinks[i].visibility = visibility // set invisible in link array
             }
         }
+    }
+
+    // This functions gets all links that need to be repathed alongside the key that needs to be repathed('source' or 'target')
+    static getInternalRepathLinks(invisibleInternalNodes){
+        const internalRepathLinkObjs = []
+
+        const linksForPotentialRepath = Link.internalLinks.filter(l => !l.visibility) // invisible links
+        for(const link of linksForPotentialRepath){
+            const sourceIsInvisibleInternalNode = invisibleInternalNodes.find(n => n.id === link.source)
+            const targetIsInvisibleInternalNode = invisibleInternalNodes.find(n => n.id === link.target)
+            if(!(sourceIsInvisibleInternalNode && targetIsInvisibleInternalNode)){ // if either link or source is not an invisibleInternalNode we gotta repath the link to the first parent node that is visible
+                Link.internalLinks[link.id].visibility = true
+                if(sourceIsInvisibleInternalNode) internalRepathLinkObjs.push({link, key: 'source'}) // repath link source to parent
+                else internalRepathLinkObjs.push({link, key: 'target'}) // repath link target to parent
+            }
+        }
+
+        return internalRepathLinkObjs
     }
 }

@@ -126,9 +126,11 @@ function redraw(D3Data) {
         .on('click', function (g) {
             console.log('group clicked', g.id)
 
-            const D3Data = Node.hideChildren(g.id)
-            console.log("D3 redraw data --> ", D3Data)
-            redraw(D3Data)
+            const D3Data = Node.toggleChildrenVisibility(g.id)
+            if (D3Data) { // if no D3Data is returned a redraw is not necessary
+                console.log("D3 redraw data --> ", D3Data)
+                redraw(D3Data)
+            }
         })
 
 
