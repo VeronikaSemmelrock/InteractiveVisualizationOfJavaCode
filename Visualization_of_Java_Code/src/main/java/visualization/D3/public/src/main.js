@@ -128,7 +128,7 @@ function redraw(D3Data) {
 
             const D3Data = Node.hideChildren(g.id)
             console.log("D3 redraw data --> ", D3Data)
-            // redraw(D3Data)
+            redraw(D3Data)
         })
 
 
