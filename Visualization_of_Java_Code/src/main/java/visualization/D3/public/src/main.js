@@ -5,17 +5,17 @@ import entities from "./data/entities.js"
 import Node from "./classes/Node.js"
 import Link from "./classes/Link.js"
 
-// importJsonToD3(JSON.stringify({associations, entities}))
+importJsonToD3(JSON.stringify({associations, entities}))
 // Load data
-data.groups.forEach(group => new Node(group.id, group.name, group.visibility, 'testType', group.leaves, group.groups))
-data.links.forEach(link => new Link(link.id, link.name, link.visibility, link.source, link.target))
-console.log('all data', {
-    internalNodes: Node.internalNodes,
-    nodes: Node.nodes,
-    groups: Node.groups,
-    internalLinks: Link.internalLinks,
-    links: Link.links
-})
+// data.groups.forEach(group => new Node(group.id, group.name, group.visibility, 'testType', group.leaves, group.groups))
+// data.links.forEach(link => new Link(link.id, link.name, link.visibility, link.source, link.target))
+// console.log('all data', {
+//     internalNodes: Node.internalNodes,
+//     nodes: Node.nodes,
+//     groups: Node.groups,
+//     internalLinks: Link.internalLinks,
+//     links: Link.links
+// })
 
 
 
@@ -74,7 +74,13 @@ svg
 redraw(Node.getD3Data())
 
 
+// setTimeout(() => {
+//     Node.toggleTypeVisibility('class')
+// }, 5000)
 
+// setTimeout(() => {
+//     Node.toggleTypeVisibility('class')
+// }, 45000)
 
 
 // function testFunc(d) {

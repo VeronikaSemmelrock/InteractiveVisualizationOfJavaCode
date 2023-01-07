@@ -13,7 +13,7 @@ function parseAssociationsToLinks(associations, entities){
             "source": entityKeys.findIndex(key => key === association.fFromEntity.fUniqueName),
             "target": entityKeys.findIndex(key => key === association.fToEntity.fUniqueName),
             "type" : association.fType, 
-            "visibiity" : true}
+            "visibility" : true}
         ); 
     }
     return result; 
@@ -53,7 +53,7 @@ function parseEntitiesToNodes(entities){
         const temp = { 
             id: i,
             visibility: true,
-            uniqueName: entity.fUniqueName,
+            name: entity.fUniqueName,
             leaves: [i],
             groups: test 
         };
@@ -84,7 +84,7 @@ function replaceUniqueNamesWithIndex(list){
         const children = list[i].groups; 
         for(let j = 0; j < children.length; j++){//go through each child of the group
             //add the index of the child to the list indexesChildren
-            indexesChildren.push(list.findIndex(node => node.uniqueName === children[j]))
+            indexesChildren.push(list.findIndex(node => node.name === children[j]))
         }
         //replace the list with uniqueNames with the list of indexes
         list[i].groups = indexesChildren; 

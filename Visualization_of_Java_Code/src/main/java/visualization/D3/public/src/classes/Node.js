@@ -28,8 +28,8 @@ export default class Node extends Base {
         }
 
         // additional props
-        node.width = 200 // set status width and height
-        node.height = 100
+        node.width = 50 // set status width and height
+        node.height = 25
         //node.fill = TODO - get from type
         //node.rx = TODO - get from type
         //node.ry = TODO - get from type
@@ -105,7 +105,7 @@ export default class Node extends Base {
             const n = Node.internalNodes[i]
 
             if (n.type === type) {
-                Node.internalNodes[i].visibility = !n.visibility // use inverse of what is currently set 
+                this.toggleChildrenVisibility(n.id)
             }
         }
 
