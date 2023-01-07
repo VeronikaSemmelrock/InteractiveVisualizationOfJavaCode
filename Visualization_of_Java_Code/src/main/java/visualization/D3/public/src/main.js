@@ -124,13 +124,9 @@ function redraw(D3Data) {
             d3Cola.alpha(1); // fire it off again to satify gridify
         })
         .on('click', function (g) {
-            console.log('group clicked', g.id)
-
+            // console.log('group clicked', g.id)
             const D3Data = Node.toggleChildrenVisibility(g.id)
-            if (D3Data) { // if no D3Data is returned a redraw is not necessary
-                console.log("D3 redraw data --> ", D3Data)
-                redraw(D3Data)
-            }
+            if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
         })
 
 
