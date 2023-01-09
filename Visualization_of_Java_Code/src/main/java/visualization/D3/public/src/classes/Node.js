@@ -32,8 +32,8 @@ export default class Node extends Base {
         }
 
         // additional props
-        node.width = 200 // set status width and height
-        node.height = 100
+        node.width = 50 // set status width and height
+        node.height = 25
         //node.fill = TODO - get from type
         //node.rx = TODO - get from type
         //node.ry = TODO - get from type

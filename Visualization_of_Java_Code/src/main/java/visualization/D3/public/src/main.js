@@ -22,18 +22,17 @@ importJsonToD3(JSON.stringify({ associations, entities }))
 const d3 = window.d3
 
 //for window
-var width = window.innerWidth, // set width to window width
+const width = window.innerWidth, // set width to window width
     height = window.innerHeight; // set height to window height
-var margin = 20,
-    pad = 8;
+
 
 
 
 //setting colour scheme
-var color = d3.scaleOrdinal(d3.schemeSet3);
+const color = d3.scaleOrdinal(d3.schemeSet3);
 
 //configuring webcola
-var d3Cola = cola
+const d3Cola = cola
     .d3adaptor(d3)
     .linkDistance(100)
     .avoidOverlaps(true)
@@ -45,32 +44,39 @@ var d3Cola = cola
 
 
 //appending svg to container "diagram"
-var svg = d3
+const svg = d3
     .select("#diagram")
     .append("svg")
     .attr("viewBox", [0, 0, width, height])
 // .attr("width", width)
 // .attr("height", height)
+const g = svg.append('g');
+
 
 // Configure zoom
-svg.call(d3.zoom()
-    .extent([0, 0], [width, height])
-    .scaleExtent([1, 1000])
-    .on("zoom", function (e, x, b, y, z) {
-        console.log('zooming', e, x, b, z, y)
-        const transform = d3.zoomTransform()
-        // svg.attr("transform", transform)
-        // .attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
+const zoom = d3.zoom()
+
+svg.call(zoom
+    .extent([[0, 0], [width, height]])
+    .scaleExtent([1, 8])
+    // .translateExtent([[0, 0], [width, height]])
+    .on("zoom", function () {
+        const transform = d3.zoomTransform(this)
+        console.log('zooming', transform, transform.x - width / 2, transform.y - height / 2)
+        g.attr("transform", "translate(" + transform.x + "," + transform.y + ") scale(" + transform.k + ")");
     }))
+    .on("dblclick.zoom", null)
+
+function zoomOnClick(x, y) {
+    // e.stopPropagation();
+    svg.transition().duration(750).call(
+        zoom.transform,
+        d3.zoomIdentity.translate(width / 2, height / 2).scale(3).translate(-x, -y)//,
+        // d3.pointer(e)
+    );
+}
 
 
-// let transform
-// const zoom = d3.zoom().on("zoom", function (e) {
-//     svg.attr("transform", (transform = e.transform))
-//     console.log('transform', transform.k)
-// })
-
-const g = svg.append('g');
 
 //configuration for arrow heads
 g
@@ -90,11 +96,8 @@ g
 
 
 
-
-
-redraw(Node.getD3Data())
-
-
+const delimiters = ['.', '^', '\'', '#', '$']
+const delimiterRegex = /[\.\^\'\#\$]/g
 // setTimeout(() => {
 //     const D3Data = Node.toggleTypeVisibility('method')
 //     if(D3Data) redraw(D3Data)
@@ -104,6 +107,12 @@ redraw(Node.getD3Data())
 //     const D3Data = Node.toggleTypeVisibility('method')
 //     if(D3Data) redraw(D3Data)
 // }, 45000)
+
+
+
+redraw(Node.getD3Data())
+
+
 
 
 
@@ -121,6 +130,36 @@ function redraw(D3Data) {
     g.selectAll(".grouplabel").remove()
 
 
+
+    const constraints = [
+        { "type": "alignment", "axis": "x", "offsets": [/* { "node": "0", "offset": "0" } */] },
+        { "type": "alignment", "axis": "y", "offsets": [/* { "node": "0", "offset": "0" } */] }
+    ]
+    let xOffsets = 0
+    let yOffsets = 0
+
+    for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i]
+        const level = node.name.split(delimiterRegex).length
+        console.log('node', node, level)
+        if (level === 1) {
+            constraints[0].offsets.push({node: i, offset: 0})
+        }
+        else {
+            constraints[1].offsets.push({node: i, offset: 0})
+        }
+    }
+
+
+    // console.log("Nodes in redraw --> ", nodes)
+    d3Cola //setting global data in  d3Cola
+        .nodes(nodes)
+        .links(links)
+        .groups(groups)
+        // .constraints(constraints)
+        .start(50, 0, 50);
+
+
     //adding links first so they are in background 
     //inserting links into g
     var link = g
@@ -132,14 +171,6 @@ function redraw(D3Data) {
         .style("stroke", "#000")
         .attr('marker-end', (d) => "url(#end-arrow)")//attach the arrow from defs to the END of the path
         .style("stroke-width", 4);//stroke width of link
-
-
-    // console.log("Nodes in redraw --> ", nodes)
-    d3Cola //setting global data in  d3Cola
-        .nodes(nodes)
-        .links(links)
-        .groups(groups)
-        .start(50, 0, 50);
 
 
     //inserting groups into g 
@@ -155,15 +186,15 @@ function redraw(D3Data) {
             return color(i);
         })
         .call(d3Cola.drag)
-        .on("mouseup", function (d) {
-            d.fixed = 0;
-            d3Cola.alpha(1); // fire it off again to satify gridify
-        })
-        .on('click', function (g) {
-            // console.log('group clicked', g.id)
-            const D3Data = Node.toggleChildrenVisibility(g.id)
-            if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
-        })
+    // .on("mouseup", function (d) {
+    //     d.fixed = 0;
+    //     d3Cola.alpha(1); // fire it off again to satify gridify
+    // })
+    // .on('click', function (g) {
+    //     // console.log('group clicked', g.id)
+    //     const D3Data = Node.toggleChildrenVisibility(g.id)
+    //     if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
+    // })
 
 
 
@@ -177,7 +208,9 @@ function redraw(D3Data) {
         .selectAll(".node")
         .data(nodes, function (d) { return d.name })
 
-    var enterSelection = nodeElements.enter()
+
+    let waitForDoubleClick = null
+    var enteredNodeElements = nodeElements.enter()
         .append("rect")
         .attr("class", "node")
         .attr("width", function (d) {
@@ -193,20 +226,23 @@ function redraw(D3Data) {
             return "transparent";
         })
         .call(d3Cola.drag)
-        .on('click', function (g) {
-            // console.log('group clicked', g.id)
-            const D3Data = Node.toggleChildrenVisibility(g.id)
-            if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
+        .on("click", function (node) {
+            if (waitForDoubleClick != null) {
+                clearTimeout(waitForDoubleClick)
+                waitForDoubleClick = null
+
+                // console.log('node clicked', node.id)
+                const D3Data = Node.toggleChildrenVisibility(node.id)
+                if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
+            } else {
+                waitForDoubleClick = setTimeout(() => {
+                    const { x, y } = node
+                    zoomOnClick(x, y)
+                    waitForDoubleClick = null
+                }, 100)
+            }
         })
-    // .on("mouseup", function (d) {
-    //     d.fixed = 0;
-    //     d3Cola.alpha(1); // fire it off again to satify gridify
-    // })
-    // .on("click", function (d) {
-    //     console.log("WORKS!!!")
-    //     testFunc(d);
-    //     //handleNodeClick(d.id);
-    // });
+
 
 
     //inserting labels for nodes into g
@@ -223,7 +259,7 @@ function redraw(D3Data) {
 
 
     //appending title to node so when mouse hovers over node title is displayed
-    enterSelection
+    enteredNodeElements
         .append("title")
         .text(function (d) {
             return d.name;
@@ -283,7 +319,7 @@ function redraw(D3Data) {
     //layouting of webcola
     d3Cola.on("tick", function () {
         const padding = 30;
-        enterSelection
+        enteredNodeElements
             .each(function (d) {
                 //d.innerBounds = d.bounds.inflate(-margin);// - original
                 d.innerBounds = d.parent.bounds; //make node have the same size as parent (directly surrounding group)
@@ -339,7 +375,7 @@ function redraw(D3Data) {
                 return d.name;
             });
 
-        /*enterSelection //was originally not commented but seems to not do anything?? 
+        /*enteredNodeElements //was originally not commented but seems to not do anything?? 
             .attr("x", function (d) {
                 return d.x - d.width / 2 + pad;//original
                 //return d.parent.bounds.x; // -> make the node start at the same x position as the parent
