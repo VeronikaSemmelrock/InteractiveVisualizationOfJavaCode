@@ -1,7 +1,6 @@
 export default class Base {
-    constructor(id, name, visibility) {
+    constructor(id, name) {
         this.id = id
         this.name = name
-        this.visibility = visibility
     }
 }

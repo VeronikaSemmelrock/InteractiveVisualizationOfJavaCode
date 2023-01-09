@@ -8,18 +8,22 @@ export default class Node extends Base {
     static nodes = [] // D3cola nodes array
     static groups = [] // D3cola groups array
 
-    constructor(id, name, visibility, type, leaves, groups, childrenVisibility) {
-        super(id, name, visibility)
+    constructor(id, name, type, leaves, groups, parentUniqueName) {
+        super(id, name)
         this.leaves = leaves
         this.groups = groups
         this.type = type
-        this.childrenVisibility = childrenVisibility !== undefined ? childrenVisibility : true
+        this.parentUniqueName = parentUniqueName
+        this.visibility = true
+        this.childrenVisibility = true
 
         Node.internalNodes.push(this) // data objs for instance methods
-        Node.nodes.push(this.getD3Node()) // data objs for d3cola
-        Node.groups.push(this.getD3Group()) // data objs for d3cola
+        Node.nodes.push(this.toD3Node()) // data objs for d3cola
+        Node.groups.push(this.toD3Group()) // data objs for d3cola
     }
-    getD3Node() {
+
+
+    toD3Node() {
         const node = {
             id: this.id,
             name: this.name,
@@ -28,23 +32,23 @@ export default class Node extends Base {
         }
 
         // additional props
-        node.width = 50 // set status width and height
-        node.height = 25
+        node.width = 200 // set status width and height
+        node.height = 100
         //node.fill = TODO - get from type
         //node.rx = TODO - get from type
         //node.ry = TODO - get from type
 
         return node
     }
-    getD3Group(newVisibleD3Nodes) {
+    toD3Group(newVisibleD3Nodes) {
         const group = {
             id: this.id,
             name: this.name,
             type: this.type
         }
         if (newVisibleD3Nodes) {
-            group.leaves = this.leaves.map(leave => Node.getVisibleIndexById(newVisibleD3Nodes, leave)),
-                group.groups = this.groups.map(group => Node.getVisibleIndexById(newVisibleD3Nodes, group))
+            group.leaves = this.leaves.map(leave => Node.getVisibleIndexById(newVisibleD3Nodes, leave))
+            group.groups = this.groups.map(group => Node.getVisibleIndexById(newVisibleD3Nodes, group))
         }
         else {
             group.leaves = this.leaves
@@ -55,6 +59,22 @@ export default class Node extends Base {
         group.padding = 5
 
         return group
+    }
+    toDebugNode() {
+        const _debug = this.toD3Node()
+        _debug.childrenVisibility = this.childrenVisibility
+        delete _debug.width
+        delete _debug.height
+        if (_debug.groups && _debug.groups.length !== 0 && typeof _debug.groups[0] !== 'number') _debug.groups = _debug.groups.map(g => g.id)
+        if (_debug.leaves && _debug.leaves.length !== 0 && typeof _debug.leaves[0] !== 'number') _debug.leaves = _debug.leaves.map(l => l.id)
+        return _debug
+    }
+    getLowestVisibleParentRecusive() {
+        if (this.visibility) return this
+        else {
+            const node = Node.internalNodes.find(n => n.name === this.parentUniqueName)
+            if (node) return node.getLowestVisibleParentRecusive() // if we dont find the parent it doesnt have a parent
+        }
     }
 
     // this function is necessary because D3Cola expects the indices in the link source and target to be the indices of the nodes instead of their ids
@@ -73,22 +93,15 @@ export default class Node extends Base {
 
     static resetInternalNodes() {
         // normalize all internalNodes because D3 messes with the array
-        const oldInternalNodes = Node.internalNodes.slice(0) // create new array
-        Node.internalNodes = []
         function getPotentialObjId(numberOrObj) {
             if (typeof numberOrObj === 'number') return numberOrObj
             else return numberOrObj.id
         }
 
-        oldInternalNodes.forEach(n => new Node(
-            n.id,
-            n.name,
-            n.visibility,
-            n.type,
-            n.leaves.map(getPotentialObjId),
-            n.groups.map(getPotentialObjId),
-            n.childrenVisibility
-        ))
+        for(const node of Node.internalNodes){
+            node.leaves = node.leaves.map(getPotentialObjId)
+            node.groups = node.groups.map(getPotentialObjId)
+        }
     }
     static resetInternalData() {
         Node.resetInternalNodes()
@@ -97,19 +110,30 @@ export default class Node extends Base {
         // console.log('internalLinks', Link.internalLinks)
     }
 
-
+    /////// Public API methods - START
+    static invisibleTypes = []
     static toggleTypeVisibility(type) {
         Node.resetInternalData()
 
-        for (let i = 0; i < Node.internalNodes.length; i++) {
-            const n = Node.internalNodes[i]
+        const existingIndex = Node.invisibleTypes.findIndex(_type => _type === type)
+        const visibility = existingIndex !== -1
+        if (visibility) Node.invisibleTypes.splice(existingIndex, 1)
+        else Node.invisibleTypes.push(type)
 
-            if (n.type === type) {
-                this.toggleChildrenVisibility(n.id)
-            }
+        console.log('setting visibility of type', type, 'to', visibility)
+
+        for (const node of Node.internalNodes) {
+            if (node.type === type) Node.setInternalDataVisibilityRecursive(node.id, visibility)
         }
 
-        return Node.populateVisibleD3Data()
+        // Node.internalNodes.forEach(n => {
+        //     if (n.type === type) console.log('toggling internalNode visibility', n.toDebugNode(), visibility)
+        // })
+
+        const D3Data = Node.populateVisibleD3Data()
+        // console.log('after', D3Data.groups, D3Data.links)
+        // console.log('after', Node.internalNodes)
+        return D3Data
     }
 
     static toggleChildrenVisibility(nodeId) {
@@ -120,64 +144,47 @@ export default class Node extends Base {
 
         if (groupNodeIds.length !== 0) {
             const visibility = !targetNode.childrenVisibility
-            targetNode.childrenVisibility = visibility
-            // console.log('visibility', visibility)
+            console.log('setting visibility of children', targetNode.toDebugNode(), 'to', visibility)
             // console.log('before', JSON.parse(JSON.stringify(Node.internalNodes)))
+            targetNode.childrenVisibility = visibility
 
             // set internalNodes(children) visibility
-            for (const groupNodeId of groupNodeIds) {
+            for (const groupNodeId of targetNode.groups) {
                 Node.setInternalDataVisibilityRecursive(groupNodeId, visibility)
             }
 
             // console.log('after', JSON.parse(JSON.stringify(Node.internalNodes)))
             // console.log('internalNodes', Node.internalNodes)
             // console.log('internalLinks', Link.internalLinks)
-
-            // Parse new data into the D3 arrays
-            return Node.populateVisibleD3Data()
+            return Node.populateVisibleD3Data() // Parse new data into the D3 arrays
         }
     }
+    /////// Public API methods - END
 
 
+    /////// Set internal Children visibility recursive - START
     // Recursive function for hiding children of a group
-    static setInternalDataVisibilityRecursive(nodeId, visibility) {
-        // console.log('internalNodes', Node.internalNodes, nodeId)
+    static setInternalDataVisibilityRecursive(nodeId, visibility, debug) { // with debug true this method can be executed on non-reset internal data
         const node = Node.internalNodes[nodeId]
+        // console.log('setInternalDataVisibilityRecursive', node)
 
-        Node.internalNodes[nodeId].visibility = visibility // hide internal node
-        Link.setInternalLinksVisibility(nodeId, visibility)
+        node.visibility = visibility // hide internal node
+        node.childrenVisibility = visibility // set children visibility to visibility as well because this is a recursive function
 
         // Do the same for all the groups recursively
         const nodeGroups = node.groups
         if (nodeGroups.length !== 0) {
-            for (const groupNode of nodeGroups) {
-                Node.setInternalDataVisibilityRecursive(groupNode, visibility)
+            for (const groupNodeId of nodeGroups) {
+                Node.setInternalDataVisibilityRecursive(debug ? groupNodeId.id : groupNodeId, visibility, debug)
             }
         }
     }
+    /////// Set internal Children visibility - END
 
-    //returns a list of all data that should be drawn (nodes or links that have visibility set to true)
-    static populateVisibleD3Data() {
-        const visibleD3Nodes = []
-        const visibleInternalNodes = []
-        const invisibleInternalNodes = []
 
-        for (const node of Node.internalNodes) {
-            if (node.visibility) {
-                visibleD3Nodes.push(node.getD3Node())
-                visibleInternalNodes.push(node) // save as internalNode because we need the getD3Group after we filtered the invisible groups from it
-            }
-            else invisibleInternalNodes.push(node)
-        }
-
-        const visibleD3Groups = visibleInternalNodes.map(n => n.getD3Group(visibleInternalNodes))
-
-        const internalRepathLinkObjs = Link.getInternalRepathLinks(invisibleInternalNodes)
-        const internalRepathedLinks = []
-
-        // console.log('invisibleInternalNodes - getVisible()', invisibleInternalNodes, visibleInternalNodes)
-        // Remove invisible group array nodes of visible nodes because they do not exist in the visible arrays --> D3 will say that some group is undefined
-        // Repath links so child links from and to visibleD3Notes point to their visibleD3-Nodes/Groups
+    // Remove invisible group array nodes of visible nodes because they do not exist in the visible arrays --> D3 will say that some group is undefined
+    static getVisibleD3Groups(visibleD3Nodes, visibleInternalNodes, invisibleInternalNodes){
+        const visibleD3Groups = visibleInternalNodes.map(n => n.toD3Group(visibleD3Nodes))
         for (let i = 0; i < visibleInternalNodes.length; i++) {
             const visibleInternalNode = visibleInternalNodes[i]
             const visibleInternalNodeGroupIds = visibleInternalNode.groups
@@ -192,32 +199,29 @@ export default class Node extends Base {
                 else filteredInternalNodeGroupIds.push(groupId) // is invisible groupId and has to be filtered
             }
             visibleD3Groups[i].groups = newVisibleInternalNodeGroupIds
-
-            // Assign new parent ids to links(do repathing)
-            const visibleInternalNodeId = visibleInternalNode.id
-            if (filteredInternalNodeGroupIds.length !== 0) {
-                for (const nodeId of filteredInternalNodeGroupIds) {
-                    for (const repathLinkObj of internalRepathLinkObjs) {
-                        const { link, key } = repathLinkObj
-                        if (link[key] === nodeId) {
-                            link[key] = visibleInternalNodeId
-                            internalRepathedLinks.push(link)
-                        }
-                    }
-                }
-            }
             // console.log('filtered groups of', visibleInternalNode.id, newVisibleInternalNodes[i].groups)
         }
 
+        return visibleD3Groups
+    }
 
 
-        // console.log('internalNodes', Node.internalNodes)
-        // console.log(Link.internalLinks)
+    // Repopulates all data that should be drawn (nodes or links that have visibility set to true)
+    static populateVisibleD3Data() {
+        const visibleD3Nodes = []
+        const visibleInternalNodes = []
+        const invisibleInternalNodes = []
 
-        // console.log('visibleD3- groups/groupos', JSON.stringify(visibleD3Groups) === JSON.stringify(visibleD3Groups))
-        const visibleD3Links = Link.getVisibleD3Links(visibleD3Nodes)
+        for (const node of Node.internalNodes) {
+            if (node.visibility) {
+                visibleD3Nodes.push(node.toD3Node())
+                visibleInternalNodes.push(node) // save as internalNode because we need the toD3Group after we filtered the invisible groups from it
+            }
+            else invisibleInternalNodes.push(node)
+        }
 
-        // console.log('internalNodes', Node.internalNodes)
+        const visibleD3Links = Link.repathLinksAndGetVisibleD3Links(visibleD3Nodes, invisibleInternalNodes) // visible D3 links without repathed links
+        const visibleD3Groups = Node.getVisibleD3Groups(visibleD3Nodes, visibleInternalNodes, invisibleInternalNodes)
 
         // Set new D3Data
         Node.nodes = visibleD3Nodes
@@ -225,5 +229,81 @@ export default class Node extends Base {
         Link.links = visibleD3Links
 
         return Node.getD3Data()
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Node Styling
+    static getStyle(nodeType) {
+        switch (nodeType) {
+            case 'package':
+                return {
+                    color: 'green',
+                    rx: 8,
+                    ry: 8,
+                    width: 100,
+                    height: 50
+                }
+            case 'class':
+                return {
+                    color: 'blue',
+                    rx: 10,
+                    ry: 10,
+                    width: 100,
+                    height: 50
+                };
+            case 'method':
+                return {
+                    color: 'red',
+                    rx: 15,
+                    ry: 15,
+                    width: 100,
+                    height: 50
+                };
+            case 'constructor':
+                return {
+                    color: 'yellow',
+                    rx: 20,
+                    ry: 20,
+                    width: 100,
+                    height: 50
+                };
+            case 'attribute':
+                return {
+                    color: 'violet',
+                    rx: 30,
+                    ry: 8,
+                    width: 100,
+                    height: 50
+                };
+            case 'parameter':
+                return {
+                    color: 'orange',
+                    rx: 8,
+                    ry: 30,
+                    width: 100,
+                    height: 50
+                };
+            case 'localVar':
+                return {
+                    color: 'turquoise',
+                    rx: 0,
+                    ry: 0,
+                    width: 100,
+                    height: 50
+                };
+        }
     }
 }

@@ -5,16 +5,17 @@ export default class Link extends Base {
     static internalLinks = [] // class-based link array for changing links array with class methods
     static links = [] // D3cola link array
 
-    constructor(id, name, visibility, source, target) {
-        super(id, name, visibility)
+    constructor(id, name, source, target) {
+        super(id, name)
         this.source = source
         this.target = target
 
         Link.internalLinks.push(this)
-        Link.links.push(this.getD3Link())
+        Link.links.push(this.toD3Link())
     }
 
-    getD3Link(newVisibleD3Nodes) {
+
+    toD3Link(newVisibleD3Nodes) {
         const linkObj = {
             id: this.id,
             name: this.name,
@@ -31,61 +32,88 @@ export default class Link extends Base {
         return linkObj
     }
 
-    static resetInternalLinks() {
-        return // links do not have to be reset because they dont get reset by D3 for some reason
-        const oldInternalLinks = Link.internalLinks.slice(0) // create new array
-        Link.internalLinks = []
-        oldInternalLinks.forEach(l => new Link(
-            l.id,
-            l.name,
-            l.visibility,
-            l.source.id,
-            l.target.id
-        ))
+
+    static resetInternalLinks() { // links do not have to be reset because they dont get reset by D3 for some reason
+        // const oldInternalLinks = Link.internalLinks.slice(0) // create new array
+        // Link.internalLinks = []
+        // oldInternalLinks.forEach(l => new Link(
+        //     l.id,
+        //     l.name,
+        //     l.visibility,
+        //     l.source.id,
+        //     l.target.id
+        // ))
     }
-    static getVisibleD3Links(visibleD3Nodes) {
-        const d3links = []
+
+
+
+    // This functions gets all links that need to be repathed alongside the key that needs to be repathed('source' or 'target') and repaths them using their lowestVisibleParent, it then pushes them to the visibleD3Links array
+    // All other Links that have a source and path to a visible link just get added to the visibleD3Links array
+    static repathLinksAndGetVisibleD3Links(visibleD3Nodes, invisibleInternalNodes) {
+        const visibleD3Links = []
+
         for (const link of Link.internalLinks) {
-            if (link.visibility) {
-                // console.log('link is visible', link)
-                d3links.push(link.getD3Link(visibleD3Nodes))
-            }
-        }
-        return d3links
-    }
-
-    // When setting visiblity to hidden this function filters all links
-    // Not taking into account links that have connections to outside --> they have to be repathed with the below functions
-    static setInternalLinksVisibility(associatedNodeId, visibility) {
-        const internalLinks = Link.internalLinks
-        // console.log('removing links associated with', associatedNodeId)
-
-        for (let i = 0; i < internalLinks.length; i++) {
-            const link = internalLinks[i]
-            // console.log(link, link.source, link.target, associatedNodeId)
-
-            if (link.source === associatedNodeId || link.target === associatedNodeId) {
-                // console.log('associated link', link)
-                Link.internalLinks[i].visibility = visibility // set invisible in link array
-            }
-        }
-    }
-
-    // This functions gets all links that need to be repathed alongside the key that needs to be repathed('source' or 'target')
-    static getInternalRepathLinks(invisibleInternalNodes){
-        const internalRepathLinkObjs = []
-
-        const linksForPotentialRepath = Link.internalLinks.filter(l => !l.visibility) // invisible links
-        for(const link of linksForPotentialRepath){
             const sourceIsInvisibleInternalNode = invisibleInternalNodes.find(n => n.id === link.source)
             const targetIsInvisibleInternalNode = invisibleInternalNodes.find(n => n.id === link.target)
-            if(!(sourceIsInvisibleInternalNode && targetIsInvisibleInternalNode)){ // if either link or source is not an invisibleInternalNode we gotta repath the link to the first parent node that is visible
-                Link.internalLinks[link.id].visibility = true
-                if(sourceIsInvisibleInternalNode) internalRepathLinkObjs.push({link, key: 'source'}) // repath link source to parent
-                else internalRepathLinkObjs.push({link, key: 'target'}) // repath link target to parent
+            if (!sourceIsInvisibleInternalNode && !targetIsInvisibleInternalNode) {
+                visibleD3Links.push(link.toD3Link(visibleD3Nodes))
+            }
+            else if (!(sourceIsInvisibleInternalNode && targetIsInvisibleInternalNode)) { // if either link or source is not an invisibleInternalNode we gotta repath the link to the first parent node that is visible := getLowestVisibleParentRecusive
+                // console.log('repath links', Link.internalLinks, link.id, sourceIsInvisibleInternalNode ? 'source' : 'target')
+                const key = sourceIsInvisibleInternalNode ? 'source' : 'target'
+
+                const invisibleNode = sourceIsInvisibleInternalNode || targetIsInvisibleInternalNode
+                const parent = invisibleNode.getLowestVisibleParentRecusive()
+                // console.log('parent of link', link, 'is', parent)
+                if (parent) { // repath
+                    const repathedD3Link = link.toD3Link(visibleD3Nodes)
+                    repathedD3Link[key] = Node.getVisibleIndexById(visibleD3Nodes, parent.id)
+                    visibleD3Links.push(repathedD3Link)
+                }
             }
         }
 
-        return internalRepathLinkObjs
+        return visibleD3Links
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Link Styling
+    static getStyle(linkType) {
+        switch (linkType) {
+            case 'extends':
+                return {
+                    color: 'green',
+                }
+            case 'implements':
+                return {
+                    color: 'blue',
+                };
+            case 'returnType':
+                return {
+                    color: 'red',
+                };
+            case 'invocation':
+                return {
+                    color: 'yellow',
+                };
+            case 'access':
+                return {
+                    color: 'violet',
+                };
+        }
     }
 }

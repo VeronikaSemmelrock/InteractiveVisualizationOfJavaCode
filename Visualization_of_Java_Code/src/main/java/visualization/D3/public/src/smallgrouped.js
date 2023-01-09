@@ -4,126 +4,126 @@ const graph = {
       "id": 0, 
       "visibility": true,
       "name": "a",
-      "width": 200,
-      "height": 100
+      "width": 100,
+      "height": 50
     },
     {
       "id": 1, 
       "visibility": true,
       "name": "b",
-      "width": 200,
-      "height": 100
+      "width": 100,
+      "height": 50
     },
     {
       "id": 2, 
       "visibility": true,
       "name": "c",
-      "width": 200,
-      "height": 100
+      "width": 100,
+      "height": 50
     },
     {
       "id": 3, 
       "visibility": true,
       "name": "d",
-      "width": 200,
-      "height": 100
+      "width": 100,
+      "height": 50
     },
     {
       "id": 4,  
       "visibility": true,
       "name": "e",
-      "width": 200,
-      "height": 100
+      "width": 100,
+      "height": 50
     },
     {
       "id": 5,  
       "visibility": true,
       "name": "f",
-      "width": 200,
-      "height": 100
+      "width": 100,
+      "height": 50
     },
     {
       "id": 6,  
       "visibility": true,
       "name": "g",
-      "width": 200,
-      "height": 100
+      "width": 100,
+      "height": 50
     },
     {
       "id": 7, 
       "visibility": true,
-      "name": "bc",
-      "width": 200,
-      "height": 100
+      "name": "h",
+      "width": 100,
+      "height": 50
     }
   ],
   "links": [
     {
       "id": 0,
-      "name": "test",
+      "name": "bToh",
       "source": 1,
       "target": 7,
       "visibility": true
     },
     {
       "id": 1,
-      "name": "test",
+      "name": "hToc",
       "source": 7,
       "target": 2,
       "visibility": true
     },
     {
       "id": 2,
-      "name": "test",
+      "name": "cTod",
       "source": 2,
       "target": 3,
       "visibility": true
     },
     {
       "id": 3,
-      "name": "test",
+      "name": "dToe",
       "source": 3,
       "target": 4,
       "visibility": true
     },
     {
       "id": 4,
-      "name": "test",
+      "name": "aTob",
       "source": 0,
       "target": 1,
       "visibility": true
     },
     {
       "id": 5,
-      "name": "test",
+      "name": "cToa",
       "source": 2,
       "target": 0,
       "visibility": true
     },
     {
       "id": 6,
-      "name": "test",
+      "name": "dTof",
       "source": 3,
       "target": 5,
       "visibility": true
     },
     {
       "id": 7,
-      "name": "test",
+      "name": "aTof",
       "source": 0,
       "target": 5,
       "visibility": true
     }
   ],
   "groups": [
-    { "id": 0, "visibility": true, "name": "group0", "leaves": [0], "groups": [1] },
-    { "id": 1, "visibility": true, "name": "group1", "leaves": [1], "groups": [] },
-    { "id": 2, "visibility": true, "name": "group2", "leaves": [2], "groups": [] },
-    { "id": 3, "visibility": true, "name": "group3", "leaves": [3], "groups": [] },
-    { "id": 4, "visibility": true, "name": "group4", "leaves": [4], "groups": [2, 5, 6] },
-    { "id": 5, "visibility": true, "name": "group5", "leaves": [5], "groups": [] },
-    { "id": 6, "visibility": true, "name": "group6", "leaves": [6], "groups": [] },
-    { "id": 7, "visibility": true, "name": "group7", "leaves": [7], "groups": [] },
+    { "id": 0, "visibility": true, "name": "groupA", "leaves": [0], "groups": [1], parentUniqueName: "null" },
+    { "id": 1, "visibility": true, "name": "groupB", "leaves": [1], "groups": [], parentUniqueName: "groupA" },
+    { "id": 2, "visibility": true, "name": "groupC", "leaves": [2], "groups": [], parentUniqueName: "groupE" },
+    { "id": 3, "visibility": true, "name": "groupD", "leaves": [3], "groups": [], parentUniqueName: "null" },
+    { "id": 4, "visibility": true, "name": "groupE", "leaves": [4], "groups": [2, 5, 6], parentUniqueName: "null" },
+    { "id": 5, "visibility": true, "name": "groupF", "leaves": [5], "groups": [], parentUniqueName: "groupE" },
+    { "id": 6, "visibility": true, "name": "groupG", "leaves": [6], "groups": [], parentUniqueName: "groupE" },
+    { "id": 7, "visibility": true, "name": "groupH", "leaves": [7], "groups": [], parentUniqueName: "null" },
   ]
 }
 

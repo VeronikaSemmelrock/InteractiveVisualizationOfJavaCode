@@ -48,17 +48,18 @@ function parseEntitiesToNodes(entities){
                 foundChildren = foundChildren.concat(getUniqueNames(entity.fLocalVariables))
                 break; 
         }
-        const test = foundChildren; 
-        //console.log(test)
-        const temp = { 
+
+        const internalNodeObj = { 
             id: i,
             visibility: true,
             name: entity.fUniqueName,
             leaves: [i],
-            groups: test 
+            groups: foundChildren,
+            type: entity.fType,
+            parentUniqueName: entity.fParentAsString //can be "null" as string
         };
-        //console.log(temp)
-        resultNodes.push(temp)
+        //console.log(internalNodeObj)
+        resultNodes.push(internalNodeObj)
         // console.log(resultNodes)
     }
 
@@ -99,8 +100,8 @@ function importJsonToD3(jsonServerData){
     const links = parseAssociationsToLinks(associations, entities)
     const nodes = parseEntitiesToNodes(entities)
 
-    nodes.forEach(node => new Node(node.id, node.name, node.visibility, node.type, node.leaves, node.groups))
-    links.forEach(link => new Link(link.id, link.name, link.visibility, link.source, link.target))
+    nodes.forEach(node => new Node(node.id, node.name, node.type, node.leaves, node.groups, node.parentUniqueName))
+    links.forEach(link => new Link(link.id, link.name, link.source, link.target))
 
     console.log('successfully imported JSON data', {
         nodes: Node.nodes,

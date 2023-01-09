@@ -33,3 +33,11 @@
     text-anchor: middle;
     cursor: move;
 }
+
+.linklabel {
+    fill: black;
+    font-family: Verdana;
+    font-size: 18px;
+    text-anchor: middle;
+    cursor: move;
+}
