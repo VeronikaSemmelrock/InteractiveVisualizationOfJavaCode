@@ -56,7 +56,8 @@ function parseEntitiesToNodes(entities){
             leaves: [i],
             groups: foundChildren,
             type: entity.fType,
-            parentUniqueName: entity.fParentAsString //can be "null" as string
+            parentUniqueName: entity.fParentAsString, //can be "null" as string
+            foreign: entity.fForeign
         };
         //console.log(internalNodeObj)
         resultNodes.push(internalNodeObj)
@@ -100,7 +101,7 @@ function importJsonToD3(jsonServerData){
     const links = parseAssociationsToLinks(associations, entities)
     const nodes = parseEntitiesToNodes(entities)
 
-    nodes.forEach(node => new Node(node.id, node.name, node.type, node.leaves, node.groups, node.parentUniqueName))
+    nodes.forEach(node => new Node(node.id, node.name, node.type, node.leaves, node.groups, node.parentUniqueName, node.foreign))
     links.forEach(link => new Link(link.id, link.name, link.source, link.target))
 
     console.log('successfully imported JSON data', {

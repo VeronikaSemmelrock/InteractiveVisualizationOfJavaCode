@@ -1,6 +1,15 @@
 import Base from "./Base.js"
 import Link from "./Link.js"
 
+
+
+//variables for name parsing
+const DELIMITER_METHOD = '.';
+const DELIMITER_LOCALVARIABLE = '^';
+const DELIMITER_PARAMETER ='\'';
+const DELIMITER_ATTRIBUTE = '#';
+const DELIMITER_INNERCLASS = '$';
+
 // This class represents a group and its node in the context of webcola
 // webcola nodes can have links but only groups can group nodes or other groups, thus a group always only contains one node for the link
 export default class Node extends Base {
@@ -8,7 +17,7 @@ export default class Node extends Base {
     static nodes = [] // D3cola nodes array
     static groups = [] // D3cola groups array
 
-    constructor(id, name, type, leaves, groups, parentUniqueName) {
+    constructor(id, name, type, leaves, groups, parentUniqueName, foreign) {
         super(id, name)
         this.leaves = leaves
         this.groups = groups
@@ -16,6 +25,12 @@ export default class Node extends Base {
         this.parentUniqueName = parentUniqueName
         this.visibility = true
         this.childrenVisibility = true
+        this.style = Node.getStyle(type, foreign)//set style object
+        this.shortName = Node.cropName(name, type, foreign)
+        if(name.includes("innerClass()")){
+             console.log(name, type)
+        }
+       
 
         Node.internalNodes.push(this) // data objs for instance methods
         Node.nodes.push(this.toD3Node()) // data objs for d3cola
@@ -28,15 +43,15 @@ export default class Node extends Base {
             id: this.id,
             name: this.name,
             visibility: this.visibility,
-            type: this.type
+            type: this.type,
+            style: this.style, 
+            shortName: this.shortName
         }
 
-        // additional props
-        node.width = 200 // set status width and height
-        node.height = 100
-        //node.fill = TODO - get from type
-        //node.rx = TODO - get from type
-        //node.ry = TODO - get from type
+        // additional propst
+        node.width = 100; 
+        node.height = 50; 
+
 
         return node
     }
@@ -44,7 +59,9 @@ export default class Node extends Base {
         const group = {
             id: this.id,
             name: this.name,
-            type: this.type
+            type: this.type,
+            style: this.style,
+            shortName: this.shortName
         }
         if (newVisibleD3Nodes) {
             group.leaves = this.leaves.map(leave => Node.getVisibleIndexById(newVisibleD3Nodes, leave))
@@ -57,6 +74,7 @@ export default class Node extends Base {
 
         // Additional props
         group.padding = 5
+
 
         return group
     }
@@ -76,6 +94,8 @@ export default class Node extends Base {
             if (node) return node.getLowestVisibleParentRecusive() // if we dont find the parent it doesnt have a parent
         }
     }
+
+    
 
     // this function is necessary because D3Cola expects the indices in the link source and target to be the indices of the nodes instead of their ids
     static getVisibleIndexById(visibleD3Nodes, nodeId) {
@@ -162,6 +182,7 @@ export default class Node extends Base {
     /////// Public API methods - END
 
 
+
     /////// Set internal Children visibility recursive - START
     // Recursive function for hiding children of a group
     static setInternalDataVisibilityRecursive(nodeId, visibility, debug) { // with debug true this method can be executed on non-reset internal data
@@ -232,78 +253,99 @@ export default class Node extends Base {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     // Node Styling
-    static getStyle(nodeType) {
+    static getStyle(nodeType, foreign) {
+
+        var color = d3.schemeSet3;//other options schemeSet1-3
+        //console.log(color(4))
+        if(foreign){
+            return {
+                color: color[8],
+                rx: 6,
+                ry: 6
+            }
+        }
         switch (nodeType) {
             case 'package':
                 return {
-                    color: 'green',
+                    color: color[0],
                     rx: 8,
-                    ry: 8,
-                    width: 100,
-                    height: 50
+                    ry: 8
                 }
             case 'class':
                 return {
-                    color: 'blue',
+                    color: color[1],
                     rx: 10,
-                    ry: 10,
-                    width: 100,
-                    height: 50
+                    ry: 10
                 };
             case 'method':
                 return {
-                    color: 'red',
+                    color: color[2],
                     rx: 15,
-                    ry: 15,
-                    width: 100,
-                    height: 50
+                    ry: 15
                 };
             case 'constructor':
                 return {
-                    color: 'yellow',
+                    color: color[3],
                     rx: 20,
-                    ry: 20,
-                    width: 100,
-                    height: 50
+                    ry: 20
                 };
             case 'attribute':
                 return {
-                    color: 'violet',
+                    color: color[4],
                     rx: 30,
-                    ry: 8,
-                    width: 100,
-                    height: 50
+                    ry: 8
                 };
             case 'parameter':
                 return {
-                    color: 'orange',
+                    color: color[5],
                     rx: 8,
-                    ry: 30,
-                    width: 100,
-                    height: 50
+                    ry: 30
                 };
-            case 'localVar':
+            case 'localVariable':
                 return {
-                    color: 'turquoise',
-                    rx: 0,
-                    ry: 0,
-                    width: 100,
-                    height: 50
+                    color: color[6],
+                    rx: 2,
+                    ry: 2
                 };
         }
+    }
+
+    //returns short name - not unique
+    static cropName(name, type, foreign){
+        if(foreign){
+            return name; 
+        }
+        let highestIndex = 0; 
+        if(type == "method" || type == "constructor" || name.lastIndexOf("<") > -1){
+            console.log(name)
+            let maxIndex = name.lastIndexOf("(");
+            if(maxIndex == -1){
+                maxIndex = name.lastIndexOf("<"); 
+            }  
+            for (let i = 0; i < maxIndex; i++) {
+                if (name.charAt(i) == "." || name.charAt(i) == DELIMITER_INNERCLASS) {
+                    highestIndex = i; 
+                }    
+            } 
+        }else if(type == "package" || type == "class" ){
+            highestIndex = name.lastIndexOf(DELIMITER_INNERCLASS); //nested classes
+            if(highestIndex == -1){
+                highestIndex = name.lastIndexOf("."); 
+            }
+        }else if(type == "attribute"){
+            highestIndex = name.lastIndexOf(DELIMITER_ATTRIBUTE); 
+        }else if(type == "parameter"){
+            highestIndex = name.lastIndexOf(DELIMITER_PARAMETER);
+        }else if(type == "localVariable"){
+            highestIndex = name.lastIndexOf(DELIMITER_LOCALVARIABLE); 
+        }
+    
+        if(highestIndex == 0){
+            return name.substring(highestIndex); //no delimiter, full name is returned
+        }else{
+            return name.substring(highestIndex+1); //returns rest of name, excluding last occurrence of a delimiter
+        }
+
     }
 }
