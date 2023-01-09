@@ -17,7 +17,7 @@ importJsonToD3(JSON.stringify({ associations, entities }))
 //     links: Link.links
 // })
 
-console.log("asd")
+
 
 const d3 = window.d3
 
@@ -58,8 +58,11 @@ svg.call(d3.zoom()
     .scaleExtent([1, 1000])
     .on("zoom", function (e, x, b, y, z) {
         console.log('zooming', e, x, b, z, y)
+        const transform = d3.zoomTransform()
         // svg.attr("transform", transform)
+        // .attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
     }))
+
 
 // let transform
 // const zoom = d3.zoom().on("zoom", function (e) {
