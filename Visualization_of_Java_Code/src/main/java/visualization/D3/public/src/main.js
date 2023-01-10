@@ -58,7 +58,7 @@ svg.call(zoom
     // .translateExtent([[0, 0], [width, height]])
     .on("zoom", function () {
         const transform = d3.zoomTransform(this)
-        console.log('zooming', transform, transform.x - width / 2, transform.y - height / 2)
+        //console.log('zooming', transform, transform.x - width / 2, transform.y - height / 2)
         g.attr("transform", "translate(" + transform.x + "," + transform.y + ") scale(" + transform.k + ")");
     }))
     .on("dblclick.zoom", null)
@@ -116,7 +116,7 @@ redraw(Node.getD3Data())
 
 //(re)drawing of graph 
 function redraw(D3Data) {
-    console.log("D3 redraw data --> ", D3Data)
+    //console.log("D3 redraw data --> ", D3Data)
     const { nodes, links, groups } = D3Data
 
     g.selectAll(".node").remove()
@@ -137,7 +137,7 @@ function redraw(D3Data) {
     for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i]
         const level = node.name.split(delimiterRegex).length
-        console.log('node', node, level)
+        //console.log('node', node, level)
         if (level === 1) {
             constraints[0].offsets.push({node: i, offset: 0})
         }

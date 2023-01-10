@@ -4,7 +4,7 @@ import Link from "./Link.js"
 
 
 //variables for name parsing
-const DELIMITER_METHOD = '.';
+const DELIMITER_PATH = '.';
 const DELIMITER_LOCALVARIABLE = '^';
 const DELIMITER_PARAMETER ='\'';
 const DELIMITER_ATTRIBUTE = '#';
@@ -27,9 +27,7 @@ export default class Node extends Base {
         this.childrenVisibility = true
         this.style = Node.getStyle(type, foreign)//set style object
         this.shortName = Node.cropName(name, type, foreign)
-        if(name.includes("innerClass()")){
-             console.log(name, type)
-        }
+        console.log(name, Node.cropName(name, type, foreign))
        
 
         Node.internalNodes.push(this) // data objs for instance methods
@@ -318,36 +316,38 @@ export default class Node extends Base {
         if(foreign){
             return name; 
         }
-        let highestIndex = 0; 
-        if(type == "method" || type == "constructor" || name.lastIndexOf("<") > -1){
-            console.log(name)
-            let maxIndex = name.lastIndexOf("(");
-            if(maxIndex == -1){
-                maxIndex = name.lastIndexOf("<"); 
-            }  
-            for (let i = 0; i < maxIndex; i++) {
-                if (name.charAt(i) == "." || name.charAt(i) == DELIMITER_INNERCLASS) {
-                    highestIndex = i; 
-                }    
-            } 
-        }else if(type == "package" || type == "class" ){
-            highestIndex = name.lastIndexOf(DELIMITER_INNERCLASS); //nested classes
-            if(highestIndex == -1){
-                highestIndex = name.lastIndexOf("."); 
-            }
-        }else if(type == "attribute"){
-            highestIndex = name.lastIndexOf(DELIMITER_ATTRIBUTE); 
-        }else if(type == "parameter"){
-            highestIndex = name.lastIndexOf(DELIMITER_PARAMETER);
-        }else if(type == "localVariable"){
-            highestIndex = name.lastIndexOf(DELIMITER_LOCALVARIABLE); 
+        switch(type){
+            case "method": //fall through in switch-case code of constructor is executed for method (no break statement)
+            case "constructor": 
+                const maxIndex = name.lastIndexOf("("); 
+                for (let i = maxIndex; i >= 0; i--) {
+                    if (name.charAt(i) === "." || name.charAt(i) === DELIMITER_INNERCLASS) {
+                        return name.substring(i+1)
+                    }  
+                } 
+                break; 
+            case "package": 
+            case "class":
+                if(name.lastIndexOf(DELIMITER_INNERCLASS) > -1){//nested classes
+                    return name.substring(name.lastIndexOf(DELIMITER_INNERCLASS)+1)
+                } else if(name.lastIndexOf(DELIMITER_PATH) > -1) {
+                    return name.substring(name.lastIndexOf(DELIMITER_PATH)+1); 
+                }
+                break; 
+            default:
+                let highestIndex = 0; 
+                //find possible delimiter
+                if(type == "attribute"){
+                    highestIndex = name.lastIndexOf(DELIMITER_ATTRIBUTE); 
+                }else if(type == "parameter"){
+                    highestIndex = name.lastIndexOf(DELIMITER_PARAMETER);
+                }else if(type == "localVariable"){
+                    highestIndex = name.lastIndexOf(DELIMITER_LOCALVARIABLE); 
+                }
+                if(highestIndex > 0){
+                    return name.substring(highestIndex+1)
+                }
         }
-    
-        if(highestIndex == 0){
-            return name.substring(highestIndex); //no delimiter, full name is returned
-        }else{
-            return name.substring(highestIndex+1); //returns rest of name, excluding last occurrence of a delimiter
-        }
-
+        return name; //no delimiters were found -> return full name 
     }
 }

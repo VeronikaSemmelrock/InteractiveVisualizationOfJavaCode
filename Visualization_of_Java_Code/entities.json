@@ -1,4 +1,4 @@
-const entities = {
+{
   "testpackage1": {
     "fClasses": [
       {
@@ -5871,5 +5871,3 @@ const entities = {
     "fParentAsString": "null"
   }
 }
-
-export default entities

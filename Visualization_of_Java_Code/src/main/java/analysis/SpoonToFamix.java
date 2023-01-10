@@ -58,6 +58,7 @@ public class SpoonToFamix {
     private final char DELIMITER_LOCALVARIABLE = '^';
     private final char DELIMITER_PARAMETER ='\'';
     private final char DELIMITER_ATTRIBUTE = '#';
+    private final char DELIMITER_INNERCLASS = '$';
 
     /**
      * Constructor. Sets spoonModel and spoonRootPackage. The spoonRootPackage is a package created and added by SpoonParser at the root
@@ -634,14 +635,21 @@ public class SpoonToFamix {
         //extracting uniqueNames for caller- and callee-method
         String uniqueNameCallee = null;
         String uniqueNameCaller = null;
+        String uniqueNameCalleeOtherOption = null; //sometimes other delimiters have to be used ($ for innerClasses) or the full path has to be added in order to find it in the hashmap.
+        //if still no entity is found with this name, then entity is created with original uniqueName
         CtMethod parentMethod = invocation.getParent(new TypeFilter<>(CtMethod.class));
         CtConstructor parentConstructor = invocation.getParent(new TypeFilter<>(CtConstructor.class));
         if(parentMethod != null){//parent/caller is a method
             uniqueNameCaller = parentMethod.getReference().getDeclaringType().getQualifiedName()+DELIMITER_METHOD+parentMethod.getReference();
             uniqueNameCallee = invocation.getExecutable().getDeclaringType().toString()+DELIMITER_METHOD+invocation.getExecutable().toString();
+            //for finding innerClasses
+            String temp = invocation.getExecutable().getDeclaringType().toString();
+            int tempIndex = temp.lastIndexOf(".");
+            uniqueNameCalleeOtherOption = temp.substring(0, tempIndex) + DELIMITER_INNERCLASS+temp.substring(tempIndex+1)+DELIMITER_METHOD+invocation.getExecutable().toString();
         }else if(parentConstructor != null){//parent/caller is a constructor
             uniqueNameCaller = parentConstructor.getReference().toString();
             uniqueNameCallee = invocation.getExecutable().toString();
+            uniqueNameCalleeOtherOption = invocation.getExecutable().getDeclaringType().toString()+DELIMITER_METHOD+invocation.getExecutable().toString();//for finding method with full path
         }else {
             return null;
         }
@@ -659,12 +667,17 @@ public class SpoonToFamix {
         }
         //if the callee is unknown, create new FamixMethod with this uniqueName and add to entities-hashmap
         if(callee == null){
-            callee = new FamixMethod(uniqueNameCallee);
-            callee.setType("method");
-            callee.setForeign(true);//necessary to be able to filter it away in visualisation
-            famixEntities.put(uniqueNameCallee, callee);
+            System.out.println(uniqueNameCallee+ " was not found. Now searching for "+uniqueNameCalleeOtherOption);
+            callee = (FamixMethod) famixEntities.get(uniqueNameCalleeOtherOption);//search for other naming option in hashmap of known entities
+            if(callee == null){//other naming option was also not found - create new FamixMethod
+                System.out.println(uniqueNameCalleeOtherOption+ " was also not found. Now creating "+uniqueNameCallee);
+                callee = new FamixMethod(uniqueNameCallee);
+                callee.setType("method");
+                callee.setForeign(true);//necessary to be able to filter it away in visualisation
+                famixEntities.put(uniqueNameCallee, callee);
+            }
         }
-
+        System.out.println("Creating Invocation with callee "+callee.getUniqueName());
         //create and return FamixInvocation
         FamixInvocation finvocation = new FamixInvocation(caller, callee);
         finvocation.setType("invocation");
