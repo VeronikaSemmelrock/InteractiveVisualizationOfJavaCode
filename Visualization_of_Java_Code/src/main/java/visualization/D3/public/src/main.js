@@ -27,17 +27,13 @@ const width = window.innerWidth, // set width to window width
 
 
 
-
-//setting colour scheme
-const color = d3.scaleOrdinal(d3.schemeSet3);
-
 //configuring webcola
 const d3Cola = cola
     .d3adaptor(d3)
     .linkDistance(100)
     .avoidOverlaps(true)
-    .handleDisconnected(false)
-    .symmetricDiffLinkLengths(80)//directly changes link length
+    .handleDisconnected(true)
+    .symmetricDiffLinkLengths(20)//directly changes link length
     //.flowLayout("x", 150)  //the call to flowLayout causes all edges not involved in a cycle to have a separation constraint generated between their source and sink
     // with a minimum spacing set to 150. Specifying the 'x' axis achieves a left-to-right flow layout. The default is top-to-bottom flow layout
     .size([width, height]);
@@ -160,17 +156,14 @@ function redraw(D3Data) {
         .start(50, 0, 50);
 
 
-    //adding links first so they are in background 
-    //inserting links into g
-    var link = g
-        .selectAll(".link")
-        .data(links)
-        .enter()
-        .append("path") //arrows, line would make lines
-        .attr("class", "link")
-        .style("stroke", "#000")
-        .attr('marker-end', (d) => "url(#end-arrow)")//attach the arrow from defs to the END of the path
-        .style("stroke-width", 4);//stroke width of link
+
+    // console.log("Nodes in redraw --> ", nodes)
+    d3Cola //setting global data in  d3Cola
+        .nodes(nodes)
+        .links(links)
+        .groups(groups)
+        .start(10, 10, 10, 10);
+        //initialUnconstrainedIterations, initialUserConstraintIterations, initialAllConstraintsIterations, gridSnapIterations
 
 
     //inserting groups into g 
@@ -179,30 +172,27 @@ function redraw(D3Data) {
         .data(groups) // adding Node.groups 
         .enter() // enter all groups
         .append("rect")// adding group elements as rects
-        .attr("rx", 8) // set border rounding
-        .attr("ry", 8) // set border rounding
         .attr("class", "group") // adding group style from style-diagram.css
-        .style("fill", function (d, i) { // adding group file color
-            return color(i);
-        })
+        .style("stroke", "transparent")
+        .style("fill", "transparent")
         .call(d3Cola.drag)
-    // .on("mouseup", function (d) {
-    //     d.fixed = 0;
-    //     d3Cola.alpha(1); // fire it off again to satify gridify
-    // })
-    // .on('click', function (g) {
-    //     // console.log('group clicked', g.id)
-    //     const D3Data = Node.toggleChildrenVisibility(g.id)
-    //     if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
-    // })
+        /*.on("mouseup", function (d) {
+            d.fixed = 0;
+            d3Cola.alpha(1); // fire it off again to satify gridify
+        })
+        .on('click', function (g) {
+            // console.log('group clicked', g.id)
+            const D3Data = Node.toggleChildrenVisibility(g.id)
+            if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
+        })*/
 
-
+    
+    
 
 
     var pad = 20;
 
 
-    // WORKING, but exit does not remove proper node, just last node instead of removed node 
     //inserting nodes into g 
     var nodeElements = g
         .selectAll(".node")
@@ -219,11 +209,15 @@ function redraw(D3Data) {
         .attr("height", function (d) {
             return d.height - 2 * pad;
         })
-        .attr("rx", 10) //rounding
-        .attr("ry", 10)
+        .attr("rx", function(d){
+            return d.style.rx; 
+        })
+        .attr("ry", function(d){
+            return d.style.ry; 
+        }) 
         .style("fill", function (d) {
             // return color(d.id);
-            return "transparent";
+            return d.style.color;
         })
         .call(d3Cola.drag)
         .on("click", function (node) {
@@ -242,8 +236,25 @@ function redraw(D3Data) {
                 }, 100)
             }
         })
+        /*.on("mouseup", function (d) {
+           d.fixed = 0;
+         d3Cola.alpha(1); // fire it off again to satify gridify
+        })*/
+    // .on("click", function (d) {
+    //     console.log("WORKS!!!")
+    //     testFunc(d);
+    //     //handleNodeClick(d.id);
+    // });
 
-
+    var link = g
+        .selectAll(".link")
+        .data(links)
+        .enter()
+        .append("path") //arrows, line would make lines
+        .attr("class", "link")
+        .style("stroke", "black")
+        .attr('marker-end', (d) => "url(#end-arrow)")//attach the arrow from defs to the END of the path
+        .style("stroke-width", 4);//stroke width of link
 
     //inserting labels for nodes into g
     var label = g
@@ -252,8 +263,12 @@ function redraw(D3Data) {
         .enter()
         .append("text")
         .attr("class", "label")
+        //.style("color", "black")
+        //.style("stroke", "black")
+        .style("fill", "black")
+        .style("font-size", "12px")
         .text(function (d) {
-            return d.name;
+            return d.shortName;//show shortName as Label
         })
         .call(d3Cola.drag); // text also triggers drag event
 
@@ -262,20 +277,21 @@ function redraw(D3Data) {
     enteredNodeElements
         .append("title")
         .text(function (d) {
-            return d.name;
+            return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " +d.name;//capitalize Type and add shortname
         });
 
     //inserting labels for groups into g
-    var groupLabel = g
+    /*var groupLabel = g
         .selectAll(".grouplabel")
         .data(groups)
         .enter()
         .append("text")
         .attr("class", "grouplabel")
         .text(function (d) {
-            return d.name;
+            return d.shortName;//show shortName as Label
         })
         .call(d3Cola.drag); // text also triggers drag event
+        */
 
     var linkLabel = g
         .selectAll(".linklabel")
@@ -291,18 +307,19 @@ function redraw(D3Data) {
 
 
     //appending title to group so when mouse hovers over node title is displayed
-    group
+    /*group
         .append("title")
         .text(function (d) {
-            return d.name;
-        });
+            return d.type+ " " +d.shortName;//show uniqueName when hovering over group with mouse
+        });*/
 
     //appending title to links so when mouse hovers over link title is displayed
-    link
+    link //TODO _ visible? 
         .append("title")
         .text(function (d) {
             return d.name;
         });
+    console.log(link)
 
     //creating lines
     var lineFunction = d3
@@ -426,16 +443,17 @@ function redraw(D3Data) {
             });
 
 
-        groupLabel
+        /*groupLabel
             .attr("x", function (d) {
                 return d.bounds.x + d.bounds.width() / 2; // calculate x offset by dividing through group width
             })
             .attr("y", function (d) {
                 return d.bounds.y + 18; // calculate y offset by adding the height of the groupLabel
-            });
+            });*/
 
         linkLabel
             .attr("x", function (d) {
+                //console.log(d.target.x + (d.source.x - d.target.x) / 2)
                 if (d.source.x >= d.target.x) {
                     return d.target.x + (d.source.x - d.target.x) / 2
                 } else {

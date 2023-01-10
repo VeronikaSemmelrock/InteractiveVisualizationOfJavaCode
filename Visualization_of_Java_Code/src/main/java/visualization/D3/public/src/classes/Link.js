@@ -77,20 +77,6 @@ export default class Link extends Base {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // Link Styling
     static getStyle(linkType) {
         switch (linkType) {
