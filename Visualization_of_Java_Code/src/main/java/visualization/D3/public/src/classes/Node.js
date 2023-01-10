@@ -1,4 +1,3 @@
-import Base from "./Base.js"
 import Link from "./Link.js"
 
 
@@ -12,13 +11,14 @@ const DELIMITER_INNERCLASS = '$';
 
 // This class represents a group and its node in the context of webcola
 // webcola nodes can have links but only groups can group nodes or other groups, thus a group always only contains one node for the link
-export default class Node extends Base {
+export default class Node {
     static internalNodes = [] // class-based node array for changing groups and nodes arrays with class methods
     static nodes = [] // D3cola nodes array
     static groups = [] // D3cola groups array
 
     constructor(id, name, type, leaves, groups, parentUniqueName, foreign) {
-        super(id, name)
+        this.id = id
+        this.name = name
         this.leaves = leaves
         this.groups = groups
         this.type = type
@@ -27,7 +27,7 @@ export default class Node extends Base {
         this.childrenVisibility = true
         this.style = Node.getStyle(type, foreign)//set style object
         this.shortName = Node.cropName(name, type, foreign)
-        console.log(name, Node.cropName(name, type, foreign))
+        this.foreign = foreign
        
 
         Node.internalNodes.push(this) // data objs for instance methods
@@ -43,7 +43,8 @@ export default class Node extends Base {
             visibility: this.visibility,
             type: this.type,
             style: this.style, 
-            shortName: this.shortName
+            shortName: this.shortName,
+            foreign: this.foreign
         }
 
         // additional props
@@ -61,7 +62,8 @@ export default class Node extends Base {
             name: this.name,
             type: this.type,
             style: this.style,
-            shortName: this.shortName
+            shortName: this.shortName,
+            foreign: this.foreign
         }
         if (newVisibleD3Nodes) {
             group.leaves = this.leaves.map(leave => Node.getVisibleIndexById(newVisibleD3Nodes, leave))
@@ -132,20 +134,27 @@ export default class Node extends Base {
 
     /////// Public API methods - START
     static invisibleTypes = []
-    static toggleTypeVisibility(type) {
+    static toggleTypeVisibility(type, visibility) {
+        console.log("inside toggle ", type, visibility)
         Node.resetInternalData()
 
-        const existingIndex = Node.invisibleTypes.findIndex(_type => _type === type)
-        const visibility = existingIndex !== -1
-        if (visibility) Node.invisibleTypes.splice(existingIndex, 1)
-        else Node.invisibleTypes.push(type)
+        //if visibility of foreign entities should be toggled 
+        if(type === "foreign"){
+            console.log('setting visibility of type', type, 'to', visibility)
+            for (const node of Node.internalNodes) {
+                if (node.foreign === true) Node.setInternalDataVisibilityRecursive(node.id, visibility)
+            }
+        }else{
+            const existingIndex = Node.invisibleTypes.findIndex(_type => _type === type)
+            if (visibility) Node.invisibleTypes.splice(existingIndex, 1)
+            else Node.invisibleTypes.push(type)
 
-        console.log('setting visibility of type', type, 'to', visibility)
+            console.log('setting visibility of type', type, 'to', visibility)
 
-        for (const node of Node.internalNodes) {
-            if (node.type === type) Node.setInternalDataVisibilityRecursive(node.id, visibility)
+            for (const node of Node.internalNodes) {
+                if (node.type === type) Node.setInternalDataVisibilityRecursive(node.id, visibility)
+            }
         }
-
         // Node.internalNodes.forEach(n => {
         //     if (n.type === type) console.log('toggling internalNode visibility', n.toDebugNode(), visibility)
         // })

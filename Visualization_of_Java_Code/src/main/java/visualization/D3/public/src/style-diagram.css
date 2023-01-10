@@ -2,41 +2,32 @@
     stroke: #fff;
     stroke-width: 1.5px;
     cursor: move;
-}
-.label {
-    fill: black;
-    font-size: 18px;
-    text-anchor: middle;
-    cursor: move;
+    opacity: 0.8;
 }
 
-
-.group {
-    stroke: #fff;
-    stroke-width: 1.5px;
+.group { 
     cursor: move;
     opacity: 0.7;
 }
+
 .link {
     stroke: black;
     stroke-width: 3px;
-    stroke-opacity: 1;
-    marker-end: url(#end-arrow);
+    stroke-opacity: 0.6;
 }
 
-
-.grouplabel {
+.label {
     fill: black;
-    font-family: Verdana;
-    font-size: 18px;
+    font-family: Perpetua;
+    font-size: 15px;
     text-anchor: middle;
     cursor: move;
 }
 
 .linklabel {
     fill: black;
-    font-family: Verdana;
-    font-size: 18px;
+    font-family: Perpetua;
+    font-size: 15px;
     text-anchor: middle;
     cursor: move;
 }

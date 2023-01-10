@@ -17,12 +17,35 @@ importJsonToD3(JSON.stringify({ associations, entities }))
 //     links: Link.links
 // })
 
+function onToggleChildrenVisibility(nodeId){
+    const D3Data = Node.toggleChildrenVisibility(nodeId)
+        if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
+}
+function onToggleTypeVisibility(type, visibility){
+    let D3Data; 
+    if (type === "implements" || type === "extends" || type === "returnType" || type === "access" || type === "invocation") {
+        //const D3Data =  Link.toggleTypeVisibility(linkType, visibility) //TODO implement
+    }else{ 
+        D3Data = Node.toggleTypeVisibility(type, visibility)
+    }
+    if(D3Data) redraw(D3Data)
+}
 
+//add onChange()-Listeners to all filtering-Checkboxes and call toggleVisibility with type set 
+const $checkboxes = document.querySelectorAll("input"); 
+//check all checkboxes on page reload and add event listeners
+for(const checkbox of $checkboxes){
+    checkbox.checked = true; 
+    checkbox.addEventListener("change", (e) => {        
+        onToggleTypeVisibility(e.target.name, e.target.checked)
+    } )
+}
+console.log("Checkboxes", $checkboxes)
 
 const d3 = window.d3
 
 //for window
-const width = window.innerWidth, // set width to window width
+const width = window.innerWidth*0.75, // set width to window width
     height = window.innerHeight; // set height to window height
 
 
@@ -84,6 +107,7 @@ g
     .attr("markerWidth", 4)
     .attr("markerHeight", 5)
     .attr("orient", "auto")
+    .attr("opacity","0.95" )
     .append("svg:path")
     .attr("d", "M0,-5L10,0L0,5L2,0")
     .attr("stroke-width", "0px")
@@ -94,15 +118,7 @@ g
 
 const delimiters = ['.', '^', '\'', '#', '$']
 const delimiterRegex = /[\.\^\'\#\$]/g
-// setTimeout(() => {
-//     const D3Data = Node.toggleTypeVisibility('method')
-//     if(D3Data) redraw(D3Data)
-// }, 5000)
 
-// setTimeout(() => {
-//     const D3Data = Node.toggleTypeVisibility('method')
-//     if(D3Data) redraw(D3Data)
-// }, 45000)
 
 
 
@@ -124,6 +140,7 @@ function redraw(D3Data) {
     g.selectAll(".link").remove()
     g.selectAll(".label").remove()
     g.selectAll(".grouplabel").remove()
+    g.selectAll(".linklable").remove()
 
 
 
@@ -145,15 +162,6 @@ function redraw(D3Data) {
             constraints[1].offsets.push({node: i, offset: 0})
         }
     }
-
-
-    // console.log("Nodes in redraw --> ", nodes)
-    d3Cola //setting global data in  d3Cola
-        .nodes(nodes)
-        .links(links)
-        .groups(groups)
-        // .constraints(constraints)
-        .start(50, 0, 50);
 
 
 
@@ -225,15 +233,13 @@ function redraw(D3Data) {
                 clearTimeout(waitForDoubleClick)
                 waitForDoubleClick = null
 
-                // console.log('node clicked', node.id)
-                const D3Data = Node.toggleChildrenVisibility(node.id)
-                if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
+                onToggleChildrenVisibility(node.id)
             } else {
                 waitForDoubleClick = setTimeout(() => {
                     const { x, y } = node
                     zoomOnClick(x, y)
                     waitForDoubleClick = null
-                }, 100)
+                }, 250)
             }
         })
         /*.on("mouseup", function (d) {
@@ -252,9 +258,7 @@ function redraw(D3Data) {
         .enter()
         .append("path") //arrows, line would make lines
         .attr("class", "link")
-        .style("stroke", "black")
         .attr('marker-end', (d) => "url(#end-arrow)")//attach the arrow from defs to the END of the path
-        .style("stroke-width", 4);//stroke width of link
 
     //inserting labels for nodes into g
     var label = g
@@ -263,10 +267,6 @@ function redraw(D3Data) {
         .enter()
         .append("text")
         .attr("class", "label")
-        //.style("color", "black")
-        //.style("stroke", "black")
-        .style("fill", "black")
-        .style("font-size", "12px")
         .text(function (d) {
             return d.shortName;//show shortName as Label
         })
@@ -293,31 +293,24 @@ function redraw(D3Data) {
         .call(d3Cola.drag); // text also triggers drag event
         */
 
-    var linkLabel = g
+    var linkLabel = g 
         .selectAll(".linklabel")
         .data(links)
         .enter()
         .append("text")
         .attr("class", "linklabel")
-        .attr("text-anchor", "middle")
         .text(function (d) {
-            return d.name;
+            console.log(d.type)
+            return d.type;
         })
         .call(d3Cola.drag); // text also triggers drag event
 
 
-    //appending title to group so when mouse hovers over node title is displayed
-    /*group
-        .append("title")
-        .text(function (d) {
-            return d.type+ " " +d.shortName;//show uniqueName when hovering over group with mouse
-        });*/
-
     //appending title to links so when mouse hovers over link title is displayed
-    link //TODO _ visible? 
+    link 
         .append("title")
         .text(function (d) {
-            return d.name;
+            return d.type;
         });
     console.log(link)
 

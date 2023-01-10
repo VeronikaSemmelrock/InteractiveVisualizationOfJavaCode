@@ -12,8 +12,7 @@ function parseAssociationsToLinks(associations, entities){
             "id" : i, 
             "source": entityKeys.findIndex(key => key === association.fFromEntity.fUniqueName),
             "target": entityKeys.findIndex(key => key === association.fToEntity.fUniqueName),
-            "type" : association.fType, 
-            "visibility" : true}
+            "type" : association.fType}
         ); 
     }
     return result; 
@@ -51,7 +50,6 @@ function parseEntitiesToNodes(entities){
 
         const internalNodeObj = { 
             id: i,
-            visibility: true,
             name: entity.fUniqueName,
             leaves: [i],
             groups: foundChildren,
@@ -102,7 +100,7 @@ function importJsonToD3(jsonServerData){
     const nodes = parseEntitiesToNodes(entities)
 
     nodes.forEach(node => new Node(node.id, node.name, node.type, node.leaves, node.groups, node.parentUniqueName, node.foreign))
-    links.forEach(link => new Link(link.id, link.name, link.source, link.target))
+    links.forEach(link => new Link(link.id, link.source, link.target, link.type))
 
     console.log('successfully imported JSON data', {
         nodes: Node.nodes,

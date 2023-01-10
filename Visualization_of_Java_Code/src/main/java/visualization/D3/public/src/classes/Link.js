@@ -1,12 +1,12 @@
-import Base from "./Base.js"
 import Node from "./Node.js"
 
-export default class Link extends Base {
+export default class Link{
     static internalLinks = [] // class-based link array for changing links array with class methods
     static links = [] // D3cola link array
 
-    constructor(id, name, source, target) {
-        super(id, name)
+    constructor(id, source, target, type) {
+        this.id = id
+        this.type = type
         this.source = source
         this.target = target
 
@@ -18,7 +18,7 @@ export default class Link extends Base {
     toD3Link(newVisibleD3Nodes) {
         const linkObj = {
             id: this.id,
-            name: this.name,
+            type: this.type,
         }
         if (newVisibleD3Nodes) {
             linkObj.source = Node.getVisibleIndexById(newVisibleD3Nodes, this.source)
@@ -78,6 +78,7 @@ export default class Link extends Base {
 
 
     // Link Styling
+    /*
     static getStyle(linkType) {
         switch (linkType) {
             case 'extends':
@@ -101,5 +102,5 @@ export default class Link extends Base {
                     color: 'violet',
                 };
         }
-    }
+    }*/
 }
