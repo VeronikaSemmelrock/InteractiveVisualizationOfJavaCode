@@ -1,6 +1,7 @@
 import Node from "./classes/Node.js";
 import Link from "./classes/Link.js";
 
+//parses associations.json from IVC to links for D3
 function parseAssociationsToLinks(associations, entities){
     let result = []; 
     const associationKeys = Object.keys(associations)
@@ -18,6 +19,7 @@ function parseAssociationsToLinks(associations, entities){
     return result; 
 }   
 
+//parses entities.json from IVC to nodes/groups for D3
 function parseEntitiesToNodes(entities){
     //add all entities to nodes-list with uniqueNames of children set as groups and its own index as leaves-index 
     //later uniqueNames in groups will be replaced by right index after all entities have been added to list
@@ -57,16 +59,13 @@ function parseEntitiesToNodes(entities){
             parentUniqueName: entity.fParentAsString, //can be "null" as string
             foreign: entity.fForeign
         };
-        //console.log(internalNodeObj)
         resultNodes.push(internalNodeObj)
-        // console.log(resultNodes)
     }
-
-    //all entities have been added to the list -> now uniqueNames in children can be replaced with index, then list can be returned
-    return replaceUniqueNamesWithIndex(resultNodes); 
-
+    //all entities have been added to the list -> now uniqueNames in children can be replaced with index (as D3 needs indexes)
+    return replaceChildUniqueNamesWithIndex(resultNodes); 
 }
 
+//
 function getUniqueNames(list){
     //console.log(list)
     const result = [];  
@@ -76,9 +75,8 @@ function getUniqueNames(list){
     return result; 
 }
 
-function replaceUniqueNamesWithIndex(list){
-    console.log(list); 
-    //console.log(nodes)
+//replaces the uniqueNames of the children (in "group") with the index of the entity in the list 
+function replaceChildUniqueNamesWithIndex(list){
     for(let i = 0; i < list.length; i++){//go through all nodes
         const indexesChildren = [];  
         const children = list[i].groups; 
@@ -92,7 +90,7 @@ function replaceUniqueNamesWithIndex(list){
     return list; 
 }
 
-
+//imports json-files (association.json and entities.json) and parses them to nodes in class Node and links in class Link
 function importJsonToD3(jsonServerData){
     const {associations, entities} = JSON.parse(jsonServerData)
 

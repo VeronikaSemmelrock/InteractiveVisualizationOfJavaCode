@@ -10,7 +10,7 @@ const DELIMITER_ATTRIBUTE = '#';
 const DELIMITER_INNERCLASS = '$';
 
 // This class represents a group and its node in the context of webcola
-// webcola nodes can have links but only groups can group nodes or other groups, thus a group always only contains one node for the link
+// webcola nodes can have links but only groups can group other nodes or other groups, thus the group representation of the node always only contains one node for the link (itself as a node)
 export default class Node {
     static internalNodes = [] // class-based node array for changing groups and nodes arrays with class methods
     static nodes = [] // D3cola nodes array
@@ -35,7 +35,7 @@ export default class Node {
         Node.groups.push(this.toD3Group()) // data objs for d3cola
     }
 
-
+    //creates a D3Node out of a Node (this)
     toD3Node() {
         const node = {
             id: this.id,
@@ -53,9 +53,10 @@ export default class Node {
         //node.fill = TODO - get from type
         //node.rx = TODO - get from type
         //node.ry = TODO - get from type
-
         return node
     }
+
+    //creates a D3Group out of a node (with proper indexes reset if visibility of a node is altered) 
     toD3Group(newVisibleD3Nodes) {
         const group = {
             id: this.id,
@@ -77,9 +78,9 @@ export default class Node {
         // Additional props
         group.padding = 5
 
-
         return group
     }
+
     toDebugNode() {
         const _debug = this.toD3Node()
         _debug.childrenVisibility = this.childrenVisibility
@@ -89,6 +90,7 @@ export default class Node {
         if (_debug.leaves && _debug.leaves.length !== 0 && typeof _debug.leaves[0] !== 'number') _debug.leaves = _debug.leaves.map(l => l.id)
         return _debug
     }
+    //gets the lowest visible Parent of this
     getLowestVisibleParentRecusive() {
         if (this.visibility) return this
         else {
@@ -104,6 +106,8 @@ export default class Node {
         // console.log('gettingVisibleIndicesById', visibleD3Nodes, nodeId)
         return visibleD3Nodes.findIndex(n => n.id === nodeId)
     }
+
+    //returns all D3Data set in Node 
     static getD3Data() {
         const obj = Object.create(null)
         obj.nodes = Node.nodes// .map(n => n)
@@ -112,7 +116,7 @@ export default class Node {
         return obj
     }
 
-
+    //resets internal node data 
     static resetInternalNodes() {
         // normalize all internalNodes because D3 messes with the array
         function getPotentialObjId(numberOrObj) {
@@ -125,6 +129,8 @@ export default class Node {
             node.groups = node.groups.map(getPotentialObjId)
         }
     }
+
+    //resets internal data 
     static resetInternalData() {
         Node.resetInternalNodes()
         Link.resetInternalLinks()
@@ -134,11 +140,12 @@ export default class Node {
 
     /////// Public API methods - START
     static invisibleTypes = []
-    static toggleTypeVisibility(type, visibility) {
+    //sets visibility of given type in internal and D3Data
+    static setTypeVisibility(type, visibility) {
         console.log("inside toggle ", type, visibility)
         Node.resetInternalData()
 
-        //if visibility of foreign entities should be toggled 
+        //if visibility of foreign entities should be set 
         if(type === "foreign"){
             console.log('setting visibility of type', type, 'to', visibility)
             for (const node of Node.internalNodes) {
@@ -165,6 +172,7 @@ export default class Node {
         return D3Data
     }
 
+    //toggles Visibility of children of a nodeId 
     static toggleChildrenVisibility(nodeId) {
         // console.log(Node.internalNodes[nodeId].groups)
         Node.resetInternalData()
@@ -262,7 +270,7 @@ export default class Node {
     }
 
 
-    // Node Styling
+    //returns styling of a node
     static getStyle(nodeType, foreign) {
 
         var color = d3.schemeSet3;//other options schemeSet1-3
@@ -320,7 +328,7 @@ export default class Node {
         }
     }
 
-    //returns short name - not unique
+    //returns short name of node (removing path)
     static cropName(name, type, foreign){
         if(foreign){
             return name; 

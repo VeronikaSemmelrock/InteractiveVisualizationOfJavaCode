@@ -1,54 +1,44 @@
 import Link from "./classes/Link.js"
 import Node from "./classes/Node.js"
-import data from "./smallgrouped.js"
 import importJsonToD3 from "./parse.js"
 import associations from "./data/associations.js"
 import entities from "./data/entities.js"
 
-importJsonToD3(JSON.stringify({ associations, entities }))
-// Load data
-// data.groups.forEach(group => new Node(group.id, group.name, group.groups.length !== 0 ? 'class' : 'method', group.leaves, group.groups, group.parentUniqueName))
-// data.links.forEach(link => new Link(link.id, link.name, link.source, link.target))
-// console.log('all data', {
-//     internalNodes: Node.internalNodes,
-//     nodes: Node.nodes,
-//     groups: Node.groups,
-//     internalLinks: Link.internalLinks,
-//     links: Link.links
-// })
-
+//toggles children Visibility of given nodeId and calls redraw if data changed 
 function onToggleChildrenVisibility(nodeId){
     const D3Data = Node.toggleChildrenVisibility(nodeId)
         if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
 }
-function onToggleTypeVisibility(type, visibility){
+
+//sets type visibility of given type (of node or link) and calls redraw if data changed 
+function onSetTypeVisibility(type, visibility){
     let D3Data; 
     if (type === "implements" || type === "extends" || type === "returnType" || type === "access" || type === "invocation") {
         //const D3Data =  Link.toggleTypeVisibility(linkType, visibility) //TODO implement
     }else{ 
-        D3Data = Node.toggleTypeVisibility(type, visibility)
+        D3Data = Node.setTypeVisibility(type, visibility)
     }
     if(D3Data) redraw(D3Data)
 }
 
-//add onChange()-Listeners to all filtering-Checkboxes and call toggleVisibility with type set 
+
 const $checkboxes = document.querySelectorAll("input"); 
-//check all checkboxes on page reload and add event listeners
+//check all checkboxes on page reload and add event listeners that call toggling of corresponding type visibility 
 for(const checkbox of $checkboxes){
     checkbox.checked = true; 
     checkbox.addEventListener("change", (e) => {        
-        onToggleTypeVisibility(e.target.name, e.target.checked)
+        onSetTypeVisibility(e.target.name, e.target.checked)
     } )
 }
-console.log("Checkboxes", $checkboxes)
+
 
 const d3 = window.d3
-
 //for window
-const width = window.innerWidth*0.75, // set width to window width
-    height = window.innerHeight; // set height to window height
+const width = window.innerWidth*0.75, // set width to 0.75*window-width to keep space for optionsContainer
+    height = window.innerHeight;
 
 
+importJsonToD3(JSON.stringify({ associations, entities }))
 
 //configuring webcola
 const d3Cola = cola
@@ -67,14 +57,15 @@ const svg = d3
     .select("#diagram")
     .append("svg")
     .attr("viewBox", [0, 0, width, height])
-// .attr("width", width)
-// .attr("height", height)
+
+//appending g (will hold graph) to svg
 const g = svg.append('g');
 
 
 // Configure zoom
 const zoom = d3.zoom()
 
+//configuring zooming
 svg.call(zoom
     .extent([[0, 0], [width, height]])
     .scaleExtent([1, 8])
@@ -114,43 +105,33 @@ g
     .attr("fill", "#000");
 
 
-
-
 const delimiters = ['.', '^', '\'', '#', '$']
 const delimiterRegex = /[\.\^\'\#\$]/g
 
-
-
-
+//starts drawing of graph for the first time
 redraw(Node.getD3Data())
-
-
-
-
-
-
 
 //(re)drawing of graph 
 function redraw(D3Data) {
-    //console.log("D3 redraw data --> ", D3Data)
     const { nodes, links, groups } = D3Data
 
+    //removes old graph-elements
     g.selectAll(".node").remove()
     g.selectAll(".group").remove()
     g.selectAll(".link").remove()
     g.selectAll(".label").remove()
     g.selectAll(".grouplabel").remove()
-    g.selectAll(".linklable").remove()
+    g.selectAll(".linklabel").remove()
 
 
-
+    //constraints
     const constraints = [
         { "type": "alignment", "axis": "x", "offsets": [/* { "node": "0", "offset": "0" } */] },
         { "type": "alignment", "axis": "y", "offsets": [/* { "node": "0", "offset": "0" } */] }
     ]
     let xOffsets = 0
     let yOffsets = 0
-
+    //constraint configuration - TODO 
     for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i]
         const level = node.name.split(delimiterRegex).length
@@ -163,10 +144,8 @@ function redraw(D3Data) {
         }
     }
 
-
-
-    // console.log("Nodes in redraw --> ", nodes)
-    d3Cola //setting global data in  d3Cola
+    //setting of data in d3Cola and starting layouting process
+    d3Cola 
         .nodes(nodes)
         .links(links)
         .groups(groups)
@@ -183,7 +162,7 @@ function redraw(D3Data) {
         .attr("class", "group") // adding group style from style-diagram.css
         .style("stroke", "transparent")
         .style("fill", "transparent")
-        .call(d3Cola.drag)
+        .call(d3Cola.drag) //adding ability to drag
         /*.on("mouseup", function (d) {
             d.fixed = 0;
             d3Cola.alpha(1); // fire it off again to satify gridify
@@ -194,20 +173,16 @@ function redraw(D3Data) {
             if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
         })*/
 
-    
-    
 
-
-    var pad = 20;
-
-
-    //inserting nodes into g 
+    //inserting nodes-data into g 
     var nodeElements = g
         .selectAll(".node")
         .data(nodes, function (d) { return d.name })
 
 
     let waitForDoubleClick = null
+    var pad = 20;
+    //inserting nodes into g 
     var enteredNodeElements = nodeElements.enter()
         .append("rect")
         .attr("class", "node")
@@ -229,17 +204,17 @@ function redraw(D3Data) {
         })
         .call(d3Cola.drag)
         .on("click", function (node) {
+            //on doubleclick toggle group/children visibility 
             if (waitForDoubleClick != null) {
                 clearTimeout(waitForDoubleClick)
                 waitForDoubleClick = null
-
                 onToggleChildrenVisibility(node.id)
-            } else {
+            } else { //on single click zoom in on clicked spot 
                 waitForDoubleClick = setTimeout(() => {
                     const { x, y } = node
                     zoomOnClick(x, y)
                     waitForDoubleClick = null
-                }, 250)
+                }, 250)//waiting for 250 to detect double click 
             }
         })
         /*.on("mouseup", function (d) {
@@ -252,15 +227,16 @@ function redraw(D3Data) {
     //     //handleNodeClick(d.id);
     // });
 
+    //inserting links 
     var link = g
         .selectAll(".link")
         .data(links)
         .enter()
-        .append("path") //arrows, line would make lines
+        .append("path") //arrows, "line" would make lines
         .attr("class", "link")
-        .attr('marker-end', (d) => "url(#end-arrow)")//attach the arrow from defs to the END of the path
+        .attr('marker-end', (d) => "url(#end-arrow)")//attach the arrow from defs to the end of the path
 
-    //inserting labels for nodes into g
+    //inserting labels for nodes
     var label = g
         .selectAll(".label")
         .data(nodes)
@@ -280,19 +256,7 @@ function redraw(D3Data) {
             return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " +d.name;//capitalize Type and add shortname
         });
 
-    //inserting labels for groups into g
-    /*var groupLabel = g
-        .selectAll(".grouplabel")
-        .data(groups)
-        .enter()
-        .append("text")
-        .attr("class", "grouplabel")
-        .text(function (d) {
-            return d.shortName;//show shortName as Label
-        })
-        .call(d3Cola.drag); // text also triggers drag event
-        */
-
+    //inserting labels for links
     var linkLabel = g 
         .selectAll(".linklabel")
         .data(links)
@@ -326,9 +290,10 @@ function redraw(D3Data) {
         .curve(d3.curveLinear);
 
 
-    //layouting of webcola
+    //layouting of webcola (tick-function is called internally)
     d3Cola.on("tick", function () {
         const padding = 30;
+        //layouting of nodes
         enteredNodeElements
             .each(function (d) {
                 //d.innerBounds = d.bounds.inflate(-margin);// - original
@@ -356,7 +321,7 @@ function redraw(D3Data) {
                 //return 0; //-> makes the node invisible
             });
 
-
+        //layouting of links
         link
             .attr("d", function (d) {
                 var route = cola.makeEdgeBetween(
@@ -397,6 +362,7 @@ function redraw(D3Data) {
                 //return d.parent.bounds.y; // -> makes the node be at the top of the parent-group, but the arrows still point to old position :(
             });*/
 
+        //layouting of groups 
         group
             .each(function (d) {//new function added
                 d.innerBounds = d.bounds.inflate(-padding);
@@ -420,6 +386,8 @@ function redraw(D3Data) {
             .attr("height", function (d) {
                 return d.bounds.height();
             });
+        
+        //layouting of node labels 
         label
             .attr("x", function (d) {
                 //console.log("d ->", d, "d.parent -> ", d.parent)
@@ -444,6 +412,7 @@ function redraw(D3Data) {
                 return d.bounds.y + 18; // calculate y offset by adding the height of the groupLabel
             });*/
 
+        //layouting of linklabels
         linkLabel
             .attr("x", function (d) {
                 //console.log(d.target.x + (d.source.x - d.target.x) / 2)

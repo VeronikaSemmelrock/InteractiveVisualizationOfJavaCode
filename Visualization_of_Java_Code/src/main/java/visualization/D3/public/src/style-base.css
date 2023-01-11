@@ -1,7 +1,6 @@
 body{
     overflow: hidden; 
 }
-
 #optionsContainer{
     font-family: Perpetua;
     width: 23vw;
@@ -16,10 +15,10 @@ body{
 #optionsContainer{
     font-size: 0.7rem;
 }
-#optionsContainer > div{/*all direct children of optionscontainer that are of type div*/
+#optionsContainer > div{
     margin: 0.75vh 0
 }
-@media(min-width: 768px){ /*like an if that checks the current window width in pixel -> "body" of "if" is executed when window size bigger than 768 pixels*/
+@media(min-width: 768px){
     #optionsContainer{
         font-size: 0.95rem;
     }
@@ -29,7 +28,6 @@ body{
         font-size: 1.095rem;
     }
 }
-
 #diagram{
     float:right;
     width: 75vw;
