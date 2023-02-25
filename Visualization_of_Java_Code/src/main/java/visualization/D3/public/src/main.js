@@ -4,6 +4,20 @@ import importJsonToD3 from "./parse.js"
 import associations from "./data/associations.js"
 import entities from "./data/entities.js"
 
+
+
+//vars for filtering that only happens in frontend 
+var styleEntities; 
+var showLinkLabels;  
+var showEntityLabels; 
+
+//vars for defaultStyling 
+const defaultRounding = 6
+const defaultColour =  "#b3e6b5" //light green 
+
+
+
+
 //toggles children Visibility of given nodeId and calls redraw if data changed 
 function onToggleChildrenVisibility(nodeId){
     const D3Data = Node.toggleChildrenVisibility(nodeId)
@@ -15,20 +29,20 @@ function onSetTypeVisibility(type, visibility){
     let D3Data; 
     if (type === "implements" || type === "extends" || type === "returnType" || type === "access" || type === "invocation") {
         //const D3Data =  Link.toggleTypeVisibility(linkType, visibility) //TODO implement
-    }else{ 
+        //or just filter in frontend - not possible ! if only specific should be filtered! 
+    }else if(type === "styling") {
+        //turn styling on or off 
+        styleEntities = visibility
+    }else if(type === "linkLabels"){
+        //turn linkLabels on or off 
+        showLinkLabels = visibility
+    }else if(type === "entityLabels"){
+        //turn entityLabels on or off 
+        showEntityLabels = visibility
+    }else{ //node visibility
         D3Data = Node.setTypeVisibility(type, visibility)
-    }
-    if(D3Data) redraw(D3Data)
-}
-
-
-const $checkboxes = document.querySelectorAll("input"); 
-//check all checkboxes on page reload and add event listeners that call toggling of corresponding type visibility 
-for(const checkbox of $checkboxes){
-    checkbox.checked = true; 
-    checkbox.addEventListener("change", (e) => {        
-        onSetTypeVisibility(e.target.name, e.target.checked)
-    } )
+    } 
+    redraw(Node.getD3Data())
 }
 
 
@@ -39,6 +53,7 @@ const width = window.innerWidth*0.75, // set width to 0.75*window-width to keep 
 
 
 importJsonToD3(JSON.stringify({ associations, entities }))
+
 
 //configuring webcola
 const d3Cola = cola
@@ -108,11 +123,57 @@ g
 const delimiters = ['.', '^', '\'', '#', '$']
 const delimiterRegex = /[\.\^\'\#\$]/g
 
+
+
+
+
+const $checkboxes = document.querySelectorAll("input"); 
+//uncheck all checkboxes on page reload and add event listeners that call toggling of corresponding type visibility - TODO
+for(const checkbox of $checkboxes){
+    checkbox.checked = true;//should be false 
+    checkbox.addEventListener("change", (e) => {        
+        onSetTypeVisibility(e.target.name, e.target.checked)
+    } )
+     
+}
+//set checkbox of packages to checked, so packages are visible at page reload - TODO
+//document.getElementById("filterPackages").checked = true
+//set corresponding initial values for vars that are for filtering in frontend 
+styleEntities = true; 
+showEntityLabels = true; 
+showLinkLabels = true; 
+
+
+
+
+/*console.log("Nodes before ", Node.getD3Data().nodes)
+//initially close all nodes 
+for(const node of Node.getD3Data().nodes){
+    Node.setChildrenVisibility(node.id, false)
+}
+console.log("After setting showChildren to false -> ",  Node.getD3Data(), Node.internalNodes)
+//set data to inital values as well 
+//Node.setTypeVisibility("package", true)
+Node.setTypeVisibility("class", false)
+Node.setTypeVisibility("method", false)
+Node.setTypeVisibility("constructor", false)
+Node.setTypeVisibility("parameter", false)
+Node.setTypeVisibility("attribute", false)
+Node.setTypeVisibility("localVariable", false)*/
+
+
+
+
+
+
+
 //starts drawing of graph for the first time
 redraw(Node.getD3Data())
 
+
 //(re)drawing of graph 
 function redraw(D3Data) {
+    console.log("Data for drawing -> ", D3Data, "Internal data -> ", Node.internalNodes)
     const { nodes, links, groups } = D3Data
 
     //removes old graph-elements
@@ -193,14 +254,17 @@ function redraw(D3Data) {
             return d.height - 2 * pad;
         })
         .attr("rx", function(d){
-            return d.style.rx; 
+            //style depending on checkbox value 
+            if(styleEntities) return d.style.rx
+            else return defaultRounding; 
         })
         .attr("ry", function(d){
-            return d.style.ry; 
+            if(styleEntities) return d.style.ry
+            else return defaultRounding; 
         }) 
         .style("fill", function (d) {
-            // return color(d.id);
-            return d.style.color;
+            if(styleEntities) return d.style.color
+            else return defaultColour
         })
         .call(d3Cola.drag)
         .on("click", function (node) {
@@ -236,8 +300,9 @@ function redraw(D3Data) {
         .attr("class", "link")
         .attr('marker-end', (d) => "url(#end-arrow)")//attach the arrow from defs to the end of the path
 
-    //inserting labels for nodes
-    var label = g
+    //inserting labels for nodes - only if checkbox is checked 
+    if(showEntityLabels){
+        var label = g
         .selectAll(".label")
         .data(nodes)
         .enter()
@@ -247,7 +312,8 @@ function redraw(D3Data) {
             return d.shortName;//show shortName as Label
         })
         .call(d3Cola.drag); // text also triggers drag event
-
+    }
+    
 
     //appending title to node so when mouse hovers over node title is displayed
     enteredNodeElements
@@ -256,8 +322,9 @@ function redraw(D3Data) {
             return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " +d.name;//capitalize Type and add shortname
         });
 
-    //inserting labels for links
-    var linkLabel = g 
+    //inserting labels for links - only if checkbox is checked 
+    if(showLinkLabels){
+        var linkLabel = g 
         .selectAll(".linklabel")
         .data(links)
         .enter()
@@ -268,6 +335,8 @@ function redraw(D3Data) {
             return d.type;
         })
         .call(d3Cola.drag); // text also triggers drag event
+    }
+    
 
 
     //appending title to links so when mouse hovers over link title is displayed
@@ -387,8 +456,9 @@ function redraw(D3Data) {
                 return d.bounds.height();
             });
         
-        //layouting of node labels 
-        label
+        //layouting of node labels - only if checkbox is checked 
+        if(showEntityLabels){
+            label
             .attr("x", function (d) {
                 //console.log("d ->", d, "d.parent -> ", d.parent)
                 return d.parent.bounds.x + d.parent.bounds.width() / 2;
@@ -402,6 +472,8 @@ function redraw(D3Data) {
                 return d.y + h /4;*/ //original
                 //return d.bounds.y + h / 4;
             });
+        }
+        
 
 
         /*groupLabel
@@ -412,8 +484,9 @@ function redraw(D3Data) {
                 return d.bounds.y + 18; // calculate y offset by adding the height of the groupLabel
             });*/
 
-        //layouting of linklabels
-        linkLabel
+        //layouting of linklabels - only if checkbox is checked
+        if(showLinkLabels){
+            linkLabel
             .attr("x", function (d) {
                 //console.log(d.target.x + (d.source.x - d.target.x) / 2)
                 if (d.source.x >= d.target.x) {
@@ -429,6 +502,8 @@ function redraw(D3Data) {
                     return d.source.y + (d.target.y - d.source.y) / 2
                 }
             });
+        }
+        
     });
 
 }
