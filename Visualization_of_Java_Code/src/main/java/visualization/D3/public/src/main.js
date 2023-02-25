@@ -10,6 +10,7 @@ import entities from "./data/entities.js"
 var styleEntities; 
 var showLinkLabels;  
 var showEntityLabels; 
+var showLinks; 
 
 //vars for defaultStyling 
 const defaultRounding = 6
@@ -27,9 +28,9 @@ function onToggleChildrenVisibility(nodeId){
 //sets type visibility of given type (of node or link) and calls redraw if data changed 
 function onSetTypeVisibility(type, visibility){
     let D3Data; 
-    if (type === "implements" || type === "extends" || type === "returnType" || type === "access" || type === "invocation") {
-        //const D3Data =  Link.toggleTypeVisibility(linkType, visibility) //TODO implement
-        //or just filter in frontend - not possible ! if only specific should be filtered! 
+    //if (type === "implements" || type === "extends" || type === "returnType" || type === "access" || type === "invocation") {
+    if(type === "links"){
+        showLinks = visibility
     }else if(type === "styling") {
         //turn styling on or off 
         styleEntities = visibility
@@ -142,6 +143,8 @@ for(const checkbox of $checkboxes){
 styleEntities = true; 
 showEntityLabels = true; 
 showLinkLabels = true; 
+showLinks = false; 
+document.getElementById("filterLinks").checked = false
 
 
 
@@ -291,14 +294,35 @@ function redraw(D3Data) {
     //     //handleNodeClick(d.id);
     // });
 
-    //inserting links 
-    var link = g
+    //inserting links - only if checkbox is checked
+    if(showLinks){
+        var link = g
         .selectAll(".link")
         .data(links)
         .enter()
         .append("path") //arrows, "line" would make lines
         .attr("class", "link")
         .attr('marker-end', (d) => "url(#end-arrow)")//attach the arrow from defs to the end of the path
+
+        //appending title to links so when mouse hovers over link title is displayed
+        link 
+        .append("title")
+        .text(function (d) {
+            return d.type;
+        });
+
+         //creating lines
+        var lineFunction = d3
+        .line()
+        .x(function (d) {
+            return d.x;
+        })
+        .y(function (d) {
+            return d.y;
+        })
+        .curve(d3.curveLinear);
+    }
+    
 
     //inserting labels for nodes - only if checkbox is checked 
     if(showEntityLabels){
@@ -322,8 +346,8 @@ function redraw(D3Data) {
             return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " +d.name;//capitalize Type and add shortname
         });
 
-    //inserting labels for links - only if checkbox is checked 
-    if(showLinkLabels){
+    //inserting labels for links - only if checkbox is checked and links are defined
+    if(link && showLinkLabels){
         var linkLabel = g 
         .selectAll(".linklabel")
         .data(links)
@@ -338,25 +362,7 @@ function redraw(D3Data) {
     }
     
 
-
-    //appending title to links so when mouse hovers over link title is displayed
-    link 
-        .append("title")
-        .text(function (d) {
-            return d.type;
-        });
-    console.log(link)
-
-    //creating lines
-    var lineFunction = d3
-        .line()
-        .x(function (d) {
-            return d.x;
-        })
-        .y(function (d) {
-            return d.y;
-        })
-        .curve(d3.curveLinear);
+   
 
 
     //layouting of webcola (tick-function is called internally)
@@ -390,8 +396,9 @@ function redraw(D3Data) {
                 //return 0; //-> makes the node invisible
             });
 
-        //layouting of links
-        link
+        //layouting of links - only if links were created
+        if(link){
+            link
             .attr("d", function (d) {
                 var route = cola.makeEdgeBetween(
                     d.source.innerBounds,//original
@@ -418,6 +425,8 @@ function redraw(D3Data) {
             .attr("text", function (d) {
                 return d.name;
             });
+        }
+        
 
         /*enteredNodeElements //was originally not commented but seems to not do anything?? 
             .attr("x", function (d) {
@@ -484,8 +493,8 @@ function redraw(D3Data) {
                 return d.bounds.y + 18; // calculate y offset by adding the height of the groupLabel
             });*/
 
-        //layouting of linklabels - only if checkbox is checked
-        if(showLinkLabels){
+        //layouting of linklabels - only if checkbox is checked and links were created
+        if(link && showLinkLabels){
             linkLabel
             .attr("x", function (d) {
                 //console.log(d.target.x + (d.source.x - d.target.x) / 2)
