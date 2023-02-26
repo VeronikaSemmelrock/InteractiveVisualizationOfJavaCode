@@ -18,14 +18,21 @@ importJsonToD3(JSON.stringify({ associations, entities }))
 // })
 
 
-
 const d3 = window.d3
 
-//for window
-const width = window.innerWidth, // set width to window width
-    height = window.innerHeight; // set height to window height
+// Graph max sizes
+const graphContainer = document.getElementById('main').getBoundingClientRect()
+const width = graphContainer.width, // set width to window width - FIX
+    height = graphContainer.height; // set height to window height
+const centerX = width / 2,
+    centerY = height / 2
 
-
+// Graph Boundaries
+const graphBounds = { x: 0, y: 0, width: graphContainer.width, height: graphContainer.height }
+const fixedNode = { fixed: true, fixedWeight: 1e6 } // weight when reaching the boundary --> lower means it ll be movable past the boundary
+const topLeftFixedNode = { ...fixedNode, x: graphBounds.x, y: graphBounds.y }
+const bottomRightFixedNode = { ...fixedNode, x: graphBounds.x + graphBounds.width, y: graphBounds.y + graphBounds.height }
+const constraintBase = { type: 'separation', gap: 50 } // distance to boundary
 
 
 //setting colour scheme
@@ -43,14 +50,77 @@ const d3Cola = cola
     .size([width, height]);
 
 
-//appending svg to container "diagram"
+//appending svg to container "main"
 const svg = d3
-    .select("#diagram")
+    .select("#main")
     .append("svg")
     .attr("viewBox", [0, 0, width, height])
 // .attr("width", width)
 // .attr("height", height)
-const g = svg.append('g');
+// Construct graph and its bounds
+const g = svg
+    .append('g')
+    .attr('id', 'graph')
+
+// Add Grid to graph
+const addGrid = () => {
+    console.log('addingGrid')
+    const svg = d3
+        .select('#main')
+        .append('svg')
+        .attr("viewBox", [0, 0, width, height])
+
+    const defs = svg.append('defs')
+    const firstPattern = defs
+        .append('pattern')
+        .attr('id', 'smallGrid')
+        .attr('width', '8')
+        .attr('height', '8')
+        .attr('patternUnits', 'userSpaceOnUse')
+    const path = firstPattern
+        .append('path')
+        .attr('d', 'M 8 0 L 0 0 0 8')
+        .attr('fill', 'none')
+        .attr('stroke', 'gray')
+        .attr('stroke-width', '0.35')
+    const secondPattern = defs
+        .append('pattern')
+        .attr('id', 'grid')
+        .attr('width', '80')
+        .attr('height', '80')
+        .attr('patternUnits', 'userSpaceOnUse')
+    secondPattern
+        .append('rect')
+        .attr('width', '80')
+        .attr('height', '80')
+        .attr('fill', 'url(#smallGrid)')
+    secondPattern
+        .append('path')
+        .attr('d', 'M 80 0 L 0 0 0 80')
+        .attr('fill', 'none')
+        .attr('stroke', 'gray')
+        .attr('stroke-width', '0.8')
+    const rect = svg
+        .append('rect')
+        .attr('width', '100%')
+        .attr('height', '100%')
+        .attr('fill', 'url(#grid)')
+    //     < defs >
+    //     <pattern id="smallGrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    //       <path d="M 8 0 L 0 0 0 8" fill="none" stroke="gray" stroke-width="0.5"/>
+    //     </pattern>
+    //     <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+    //       <rect width="80" height="80" fill="url(#smallGrid)"/>
+    //       <path d="M 80 0 L 0 0 0 80" fill="none" stroke="gray" stroke-width="1"/>
+    //     </pattern>
+    //   </defs >
+
+    //     <rect width="100%" height="100%" fill="url(#grid)" />
+}
+// setTimeout(addGrid, 5000)
+
+
+
 
 
 // Configure zoom
@@ -58,23 +128,77 @@ const zoom = d3.zoom()
 
 svg.call(zoom
     .extent([[0, 0], [width, height]])
-    .scaleExtent([1, 8])
+    .scaleExtent([0, 8])
     // .translateExtent([[0, 0], [width, height]])
     .on("zoom", function () {
         const transform = d3.zoomTransform(this)
-        console.log('zooming', transform, transform.x - width / 2, transform.y - height / 2)
+        // console.log('zooming', transform, transform.x - width / 2, transform.y - height / 2)
         g.attr("transform", "translate(" + transform.x + "," + transform.y + ") scale(" + transform.k + ")");
     }))
     .on("dblclick.zoom", null)
 
 function zoomOnClick(x, y) {
     // e.stopPropagation();
-    svg.transition().duration(750).call(
-        zoom.transform,
-        d3.zoomIdentity.translate(width / 2, height / 2).scale(3).translate(-x, -y)//,
-        // d3.pointer(e)
-    );
+    svg
+        .transition()
+        .duration(750)
+        .call(
+            zoom.transform,
+            d3.zoomIdentity
+                .translate(width / 2, height / 2)
+                .scale(3)
+                .translate(-x, -y)//,
+            // d3.pointer(e)
+        );
 }
+
+
+
+
+function fitGraphToView() {
+    const graph = document.getElementById('graph') // := g
+    const graphPosition = graph.getBoundingClientRect()
+    graphPosition.x = graphPosition.x - graphContainer.x
+    graphPosition.y = graphPosition.y - graphContainer.y
+    const graphCenterX = graphPosition.x + graphPosition.width / 2
+    const graphCenterY = graphPosition.y + graphPosition.height / 2
+    // console.log('graph', graphPosition, graphCenterX)
+    // console.log('graphContainer', graphContainer)
+    // console.log('center is', centerX, centerY)
+    // console.log('maxWidth and maxHeight', width, height)
+
+
+    // Scale
+    const widthRelation = graphPosition.width / width
+    const heightRelation = graphPosition.height / height
+    const graphTooSmall = widthRelation < 0.6 && heightRelation < 0.6
+    const graphTooWide = widthRelation > 1
+    const graphTooHigh = heightRelation > 1
+
+    let scale = 1
+    if (graphTooSmall) scale = widthRelation < heightRelation ? widthRelation + 1 : heightRelation + 1
+    else if (graphTooHigh || graphTooWide) {
+        let relation = heightRelation // use heightRelationTo adjust graph scale
+        if (widthRelation > heightRelation) relation = widthRelation // use widthRelation to adjust graph scale
+
+        scale = 1 / relation
+        console.log('graph too big, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, scale)
+    }
+    svg
+        .transition()
+        .duration(750)
+        .call(
+            zoom.transform,
+            d3.zoomIdentity
+                .translate(centerX, centerY)
+                .scale(scale)
+                .translate(-graphCenterX, - graphCenterY)
+        )
+}
+
+// document.getElementById('fit').addEventListener('click', fitGraphToView)
+
+
 
 
 
@@ -120,7 +244,7 @@ redraw(Node.getD3Data())
 
 //(re)drawing of graph 
 function redraw(D3Data) {
-    console.log("D3 redraw data --> ", D3Data)
+    // console.log("D3 redraw data --> ", D3Data)
     const { nodes, links, groups } = D3Data
 
     g.selectAll(".node").remove()
@@ -129,35 +253,56 @@ function redraw(D3Data) {
     g.selectAll(".label").remove()
     g.selectAll(".grouplabel").remove()
 
+    console.log('graphContainer', graphContainer)
 
-
-    const constraints = [
-        { "type": "alignment", "axis": "x", "offsets": [/* { "node": "0", "offset": "0" } */] },
-        { "type": "alignment", "axis": "y", "offsets": [/* { "node": "0", "offset": "0" } */] }
-    ]
-    let xOffsets = 0
-    let yOffsets = 0
-
+    //// constraints
+    const constrainedNodes = nodes.slice()
+    // Max Graph-width and height constraint
+    // --> Use 2 non-visible-fixed-nodes to create a boundary
+    const topLeftFixedNodeIndex = constrainedNodes.push(topLeftFixedNode) - 1
+    const bottomRightFixedNodeIndex = constrainedNodes.push(bottomRightFixedNode) - 1
+    const constraints = []
     for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i]
-        const level = node.name.split(delimiterRegex).length
-        console.log('node', node, level)
-        if (level === 1) {
-            constraints[0].offsets.push({node: i, offset: 0})
-        }
-        else {
-            constraints[1].offsets.push({node: i, offset: 0})
-        }
+        constraints.push({ ...constraintBase, axis: 'x', left: topLeftFixedNodeIndex, right: i })
+        constraints.push({ ...constraintBase, axis: 'y', left: topLeftFixedNodeIndex, right: i })
+        constraints.push({ ...constraintBase, axis: 'x', left: i, right: bottomRightFixedNodeIndex })
+        constraints.push({ ...constraintBase, axis: 'y', left: i, right: bottomRightFixedNodeIndex })
     }
 
 
-    // console.log("Nodes in redraw --> ", nodes)
-    d3Cola //setting global data in  d3Cola
-        .nodes(nodes)
+    // // const constraints = [
+    // //     { "type": "alignment", "axis": "x", "offsets": [/* { "node": "0", "offset": "0" } */] },
+    // //     { "type": "alignment", "axis": "y", "offsets": [/* { "node": "0", "offset": "0" } */] }
+    // // ]
+    // // let xOffsets = 0
+    // // let yOffsets = 0
+
+    // // for (let i = 0; i < constrainedNodes.length; i++) {
+    // //     const node = constrainedNodes[i]
+    // //     const level = node.name.split(delimiterRegex).length
+    // //     // console.log('node', node, level)
+    // //     if (level === 1) {
+    // //         constraints[0].offsets.push({ node: i, offset: 0 })
+    // //     }
+    // //     else {
+    // //         constraints[1].offsets.push({ node: i, offset: 0 })
+    // //     }
+    // // }
+
+
+
+    // Setting global data in d3Cola
+    // console.log('result', constrainedNodes, links, groups, constraints)
+    d3Cola
+        .nodes(constrainedNodes)
         .links(links)
         .groups(groups)
-        // .constraints(constraints)
-        .start(50, 0, 50);
+        .constraints(constraints)
+
+        // .handleDisconnected(false)
+        .start(10, 15, 20);
+    // The start() method now includes up to three integer arguments. In the example above, start will initially apply 10 iterations of layout with no constraints, 15 iterations with only structural (user-specified) constraints and 20 iterations of layout with all constraints including anti-overlap constraints.
+    // Specifying such a schedule is useful to allow the graph to untangle before making it relatively "rigid" with constraints.
 
 
     //adding links first so they are in background 
@@ -181,7 +326,7 @@ function redraw(D3Data) {
         .append("rect")// adding group elements as rects
         .attr("rx", 8) // set border rounding
         .attr("ry", 8) // set border rounding
-        .attr("class", "group") // adding group style from style-diagram.css
+        .attr("class", "group") // adding group style from style-graph.css
         .style("fill", function (d, i) { // adding group file color
             return color(i);
         })
@@ -206,7 +351,7 @@ function redraw(D3Data) {
     //inserting nodes into g 
     var nodeElements = g
         .selectAll(".node")
-        .data(nodes, function (d) { return d.name })
+        .data(nodes)// , function (d) { return d.name })
 
 
     let waitForDoubleClick = null

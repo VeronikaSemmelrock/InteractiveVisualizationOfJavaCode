@@ -78,7 +78,7 @@ function getUniqueNames(list){
 }
 
 function replaceUniqueNamesWithIndex(list){
-    console.log(list); 
+    // console.log(list); 
     //console.log(nodes)
     for(let i = 0; i < list.length; i++){//go through all nodes
         const indexesChildren = [];  
