@@ -4,29 +4,9 @@
 
 <head>
 	<meta charset="utf-8" />
-	<title>IVJC - Graph</title>
-	<style>
-		#main {
-			/* overflow: hidden; */
-			background: '#111';
-			height: 900px;
-			width: 1600px;
-			margin: 100px 0 0 500px;
-			border: 1px solid 'red';
-		}
-
-		body {
-			height: 100vh;
-			width: 100vw;
-			margin: 0 auto;
-			overflow: hidden;
-			background-color: 'red';
-		}
-	</style>
-	
-	
+	<title>IVJC - Graph</title>	
 	<link rel="stylesheet" type="text/css" href="./src/style-base.css" />
-	<link rel="stylesheet" type="text/css" href="./src/style-diagram.css" />
+	<link rel="stylesheet" type="text/css" href="./src/style-graph.css" />
 	<!-- <script src="https://cdn.jsdelivr.net/npm/webcola@3.3.8/dist/index.min.js"></script> -->
 	<script src="http://marvl.infotech.monash.edu/webcola/cola.min.js"></script>
 	<!-- <script src="https://d3js.org/d3.v7.min.js"></script> -->
@@ -89,6 +69,10 @@
 		<label for="linkLables">Show Labels of Associations</label><br>
 		<input type="checkbox" id="entityLabels" name="entityLabels">
 		<label for="entityLables">Show Labels of Entities</label><br>
+
+		<br>
+		<br>
+		<button id="fitToView">Fit to View</button>
 	</div>
 </body>
 </html>

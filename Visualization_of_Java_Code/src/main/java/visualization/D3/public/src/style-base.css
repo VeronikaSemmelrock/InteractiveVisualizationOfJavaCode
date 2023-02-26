@@ -1,7 +1,11 @@
-body{
-    overflow: hidden; 
+body {
+    height: 100vh;
+    width: 100vw;
+    margin: 0 auto;
+    overflow: hidden;
 }
-#optionsContainer{
+
+#optionsContainer {
     font-family: Perpetua;
     width: 23vw;
     height: calc(100vh - 1vw);
@@ -9,26 +13,34 @@ body{
     max-width: 25vw; */
     min-height: calc(100vh - 1vw);
     max-height: calc(100vh - 1vw);
-    float:left;
-    background-color: rgb(246, 246, 246);/*very light grey*/
+    float: left;
+    background-color: rgb(246, 246, 246);
+    /*very light grey*/
 }
-#optionsContainer{
+
+#optionsContainer {
     font-size: 0.7rem;
 }
-#optionsContainer > div{
+
+#optionsContainer>div {
     margin: 0.75vh 0
 }
-@media(min-width: 768px){
-    #optionsContainer{
+
+@media(min-width: 768px) {
+    #optionsContainer {
         font-size: 0.95rem;
     }
 }
-@media(min-width: 992px){
-    #optionsContainer{
+
+@media(min-width: 992px) {
+    #optionsContainer {
         font-size: 1.095rem;
     }
 }
-#diagram{
-    float:right;
+
+#main {
+    float: right;
     width: 75vw;
+    height: 100vh;
+    border: 1px solid red;
 }

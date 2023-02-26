@@ -225,7 +225,7 @@ function fitGraphToView() {
         )
 }
 
-// document.getElementById('fit').addEventListener('click', fitGraphToView)
+document.getElementById('fitToView').addEventListener('click', fitGraphToView)
 
 
 
@@ -360,22 +360,11 @@ function redraw(D3Data) {
         .groups(groups)
         .constraints(constraints)
         // .handleDisconnected(false)
-        .start(10, 10, 10, 10); // 10, 15, 20
+        .start(10, 15, 20)//10, 10, 10, 10); // 10, 15, 20
     // The start() method now includes up to three integer arguments. In the example above, start will initially apply 10 iterations of layout with no constraints, 15 iterations with only structural (user-specified) constraints and 20 iterations of layout with all constraints including anti-overlap constraints.
     // Specifying such a schedule is useful to allow the graph to untangle before making it relatively "rigid" with constraints.
 
 
-    //adding links first so they are in background 
-    //inserting links into g
-    var link = g
-        .selectAll(".link")
-        .data(links)
-        .enter()
-        .append("path") //arrows, line would make lines
-        .attr("class", "link")
-        .style("stroke", "#000")
-        .attr('marker-end', (d) => "url(#end-arrow)")//attach the arrow from defs to the END of the path
-        .style("stroke-width", 4);//stroke width of link
 
 
     //inserting groups into g 
@@ -384,7 +373,7 @@ function redraw(D3Data) {
         .data(groups) // adding Node.groups 
         .enter() // enter all groups
         .append("rect")// adding group elements as rects
-        .attr("class", "group") // adding group style from style-diagram.css
+        .attr("class", "group") // adding group style from style-graph.css
         .style("stroke", "transparent")
         .style("fill", "transparent")
         .call(d3Cola.drag) //adding ability to drag
@@ -568,6 +557,8 @@ function redraw(D3Data) {
                     //pad+8//distance from target - was 4 before, perfect for arrow head -> was before, when innerBounds of node was still set differently
                     5
                 );
+
+                console.log('lineFunction', lineFunction)
                 return lineFunction([route.sourceIntersection, route.arrowStart]);
             })
             .attr("x1", function (d) {
