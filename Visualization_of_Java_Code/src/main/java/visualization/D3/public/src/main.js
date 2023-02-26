@@ -355,7 +355,6 @@ function redraw(D3Data) {
         .append("text")
         .attr("class", "linklabel")
         .text(function (d) {
-            console.log(d.type)
             return d.type;
         })
         .call(d3Cola.drag); // text also triggers drag event
@@ -497,18 +496,32 @@ function redraw(D3Data) {
         if(link && showLinkLabels){
             linkLabel
             .attr("x", function (d) {
-                //console.log(d.target.x + (d.source.x - d.target.x) / 2)
-                if (d.source.x >= d.target.x) {
-                    return d.target.x + (d.source.x - d.target.x) / 2
+                var route = cola.makeEdgeBetween(
+                    d.source.innerBounds,
+                    d.target.innerBounds,
+                    5
+                );
+                const source = route.sourceIntersection
+                const target = route.arrowStart
+                if (source.x >= target.x) {
+                    return target.x + (source.x - target.x) / 2
                 } else {
-                    return d.source.x + (d.target.x - d.source.x) / 2
+                    return source.x + (target.x - source.x) / 2
                 }
             })
             .attr("y", function (d) {
-                if (d.source.y >= d.target.y) {
-                    return d.target.y + (d.source.y - d.target.y) / 2
+                var route = cola.makeEdgeBetween(
+                    d.source.innerBounds,
+                    d.target.innerBounds,
+                    5
+                );
+                const source = route.sourceIntersection
+                const target = route.arrowStart
+
+                if (source.y >= target.y) {
+                    return target.y + (source.y - target.y) / 2
                 } else {
-                    return d.source.y + (d.target.y - d.source.y) / 2
+                    return source.y + (target.y - source.y) / 2
                 }
             });
         }
