@@ -1,10 +1,8 @@
 import Link from "./classes/Link.js"
 import Node from "./classes/Node.js"
 import importJsonToD3 from "./parse.js"
-import associations from "./data/associations.js"
-import entities from "./data/entities.js"
 
-importJsonToD3(JSON.stringify({ associations, entities }))
+await importJsonToD3()
 // Load data
 // data.groups.forEach(group => new Node(group.id, group.name, group.groups.length !== 0 ? 'class' : 'method', group.leaves, group.groups, group.parentUniqueName))
 // data.links.forEach(link => new Link(link.id, link.name, link.source, link.target))

@@ -3,7 +3,6 @@ body {
     width: 100vw;
     margin: 0 auto;
     overflow: hidden;
-    background-color: 'red';
 }
 #optionsContainer{
     font-family: Perpetua;
@@ -18,7 +17,6 @@ body {
 }
 #optionsContainer{
     font-size: 0.7rem;
-    background: blue;
 }
 #optionsContainer > div{
     margin: 0.75vh 0

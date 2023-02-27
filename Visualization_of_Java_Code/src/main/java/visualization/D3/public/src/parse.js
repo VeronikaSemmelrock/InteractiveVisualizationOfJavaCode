@@ -1,6 +1,5 @@
 import Node from "./classes/Node.js";
 import Link from "./classes/Link.js";
-
 //parses associations.json from IVC to links for D3
 function parseAssociationsToLinks(associations, entities){
     let result = []; 
@@ -91,20 +90,28 @@ function replaceChildUniqueNamesWithIndex(list){
 }
 
 //imports json-files (association.json and entities.json) and parses them to nodes in class Node and links in class Link
-function importJsonToD3(jsonServerData){
-    const {associations, entities} = JSON.parse(jsonServerData)
+async function importJsonToD3(){
+    try {
+        const data = await fetch("data")
+        const {associations: associationsJSON, entities: entitiesJSON} = await data.json()
+        const associations = JSON.parse(associationsJSON)
+        
+        const entities = JSON.parse(entitiesJSON)
+        console.log("Data downloaded, importing", associations, entities)
+        const links = parseAssociationsToLinks(associations, entities)
+        const nodes = parseEntitiesToNodes(entities)
 
-    const links = parseAssociationsToLinks(associations, entities)
-    const nodes = parseEntitiesToNodes(entities)
+        nodes.forEach(node => new Node(node.id, node.name, node.type, node.leaves, node.groups, node.parentUniqueName, node.foreign))
+        links.forEach(link => new Link(link.id, link.source, link.target, link.type))
 
-    nodes.forEach(node => new Node(node.id, node.name, node.type, node.leaves, node.groups, node.parentUniqueName, node.foreign))
-    links.forEach(link => new Link(link.id, link.source, link.target, link.type))
-
-    console.log('successfully imported JSON data', {
-        nodes: Node.nodes,
-        groups: Node.groups,
-        links: Link.links
-    })
+        console.log('successfully imported JSON data', {
+            nodes: Node.nodes,
+            groups: Node.groups,
+            links: Link.links
+        })
+    } catch (error) {
+        console.error("Error during import of project", error)
+    }
 }
 
 export default importJsonToD3

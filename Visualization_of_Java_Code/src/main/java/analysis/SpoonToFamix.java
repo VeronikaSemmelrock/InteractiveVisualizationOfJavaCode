@@ -667,17 +667,14 @@ public class SpoonToFamix {
         }
         //if the callee is unknown, create new FamixMethod with this uniqueName and add to entities-hashmap
         if(callee == null){
-            System.out.println(uniqueNameCallee+ " was not found. Now searching for "+uniqueNameCalleeOtherOption);
             callee = (FamixMethod) famixEntities.get(uniqueNameCalleeOtherOption);//search for other naming option in hashmap of known entities
             if(callee == null){//other naming option was also not found - create new FamixMethod
-                System.out.println(uniqueNameCalleeOtherOption+ " was also not found. Now creating "+uniqueNameCallee);
                 callee = new FamixMethod(uniqueNameCallee);
                 callee.setType("method");
                 callee.setForeign(true);//necessary to be able to filter it away in visualisation
                 famixEntities.put(uniqueNameCallee, callee);
             }
         }
-        System.out.println("Creating Invocation with callee "+callee.getUniqueName());
         //create and return FamixInvocation
         FamixInvocation finvocation = new FamixInvocation(caller, callee);
         finvocation.setType("invocation");
