@@ -18,8 +18,7 @@ public class IntegrationTests {
     @Before
     public void createIVC() throws Exception {
         ivc = new IVC();
-        ivc.setProjectPath(System.getProperty("user.dir")+"\\src\\test\\resources\\IntegrationTestInputProject");
-        ivc.startIVC();
+        ivc.startIVC(System.getProperty("user.dir")+"\\src\\test\\resources\\IntegrationTestInputProject", "");
         famixEntities = ivc.getEntities();
         famixAssociations = ivc.getAssociations();
     }
