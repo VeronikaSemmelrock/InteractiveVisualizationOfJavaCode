@@ -5828,30 +5828,6 @@ const entities = {
     "fType": "class",
     "fParentAsString": "null"
   },
-  "testClass1Method(java.lang.String,int)": {
-    "fAnonymClasses": [],
-    "fParameters": [],
-    "fLocalVariables": [],
-    "fUniqueName": "testClass1Method(java.lang.String,int)",
-    "fModifiers": 0,
-    "fForeign": true,
-    "fComments": [],
-    "fProperties": [],
-    "fType": "method",
-    "fParentAsString": "null"
-  },
-  "testpackage1.Testclass1.innerClass.innerClassTestMethod(java.lang.String)": {
-    "fAnonymClasses": [],
-    "fParameters": [],
-    "fLocalVariables": [],
-    "fUniqueName": "testpackage1.Testclass1.innerClass.innerClassTestMethod(java.lang.String)",
-    "fModifiers": 0,
-    "fForeign": true,
-    "fComments": [],
-    "fProperties": [],
-    "fType": "method",
-    "fParentAsString": "null"
-  },
   "java.io.PrintStream.println(java.lang.String)": {
     "fAnonymClasses": [],
     "fParameters": [],

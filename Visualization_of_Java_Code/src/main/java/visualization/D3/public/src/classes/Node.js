@@ -1,34 +1,50 @@
-import Base from "./Base.js"
 import Link from "./Link.js"
 
+
+
+//variables for name parsing
+const DELIMITER_PATH = '.';
+const DELIMITER_LOCALVARIABLE = '^';
+const DELIMITER_PARAMETER ='\'';
+const DELIMITER_ATTRIBUTE = '#';
+const DELIMITER_INNERCLASS = '$';
+
 // This class represents a group and its node in the context of webcola
-// webcola nodes can have links but only groups can group nodes or other groups, thus a group always only contains one node for the link
-export default class Node extends Base {
+// webcola nodes can have links but only groups can group other nodes or other groups, thus the group representation of the node always only contains one node for the link (itself as a node)
+export default class Node {
     static internalNodes = [] // class-based node array for changing groups and nodes arrays with class methods
     static nodes = [] // D3cola nodes array
     static groups = [] // D3cola groups array
 
-    constructor(id, name, type, leaves, groups, parentUniqueName) {
-        super(id, name)
+    constructor(id, name, type, leaves, groups, parentUniqueName, foreign) {
+        this.id = id
+        this.name = name
         this.leaves = leaves
         this.groups = groups
         this.type = type
         this.parentUniqueName = parentUniqueName
         this.visibility = true
         this.childrenVisibility = true
+        this.style = Node.getStyle(type, foreign)//set style object
+        this.shortName = Node.cropName(name, type, foreign)
+        this.foreign = foreign
+       
 
         Node.internalNodes.push(this) // data objs for instance methods
         Node.nodes.push(this.toD3Node()) // data objs for d3cola
         Node.groups.push(this.toD3Group()) // data objs for d3cola
     }
 
-
+    //creates a D3Node out of a Node (this)
     toD3Node() {
         const node = {
             id: this.id,
             name: this.name,
             visibility: this.visibility,
-            type: this.type
+            type: this.type,
+            style: this.style, 
+            shortName: this.shortName,
+            foreign: this.foreign
         }
 
         // additional props
@@ -37,14 +53,18 @@ export default class Node extends Base {
         //node.fill = TODO - get from type
         //node.rx = TODO - get from type
         //node.ry = TODO - get from type
-
         return node
     }
+
+    //creates a D3Group out of a node (with proper indexes reset if visibility of a node is altered) 
     toD3Group(newVisibleD3Nodes) {
         const group = {
             id: this.id,
             name: this.name,
-            type: this.type
+            type: this.type,
+            style: this.style,
+            shortName: this.shortName,
+            foreign: this.foreign
         }
         if (newVisibleD3Nodes) {
             group.leaves = this.leaves.map(leave => Node.getVisibleIndexById(newVisibleD3Nodes, leave))
@@ -60,6 +80,7 @@ export default class Node extends Base {
 
         return group
     }
+
     toDebugNode() {
         const _debug = this.toD3Node()
         _debug.childrenVisibility = this.childrenVisibility
@@ -69,6 +90,7 @@ export default class Node extends Base {
         if (_debug.leaves && _debug.leaves.length !== 0 && typeof _debug.leaves[0] !== 'number') _debug.leaves = _debug.leaves.map(l => l.id)
         return _debug
     }
+    //gets the lowest visible Parent of this
     getLowestVisibleParentRecusive() {
         if (this.visibility) return this
         else {
@@ -77,11 +99,15 @@ export default class Node extends Base {
         }
     }
 
+    
+
     // this function is necessary because D3Cola expects the indices in the link source and target to be the indices of the nodes instead of their ids
     static getVisibleIndexById(visibleD3Nodes, nodeId) {
         // console.log('gettingVisibleIndicesById', visibleD3Nodes, nodeId)
         return visibleD3Nodes.findIndex(n => n.id === nodeId)
     }
+
+    //returns all D3Data set in Node 
     static getD3Data() {
         const obj = Object.create(null)
         obj.nodes = Node.nodes// .map(n => n)
@@ -90,7 +116,7 @@ export default class Node extends Base {
         return obj
     }
 
-
+    //resets internal node data 
     static resetInternalNodes() {
         // normalize all internalNodes because D3 messes with the array
         function getPotentialObjId(numberOrObj) {
@@ -103,6 +129,8 @@ export default class Node extends Base {
             node.groups = node.groups.map(getPotentialObjId)
         }
     }
+
+    //resets internal data 
     static resetInternalData() {
         Node.resetInternalNodes()
         Link.resetInternalLinks()
@@ -112,20 +140,28 @@ export default class Node extends Base {
 
     /////// Public API methods - START
     static invisibleTypes = []
-    static toggleTypeVisibility(type) {
+    //sets visibility of given type in internal and D3Data
+    static setTypeVisibility(type, visibility) {
+        console.log("inside toggle ", type, visibility)
         Node.resetInternalData()
 
-        const existingIndex = Node.invisibleTypes.findIndex(_type => _type === type)
-        const visibility = existingIndex !== -1
-        if (visibility) Node.invisibleTypes.splice(existingIndex, 1)
-        else Node.invisibleTypes.push(type)
+        //if visibility of foreign entities should be set 
+        if(type === "foreign"){
+            console.log('setting visibility of type', type, 'to', visibility)
+            for (const node of Node.internalNodes) {
+                if (node.foreign === true) Node.setInternalDataVisibilityRecursive(node.id, visibility)
+            }
+        }else{
+            const existingIndex = Node.invisibleTypes.findIndex(_type => _type === type)
+            if (visibility) Node.invisibleTypes.splice(existingIndex, 1)
+            else Node.invisibleTypes.push(type)
 
-        console.log('setting visibility of type', type, 'to', visibility)
+            console.log('setting visibility of type', type, 'to', visibility)
 
-        for (const node of Node.internalNodes) {
-            if (node.type === type) Node.setInternalDataVisibilityRecursive(node.id, visibility)
+            for (const node of Node.internalNodes) {
+                if (node.type === type) Node.setInternalDataVisibilityRecursive(node.id, visibility)
+            }
         }
-
         // Node.internalNodes.forEach(n => {
         //     if (n.type === type) console.log('toggling internalNode visibility', n.toDebugNode(), visibility)
         // })
@@ -136,6 +172,7 @@ export default class Node extends Base {
         return D3Data
     }
 
+    //toggles Visibility of children of a nodeId 
     static toggleChildrenVisibility(nodeId) {
         // console.log(Node.internalNodes[nodeId].groups)
         Node.resetInternalData()
@@ -160,6 +197,7 @@ export default class Node extends Base {
         }
     }
     /////// Public API methods - END
+
 
 
     /////// Set internal Children visibility recursive - START
@@ -232,78 +270,101 @@ export default class Node extends Base {
     }
 
 
+    //returns styling of a node
+    static getStyle(nodeType, foreign) {
 
-
-
-
-
-
-
-
-
-
-
-
-
-    // Node Styling
-    static getStyle(nodeType) {
+        var color = d3.schemeSet3;//other options schemeSet1-3
+        //console.log(color(4))
+        if(foreign){
+            return {
+                color: color[8],
+                rx: 6,
+                ry: 6
+            }
+        }
         switch (nodeType) {
             case 'package':
                 return {
-                    color: 'green',
+                    color: color[0],
                     rx: 8,
-                    ry: 8,
-                    width: 100,
-                    height: 50
+                    ry: 8
                 }
             case 'class':
                 return {
-                    color: 'blue',
+                    color: color[1],
                     rx: 10,
-                    ry: 10,
-                    width: 100,
-                    height: 50
+                    ry: 10
                 };
             case 'method':
                 return {
-                    color: 'red',
+                    color: color[2],
                     rx: 15,
-                    ry: 15,
-                    width: 100,
-                    height: 50
+                    ry: 15
                 };
             case 'constructor':
                 return {
-                    color: 'yellow',
+                    color: color[3],
                     rx: 20,
-                    ry: 20,
-                    width: 100,
-                    height: 50
+                    ry: 20
                 };
             case 'attribute':
                 return {
-                    color: 'violet',
+                    color: color[4],
                     rx: 30,
-                    ry: 8,
-                    width: 100,
-                    height: 50
+                    ry: 8
                 };
             case 'parameter':
                 return {
-                    color: 'orange',
+                    color: color[5],
                     rx: 8,
-                    ry: 30,
-                    width: 100,
-                    height: 50
+                    ry: 30
                 };
-            case 'localVar':
+            case 'localVariable':
                 return {
-                    color: 'turquoise',
-                    rx: 0,
-                    ry: 0,
-                    width: 100,
-                    height: 50
+                    color: color[6],
+                    rx: 2,
+                    ry: 2
                 };
         }
+    }
+
+    //returns short name of node (removing path)
+    static cropName(name, type, foreign){
+        if(foreign){
+            return name; 
+        }
+        switch(type){
+            case "method": //fall through in switch-case code of constructor is executed for method (no break statement)
+            case "constructor": 
+                const maxIndex = name.lastIndexOf("("); 
+                for (let i = maxIndex; i >= 0; i--) {
+                    if (name.charAt(i) === "." || name.charAt(i) === DELIMITER_INNERCLASS) {
+                        return name.substring(i+1)
+                    }  
+                } 
+                break; 
+            case "package": 
+            case "class":
+                if(name.lastIndexOf(DELIMITER_INNERCLASS) > -1){//nested classes
+                    return name.substring(name.lastIndexOf(DELIMITER_INNERCLASS)+1)
+                } else if(name.lastIndexOf(DELIMITER_PATH) > -1) {
+                    return name.substring(name.lastIndexOf(DELIMITER_PATH)+1); 
+                }
+                break; 
+            default:
+                let highestIndex = 0; 
+                //find possible delimiter
+                if(type == "attribute"){
+                    highestIndex = name.lastIndexOf(DELIMITER_ATTRIBUTE); 
+                }else if(type == "parameter"){
+                    highestIndex = name.lastIndexOf(DELIMITER_PARAMETER);
+                }else if(type == "localVariable"){
+                    highestIndex = name.lastIndexOf(DELIMITER_LOCALVARIABLE); 
+                }
+                if(highestIndex > 0){
+                    return name.substring(highestIndex+1)
+                }
+        }
+        return name; //no delimiters were found -> return full name 
     }
 }

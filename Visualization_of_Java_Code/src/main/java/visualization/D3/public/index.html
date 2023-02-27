@@ -4,69 +4,77 @@
 
 <head>
 	<meta charset="utf-8" />
-	<title>IVJC - Graph</title>
-	<style>
-		/* .node {
-			stroke: #fff;
-			stroke-width: 1.5px;
-			cursor: move;
-		}
-
-		.newNode {
-			stroke: #fff;
-			stroke-width: 1.5px;
-			cursor: move;
-		}
-
-		.group {
-			stroke: #fff;
-			stroke-width: 1.5px;
-			cursor: move;
-			opacity: 0.7;
-		}
-
-		.link {
-			stroke: #7a4e4e;
-			stroke-width: 3px;
-			stroke-opacity: 1;
-		}
-
-		.label {
-			fill: white;
-			font-family: Verdana;
-			font-size: 25px;
-			text-anchor: middle;
-			cursor: move;
-		} */
-		#main {
-			/* overflow: hidden; */
-			background: '#111';
-			height: 900px;
-			width: 1600px;
-			margin: 100px 0 0 500px;
-			border: 1px solid 'red';
-		}
-
-		body {
-			height: 100vh;
-			width: 100vw;
-			margin: 0 auto;
-			overflow: hidden;
-			background-color: 'red';
-		}
-	</style>
-
+	<title>Interactive Visualisation Of Java Code</title>
+	
+	
+	<link rel="stylesheet" type="text/css" href="./src/style-base.css" />
+	<link rel="stylesheet" type="text/css" href="./src/style-graph.css" />
 	<!-- <script src="https://cdn.jsdelivr.net/npm/webcola@3.3.8/dist/index.min.js"></script> -->
 	<script src="http://marvl.infotech.monash.edu/webcola/cola.min.js"></script>
 	<!-- <script src="https://d3js.org/d3.v7.min.js"></script> -->
 	<script src="https://cdn.jsdelivr.net/npm/d3@5.5.0/dist/d3.min.js"
 		integrity="sha256-0OcjjB7oKWCwru7gzilCYvXgTE9augkyvMI0WFC1ODg=" crossorigin="anonymous"></script>
-
-	<script type="module" defer async src="src/main.js"></script>
 </head>
 
 <body>
-	<div id="main"></div>
-</body>
 
+	<script type="module" src="src/main.js"></script>
+
+	<div id="main"></div>
+	<div id="optionsContainer">
+		<br>
+		<label for="fileinput">Please select zip-directory to parse:</label>
+		<input type="file" id="fileinput" name="file">
+		<br><br>
+		<br>
+		<div>Show Entities:</div>
+		<input type="checkbox" id="filterPackages" name="package">
+		<label for="filterPackages">Packages</label><br>
+		<input type="checkbox" id="filterClasses" name="class">
+		<label for="filterClasses">Classes</label><br>
+		<input type="checkbox" id="filterMethods" name="method">
+		<label for="filterMethods">Methods</label><br>
+		<input type="checkbox" id="filterConstructors" name="constructor">
+		<label for="filterConstructors">Constructors</label><br>
+		<input type="checkbox" id="filterParameters" name="parameter">
+		<label for="filterParameters">Parameters</label><br>
+		<input type="checkbox" id="filterAttributes" name="attribute">
+		<label for="filterAttributes">Attributes</label><br>
+		<input type="checkbox" id="filterLocalVariables" name="localVariable">
+		<label for="filterLocalVariables">Local Variables</label><br>
+	
+		<br>
+		<div>Show Associations:</div>
+		<!--<input type="checkbox" id="filterImplements" name="implements">
+		<label for="filterImplements">Implements Associations</label><br>
+		<input type="checkbox" id="filterExtends" name="extends">
+		<label for="filterExtends">Extends Associations</label><br>
+		<input type="checkbox" id="filterReturnTypes" name="returnType">
+		<label for="filterReturnTypes">Return Type Associations</label><br>
+		<input type="checkbox" id="filterAccesses" name="access">
+		<label for="filterAccesses">Access Associations</label><br>
+		<input type="checkbox" id="filterInvocations" name="invocation">
+		<label for="filterInvocations">Invocation Associations</label><br>!-->
+		<input type="checkbox" id="filterLinks" name="links">
+		<label for="filterLinks">Associations</label><br>
+	
+		<br>
+		<div>Show Foreign Entities:</div>
+		<input type="checkbox" id="filterForeign" name="foreign">
+		<label for="filterForeign">Foreign Entities</label><br>
+
+		<br>
+		<div>Styling:</div>
+		<input type="checkbox" id="styling" name="styling">
+		<label for="styling">Style Different Entity Types</label><br>
+		<input type="checkbox" id="linkLabels" name="linkLabels">
+		<label for="linkLables">Show Labels of Associations</label><br>
+		<input type="checkbox" id="entityLabels" name="entityLabels">
+		<label for="entityLables">Show Labels of Entities</label><br>
+
+		<br>
+		<br>
+		<button id="fitToView">Fit to View</button>
+	</div>
+</body>
 </html>
