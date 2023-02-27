@@ -4,7 +4,9 @@
 
 <head>
 	<meta charset="utf-8" />
-	<title>IVJC - Graph</title>	
+	<title>Interactive Visualisation Of Java Code</title>
+	
+	
 	<link rel="stylesheet" type="text/css" href="./src/style-base.css" />
 	<link rel="stylesheet" type="text/css" href="./src/style-graph.css" />
 	<!-- <script src="https://cdn.jsdelivr.net/npm/webcola@3.3.8/dist/index.min.js"></script> -->
@@ -12,13 +14,13 @@
 	<!-- <script src="https://d3js.org/d3.v7.min.js"></script> -->
 	<script src="https://cdn.jsdelivr.net/npm/d3@5.5.0/dist/d3.min.js"
 		integrity="sha256-0OcjjB7oKWCwru7gzilCYvXgTE9augkyvMI0WFC1ODg=" crossorigin="anonymous"></script>
-
-	<script type="module" defer async src="src/main.js"></script>
 </head>
 
 <body>
-	<div id="main"></div>
 
+	<script type="module" src="src/main.js"></script>
+
+	<div id="main"></div>
 	<div id="optionsContainer">
 		<br>
 		<label for="fileinput">Please select zip-directory to parse:</label>
