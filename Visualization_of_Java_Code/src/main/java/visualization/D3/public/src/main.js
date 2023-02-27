@@ -104,11 +104,11 @@ const centerX = width / 2,
     centerY = height / 2
 
 // Graph Boundaries
-const graphBounds = { x: 0, y: 0, width: graphContainer.width, height: graphContainer.height }
+const graphBoundaries = { x: 0, y: 0, width: graphContainer.width, height: graphContainer.height }
 const fixedNode = { fixed: true, fixedWeight: 1e6 } // weight when reaching the boundary --> lower means it ll be movable past the boundary
-const topLeftFixedNode = { ...fixedNode, x: graphBounds.x, y: graphBounds.y }
-const bottomRightFixedNode = { ...fixedNode, x: graphBounds.x + graphBounds.width, y: graphBounds.y + graphBounds.height }
-const constraintBase = { type: 'separation', gap: 50 } // distance to boundary
+const topLeftFixedNode = { ...fixedNode, x: graphBoundaries.x, y: graphBoundaries.y }
+const bottomRightFixedNode = { ...fixedNode, x: graphBoundaries.x + graphBoundaries.width, y: graphBoundaries.y + graphBoundaries.height }
+const constraintBase = { type: 'separation', gap: 38 } // distance to boundary
 
 
 //setting colour scheme
@@ -135,7 +135,7 @@ const svg = d3
 // .attr("height", height)
 // Construct graph and its bounds
 const g = svg
-    .append('g')
+    .append('svg')
     .attr('id', 'graph')
 
 // Add Grid to graph
@@ -202,6 +202,7 @@ const addGrid = () => {
 // Configure zoom
 const zoom = d3.zoom()
 
+//// zooming
 svg.call(zoom
     .extent([[0, 0], [width, height]])
     .scaleExtent([0, 8])
@@ -209,19 +210,26 @@ svg.call(zoom
     .on("zoom", function () {
         const transform = d3.zoomTransform(this)
         // console.log('zooming', transform, transform.x - width / 2, transform.y - height / 2)
-        g.attr("transform", "translate(" + transform.x + "," + transform.y + ") scale(" + transform.k + ")");
+        // redraw(Node.getD3Data(), true)
+        // enteredNodeElements.attr('x', transform.x)
+        // enteredNodeElements.attr('y', transform.y)
+
+        // enteredNodeElements.attr('width', enteredNodeElements.size())
+
+        //// resize graph content and drag graph content along its axisis
+        // enteredNodeElements.attr("transform", "translate(" + transform.x + "," + transform.y + ") scale(" + transform.k + ")");
     }))
     .on("dblclick.zoom", null)
 
 function zoomOnClick(x, y) {
     // e.stopPropagation();
-    svg
+    g
         .transition()
         .duration(750)
         .call(
             zoom.transform,
             d3.zoomIdentity
-                .translate(width / 2, height / 2)
+                .translate(centerX, centerY)
                 .scale(3)
                 .translate(-x, -y)//,
             // d3.pointer(e)
@@ -232,43 +240,68 @@ function zoomOnClick(x, y) {
 
 
 function fitGraphToView() {
-    const graph = document.getElementById('graph') // := g
-    const graphPosition = graph.getBoundingClientRect()
-    graphPosition.x = graphPosition.x - graphContainer.x
-    graphPosition.y = graphPosition.y - graphContainer.y
-    const graphCenterX = graphPosition.x + graphPosition.width / 2
-    const graphCenterY = graphPosition.y + graphPosition.height / 2
-    // console.log('graph', graphPosition, graphCenterX)
-    // console.log('graphContainer', graphContainer)
-    // console.log('center is', centerX, centerY)
-    // console.log('maxWidth and maxHeight', width, height)
+    // const graph = document.getElementById('graph') // := g
+    // const graphPosition = graph.getBoundingClientRect()
+    // graphPosition.x = graphPosition.x - graphContainer.x
+    // graphPosition.y = graphPosition.y - graphContainer.y
+    // const graphCenterX = graphPosition.x + graphPosition.width / 2
+    // const graphCenterY = graphPosition.y + graphPosition.height / 2
+    // // console.log('graph', graphPosition, graphCenterX)
+    // // console.log('graphContainer', graphContainer)
+    // // console.log('center is', centerX, centerY)
+    // // console.log('maxWidth and maxHeight', width, height)
 
 
-    // Scale
-    const widthRelation = graphPosition.width / width
-    const heightRelation = graphPosition.height / height
-    const graphTooSmall = widthRelation < 0.6 && heightRelation < 0.6
-    const graphTooWide = widthRelation > 1
-    const graphTooHigh = heightRelation > 1
+    // // Scale
+    // const widthRelation = graphPosition.width / width
+    // const heightRelation = graphPosition.height / height
+    // const graphTooSmall = widthRelation < 0.65 && heightRelation < 0.65
+    // const graphTooWide = widthRelation > 1
+    // const graphTooHigh = heightRelation > 1
 
-    let scale = 1
-    if (graphTooSmall) scale = widthRelation < heightRelation ? widthRelation + 1 : heightRelation + 1
-    else if (graphTooHigh || graphTooWide) {
-        let relation = heightRelation // use heightRelationTo adjust graph scale
-        if (widthRelation > heightRelation) relation = widthRelation // use widthRelation to adjust graph scale
+    // const factor = Math.max(graphPosition.width / width, graphPosition.height / height)
+    // let scale = 1 // Math.exp(factor) / factor
+    // let translateX = 0
+    // let translateY = 0
+    // let relation = widthRelation
+    // // console.log('scaling', scale, Math.max(graphPosition.width / width, graphPosition.height / height))
 
-        scale = 1 / relation
-        console.log('graph too big, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, scale)
-    }
+    // if (graphTooSmall) {
+    //     if (widthRelation > heightRelation) relation = heightRelation
+    //     scale = 1 + Math.sqrt(relation)
+    //     translateX = relation * (centerX - graphCenterX)
+    //     translateY = relation * (centerY - graphCenterY)
+
+    //     console.log('graph too small, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, scale)
+    // }
+
+
+    // // else if (graphTooHigh || graphTooWide) { // graph too big
+    // //     let relation = heightRelation // use heightRelationTo adjust graph scale
+    // //     if (graphTooHigh && graphTooWide) relation = graphTooHigh < graphTooWide ? heightRelation : widthRelation
+    // //     else if (widthRelation > heightRelation) relation = widthRelation // use widthRelation to adjust graph scale
+
+    // //     scale = 1 / relation
+    // //     console.log('graph too big, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, scale)
+    // // }
+
+
+    // // // const widthRelation = width / graphPosition.width
+    // // // const heightRelation = height / graphPosition.height
+    // // // let scale = 1
+    // // // if (widthRelation > 1 && heightRelation > 1) scale = widthRelation < heightRelation ? widthRelation : heightRelation // graph too small
+    // // // console.log('graph small big, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, scale)
+
+
     svg
         .transition()
         .duration(750)
         .call(
             zoom.transform,
             d3.zoomIdentity
-                .translate(centerX, centerY)
-                .scale(scale)
-                .translate(-graphCenterX, - graphCenterY)
+            // .translate(centerX, centerY)
+            // .scale(scale)
+            // .translate(-graphCenterX, -graphCenterY)
         )
 }
 
@@ -327,11 +360,11 @@ function redraw(D3Data) {
 
     //// constraints
     const constrainedNodes = nodes.slice()
+    const constraints = []
     // Max Graph-width and height constraint
     // --> Use 2 non-visible-fixed-nodes to create a boundary
     const topLeftFixedNodeIndex = constrainedNodes.push(topLeftFixedNode) - 1
     const bottomRightFixedNodeIndex = constrainedNodes.push(bottomRightFixedNode) - 1
-    const constraints = []
     for (let i = 0; i < nodes.length; i++) {
         constraints.push({ ...constraintBase, axis: 'x', left: topLeftFixedNodeIndex, right: i })
         constraints.push({ ...constraintBase, axis: 'y', left: topLeftFixedNodeIndex, right: i })
