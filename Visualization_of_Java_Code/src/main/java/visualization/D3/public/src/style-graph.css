@@ -1,13 +1,22 @@
 .node {
-    stroke: #fff;
+    /* stroke: #fff; */
     stroke-width: 1.5px;
     cursor: move;
     opacity: 0.8;
 }
 
-.group { 
+.group {
     cursor: move;
     opacity: 0.7;
+    stroke-width: 30px;
+    /* stroke: red; */
+    /* stroke-width: 10px; */
+    /* padding: 10px */
+    /* stroke: green; */
+    /* fill: green; */
+    /* padding: 100px;
+    margin: 100px */
+    /* margin-top: 1.5vh; */
 }
 
 .link {
@@ -30,5 +39,8 @@
     font-size: 15px;
     text-anchor: middle;
     cursor: move;
-    background-color: red;
+}
+
+.visibilityButton {
+    /* stroke: black */
 }

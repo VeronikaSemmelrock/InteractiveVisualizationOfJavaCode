@@ -5,9 +5,15 @@ import Link from "./Link.js"
 //variables for name parsing
 const DELIMITER_PATH = '.';
 const DELIMITER_LOCALVARIABLE = '^';
-const DELIMITER_PARAMETER ='\'';
+const DELIMITER_PARAMETER = '\'';
 const DELIMITER_ATTRIBUTE = '#';
 const DELIMITER_INNERCLASS = '$';
+
+
+// styling
+export const nodeWidth = 200
+export const nodeHeight = 35
+export const nodePadding = 10
 
 // This class represents a group and its node in the context of webcola
 // webcola nodes can have links but only groups can group other nodes or other groups, thus the group representation of the node always only contains one node for the link (itself as a node)
@@ -15,6 +21,11 @@ export default class Node {
     static internalNodes = [] // class-based node array for changing groups and nodes arrays with class methods
     static nodes = [] // D3cola nodes array
     static groups = [] // D3cola groups array
+
+
+    // Weight config
+    static weight = 500
+    static fixed = true
 
     constructor(id, name, type, leaves, groups, parentUniqueName, foreign) {
         this.id = id
@@ -28,7 +39,7 @@ export default class Node {
         this.style = Node.getStyle(type, foreign)//set style object
         this.shortName = Node.cropName(name, type, foreign)
         this.foreign = foreign
-       
+
 
         Node.internalNodes.push(this) // data objs for instance methods
         Node.nodes.push(this.toD3Node()) // data objs for d3cola
@@ -41,15 +52,21 @@ export default class Node {
             id: this.id,
             name: this.name,
             visibility: this.visibility,
+            childrenVisibility: this.childrenVisibility,
+            _groups: this.groups,
             type: this.type,
-            style: this.style, 
+            style: this.style,
             shortName: this.shortName,
-            foreign: this.foreign
+            foreign: this.foreign,
+            
         }
 
         // additional props
-        node.width = 50 // set status width and height
-        node.height = 25
+        node.width = nodeWidth // set status width and height
+        node.height = nodeHeight
+        node.fixed = Node.fixed
+        node.weight = Node.weight
+        node.fixedWeight = Node.weight
         //node.fill = TODO - get from type
         //node.rx = TODO - get from type
         //node.ry = TODO - get from type
@@ -76,7 +93,12 @@ export default class Node {
         }
 
         // Additional props
-        group.padding = 5
+        // group.padding = 8.5
+        group.width = nodeWidth // set status width and height
+        group.height = nodeHeight
+        group.fixed = Node.fixed
+        group.weight = Node.weight
+        group.fixedWeight = Node.weight
 
         return group
     }
@@ -99,7 +121,7 @@ export default class Node {
         }
     }
 
-    
+
 
     // this function is necessary because D3Cola expects the indices in the link source and target to be the indices of the nodes instead of their ids
     static getVisibleIndexById(visibleD3Nodes, nodeId) {
@@ -107,26 +129,84 @@ export default class Node {
         return visibleD3Nodes.findIndex(n => n.id === nodeId)
     }
 
+
     //returns all D3Data set in Node 
     static getD3Data() {
+        // // Calculate group layers
+        // const toParse = []
+        // const newGroups = []
+        // Node.groups.forEach((g, i) => {
+        //     // console.log('toParse', toParse.length)
+        //     if (g.groups.length === 0) {
+        //         g.layers = 1
+        //         newGroups.push(g)
+        //     }
+        //     else {
+        //         toParse.push(g)
+        //     }
+        //     // console.log('toParse', toParse.length)
+        // })
+
+        // // console.log('last toParse', toParse, toParse.find(g => g.groups.length === 0))
+        // while (toParse.length !== 0) {
+        //     toParse.forEach((g, i) => {
+        //         // console.log('g', g, g.groups.every(_g => newGroups.find(__g => this.getPotentialObjId(__g) === this.getPotentialObjId(_g))))
+        //         const foundGroups = []
+        //         const condition = g.groups.every(_g => {
+        //             const found = newGroups.find(__g => this.getPotentialObjId(__g) === this.getPotentialObjId(_g))
+        //             if (found) {
+        //                 foundGroups.push(found)
+        //                 return true
+        //             }
+        //         })
+        //         if (condition) {
+        //             // console.log('g groups', foundGroups)
+        //             g.layers = g.groups.length * foundGroups[0].layers// + 25
+        //             newGroups.push(g)
+        //             toParse.splice(i, 1)
+        //         }
+        //     })
+        // }
+
+        // console.log('newGroups with layers', newGroups, newGroups.map(g => g.layers))
+        // obj.groups = newGroups.sort((a, b) => a.id - b.id)// .map(g => g)
+
+
+        const nodes = Node.nodes.map((g, i) => {
+            const parent = Node.groups.find(_g => {
+                // console.log('find group', i, _g.groups, _g.groups)// _g.groups.find(__g => __g === g.id))
+                return _g.groups.find(__g => __g === g.id)
+            })
+            // console.log('parents', parent)
+            if (parent) {
+                g._parent = parent.id
+                Node.groups[i]._parent = parent.id
+                return g
+            }
+            else return g
+        })
+
+        
+
         const obj = Object.create(null)
-        obj.nodes = Node.nodes// .map(n => n)
-        obj.groups = Node.groups// .map(g => g)
+        obj.nodes = nodes// .map(n => n)
+        obj.groups = Node.groups
         obj.links = Link.links// .map(l => l)
         return obj
     }
 
+    // normalize all internalNodes because D3 messes with the array
+    static getPotentialObjId(numberOrObj) {
+        if (typeof numberOrObj === 'number') return numberOrObj
+        else return numberOrObj.id
+    }
     //resets internal node data 
     static resetInternalNodes() {
-        // normalize all internalNodes because D3 messes with the array
-        function getPotentialObjId(numberOrObj) {
-            if (typeof numberOrObj === 'number') return numberOrObj
-            else return numberOrObj.id
-        }
 
-        for(const node of Node.internalNodes){
-            node.leaves = node.leaves.map(getPotentialObjId)
-            node.groups = node.groups.map(getPotentialObjId)
+
+        for (const node of Node.internalNodes) {
+            node.leaves = node.leaves.map(this.getPotentialObjId)
+            node.groups = node.groups.map(this.getPotentialObjId)
         }
     }
 
@@ -146,12 +226,12 @@ export default class Node {
         Node.resetInternalData()
 
         //if visibility of foreign entities should be set 
-        if(type === "foreign"){
+        if (type === "foreign") {
             console.log('setting visibility of type', type, 'to', visibility)
             for (const node of Node.internalNodes) {
                 if (node.foreign === true) Node.setInternalDataVisibilityRecursive(node.id, visibility)
             }
-        }else{
+        } else {
             const existingIndex = Node.invisibleTypes.findIndex(_type => _type === type)
             if (visibility) Node.invisibleTypes.splice(existingIndex, 1)
             else Node.invisibleTypes.push(type)
@@ -221,7 +301,7 @@ export default class Node {
 
 
     // Remove invisible group array nodes of visible nodes because they do not exist in the visible arrays --> D3 will say that some group is undefined
-    static getVisibleD3Groups(visibleD3Nodes, visibleInternalNodes, invisibleInternalNodes){
+    static getVisibleD3Groups(visibleD3Nodes, visibleInternalNodes, invisibleInternalNodes) {
         const visibleD3Groups = visibleInternalNodes.map(n => n.toD3Group(visibleD3Nodes))
         for (let i = 0; i < visibleInternalNodes.length; i++) {
             const visibleInternalNode = visibleInternalNodes[i]
@@ -275,7 +355,7 @@ export default class Node {
 
         var color = d3.schemeSet3;//other options schemeSet1-3
         //console.log(color(4))
-        if(foreign){
+        if (foreign) {
             return {
                 color: color[8],
                 rx: 6,
@@ -329,40 +409,40 @@ export default class Node {
     }
 
     //returns short name of node (removing path)
-    static cropName(name, type, foreign){
-        if(foreign){
-            return name; 
+    static cropName(name, type, foreign) {
+        if (foreign) {
+            return name;
         }
-        switch(type){
+        switch (type) {
             case "method": //fall through in switch-case code of constructor is executed for method (no break statement)
-            case "constructor": 
-                const maxIndex = name.lastIndexOf("("); 
+            case "constructor":
+                const maxIndex = name.lastIndexOf("(");
                 for (let i = maxIndex; i >= 0; i--) {
                     if (name.charAt(i) === "." || name.charAt(i) === DELIMITER_INNERCLASS) {
-                        return name.substring(i+1)
-                    }  
-                } 
-                break; 
-            case "package": 
+                        return name.substring(i + 1)
+                    }
+                }
+                break;
+            case "package":
             case "class":
-                if(name.lastIndexOf(DELIMITER_INNERCLASS) > -1){//nested classes
-                    return name.substring(name.lastIndexOf(DELIMITER_INNERCLASS)+1)
-                } else if(name.lastIndexOf(DELIMITER_PATH) > -1) {
-                    return name.substring(name.lastIndexOf(DELIMITER_PATH)+1); 
+                if (name.lastIndexOf(DELIMITER_INNERCLASS) > -1) {//nested classes
+                    return name.substring(name.lastIndexOf(DELIMITER_INNERCLASS) + 1)
+                } else if (name.lastIndexOf(DELIMITER_PATH) > -1) {
+                    return name.substring(name.lastIndexOf(DELIMITER_PATH) + 1);
                 }
-                break; 
+                break;
             default:
-                let highestIndex = 0; 
+                let highestIndex = 0;
                 //find possible delimiter
-                if(type == "attribute"){
-                    highestIndex = name.lastIndexOf(DELIMITER_ATTRIBUTE); 
-                }else if(type == "parameter"){
+                if (type == "attribute") {
+                    highestIndex = name.lastIndexOf(DELIMITER_ATTRIBUTE);
+                } else if (type == "parameter") {
                     highestIndex = name.lastIndexOf(DELIMITER_PARAMETER);
-                }else if(type == "localVariable"){
-                    highestIndex = name.lastIndexOf(DELIMITER_LOCALVARIABLE); 
+                } else if (type == "localVariable") {
+                    highestIndex = name.lastIndexOf(DELIMITER_LOCALVARIABLE);
                 }
-                if(highestIndex > 0){
-                    return name.substring(highestIndex+1)
+                if (highestIndex > 0) {
+                    return name.substring(highestIndex + 1)
                 }
         }
         return name; //no delimiters were found -> return full name 
