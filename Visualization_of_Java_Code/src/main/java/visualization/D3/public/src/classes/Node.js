@@ -22,6 +22,11 @@ export default class Node {
     static nodes = [] // D3cola nodes array
     static groups = [] // D3cola groups array
 
+
+    // Weight config
+    static weight = 500
+    static fixed = true
+
     constructor(id, name, type, leaves, groups, parentUniqueName, foreign) {
         this.id = id
         this.name = name
@@ -52,12 +57,16 @@ export default class Node {
             type: this.type,
             style: this.style,
             shortName: this.shortName,
-            foreign: this.foreign
+            foreign: this.foreign,
+            
         }
 
         // additional props
         node.width = nodeWidth // set status width and height
         node.height = nodeHeight
+        node.fixed = Node.fixed
+        node.weight = Node.weight
+        node.fixedWeight = Node.weight
         //node.fill = TODO - get from type
         //node.rx = TODO - get from type
         //node.ry = TODO - get from type
@@ -87,6 +96,9 @@ export default class Node {
         // group.padding = 8.5
         group.width = nodeWidth // set status width and height
         group.height = nodeHeight
+        group.fixed = Node.fixed
+        group.weight = Node.weight
+        group.fixedWeight = Node.weight
 
         return group
     }
