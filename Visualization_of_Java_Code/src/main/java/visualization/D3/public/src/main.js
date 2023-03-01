@@ -1,5 +1,5 @@
 import Link from "./classes/Link.js"
-import Node from "./classes/Node.js"
+import Node, { nodeHeight, nodePadding, nodeWidth } from "./classes/Node.js"
 import data from "./smallgrouped.js"
 import importJsonToD3 from "./parse.js"
 import associations from "./data/associations.js"
@@ -65,7 +65,6 @@ for (const checkbox of $checkboxes) {
     checkbox.addEventListener("change", (e) => {
         onSetTypeVisibility(e.target.name, e.target.checked)
     })
-
 }
 //set checkbox of packages to checked, so packages are visible at page reload - TODO
 //document.getElementById("filterPackages").checked = true
@@ -108,7 +107,11 @@ const graphBoundaries = { x: 0, y: 0, width: graphContainer.width, height: graph
 const fixedNode = { fixed: true, fixedWeight: 1e6 } // weight when reaching the boundary --> lower means it ll be movable past the boundary
 const topLeftFixedNode = { ...fixedNode, x: graphBoundaries.x, y: graphBoundaries.y }
 const bottomRightFixedNode = { ...fixedNode, x: graphBoundaries.x + graphBoundaries.width, y: graphBoundaries.y + graphBoundaries.height }
-const constraintBase = { type: 'separation', gap: 38 } // distance to boundary
+const constraintBase = { type: 'separation', gap: 40 } // distance to boundary
+
+
+// Node Padding
+const padding = 30
 
 
 //setting colour scheme
@@ -117,34 +120,31 @@ const color = d3.scaleOrdinal(d3.schemeSet3);
 //configuring webcola
 const d3Cola = cola
     .d3adaptor(d3)
-    .linkDistance(100)
-    .avoidOverlaps(true)
-    .handleDisconnected(false) // try with true
-    .symmetricDiffLinkLengths(20)//directly changes link length
+    .flowLayout('y', Math.floor(nodeWidth * 2))
+    .jaccardLinkLengths(nodeWidth)
+    .linkDistance(80)
+    .avoidOverlaps(true) // !!!!!!!
+    .handleDisconnected(false) // !!!!!!!
+    .symmetricDiffLinkLengths(nodeWidth * 2)//directly changes link length
     //.flowLayout("x", 150)  //the call to flowLayout causes all edges not involved in a cycle to have a separation constraint generated between their source and sink
     // with a minimum spacing set to 150. Specifying the 'x' axis achieves a left-to-right flow layout. The default is top-to-bottom flow layout
     .size([width, height]);
 
+// console.log('cola', d3Cola.groupCompactness)
 
 //appending svg to container "main"
 const svg = d3
     .select("#main")
     .append("svg")
     .attr("viewBox", [0, 0, width, height])
-// .attr("width", width)
-// .attr("height", height)
-// Construct graph and its bounds
-const g = svg
-    .append('svg')
-    .attr('id', 'graph')
 
 // Add Grid to graph
 const addGrid = () => {
     console.log('addingGrid')
-    const svg = d3
-        .select('#main')
-        .append('svg')
-        .attr("viewBox", [0, 0, width, height])
+    // const svg = d3
+    //     .select('#main')
+    //     .append('svg')
+    //     .attr("viewBox", [0, 0, width, height])
 
     const defs = svg.append('defs')
     const firstPattern = defs
@@ -193,7 +193,17 @@ const addGrid = () => {
 
     //     <rect width="100%" height="100%" fill="url(#grid)" />
 }
+addGrid()
+
 // setTimeout(addGrid, 5000)
+// .attr("width", width)
+// .attr("height", height)
+// Construct graph and its bounds
+const g = svg
+    .append('g')
+    .attr('id', 'graph')
+
+
 
 
 
@@ -217,7 +227,7 @@ svg.call(zoom
         // enteredNodeElements.attr('width', enteredNodeElements.size())
 
         //// resize graph content and drag graph content along its axisis
-        // enteredNodeElements.attr("transform", "translate(" + transform.x + "," + transform.y + ") scale(" + transform.k + ")");
+        g.attr("transform", "translate(" + transform.x + "," + transform.y + ") scale(" + transform.k + ")");
     }))
     .on("dblclick.zoom", null)
 
@@ -335,6 +345,39 @@ const delimiterRegex = /[\.\^\'\#\$]/g
 
 
 
+// // Init config
+// async function loadConfig() { // has to happen 1 line before redraw
+//     try {
+//         // const response = await fetch('config')
+//         // const config = await response.json()
+//         // console.log('loaded config', config)
+//         const config = { collapseOnInit: true, disableAllOnInit: true }
+
+//         const { collapseOnInit, disableAllOnInit, disablePackagesOnInit, disableClassesOnInit, disableMethodsOnInit, disableConstructorsOnInit, disableParametersOnInit, disableAttributesOnInit, disableLocalVariablesOnInit } = config
+
+//         if (collapseOnInit) {
+//             for (const node of Node.getD3Data().nodes) {
+//                 Node.toggleChildrenVisibility(node.id) // TODO: when expanding nodes, all their children get expanded as well, should this stay?
+//             }
+//         }
+//         $checkboxes.forEach(element => {
+//             if (disablePackagesOnInit && element.name === 'package') {
+//                 console.log('disablePackages', disablePackagesOnInit)
+//                 element.click()
+//             }
+//             else if (disableAllOnInit || disableClassesOnInit && element.name === 'class') element.click()
+//             else if (disableAllOnInit || disableMethodsOnInit && element.name === 'method') element.click()
+//             else if (disableAllOnInit || disableConstructorsOnInit && element.name === 'constructor') element.click()
+//             else if (disableAllOnInit || disableParametersOnInit && element.name === 'parameter') element.click()
+//             else if (disableAllOnInit || disableAttributesOnInit && element.name === 'attribute') element.click()
+//             else if (disableAllOnInit || disableLocalVariablesOnInit && element.name === 'localVariable') element.click()
+//         })
+//     } catch (error) {
+//         console.error('Failed to load config', error)
+//     }
+// }
+
+// await loadConfig()
 redraw(Node.getD3Data())
 
 
@@ -355,8 +398,9 @@ function redraw(D3Data) {
     g.selectAll(".label").remove()
     g.selectAll(".grouplabel").remove()
     g.selectAll(".linklabel").remove()
+    g.selectAll('.visibilityButton').remove()
 
-    console.log('graphContainer', graphContainer)
+    console.log('graphContainer', nodes, links, groups)
 
     //// constraints
     const constrainedNodes = nodes.slice()
@@ -365,13 +409,93 @@ function redraw(D3Data) {
     // --> Use 2 non-visible-fixed-nodes to create a boundary
     const topLeftFixedNodeIndex = constrainedNodes.push(topLeftFixedNode) - 1
     const bottomRightFixedNodeIndex = constrainedNodes.push(bottomRightFixedNode) - 1
-    for (let i = 0; i < nodes.length; i++) {
-        constraints.push({ ...constraintBase, axis: 'x', left: topLeftFixedNodeIndex, right: i })
-        constraints.push({ ...constraintBase, axis: 'y', left: topLeftFixedNodeIndex, right: i })
-        constraints.push({ ...constraintBase, axis: 'x', left: i, right: bottomRightFixedNodeIndex })
-        constraints.push({ ...constraintBase, axis: 'y', left: i, right: bottomRightFixedNodeIndex })
-    }
+    // for (let i = 0; i < nodes.length; i++) {
+    //     constraints.push({ ...constraintBase, axis: 'x', left: topLeftFixedNodeIndex, right: i })
+    //     constraints.push({ ...constraintBase, axis: 'y', left: topLeftFixedNodeIndex, right: i })
+    //     constraints.push({ ...constraintBase, axis: 'x', left: i, right: bottomRightFixedNodeIndex })
+    //     constraints.push({ ...constraintBase, axis: 'y', left: i, right: bottomRightFixedNodeIndex })
+    // }
 
+
+    // Main Node to Groups Distance
+    // const nodesWithGroups = groups.filter(n => n.groups.length !== 0)
+    // const firstChildNodes = nodesWithGroups.map(n => groups.find(_n => _n.id === n.groups[0]))
+    // // align along y axis
+    groups.forEach((n, i) => {
+        const constraintY = {
+            type: 'separation',
+            gap: Math.floor(nodeHeight * 2),
+            axis: "y",
+            left: Node.getPotentialObjId(n.leaves[0]),
+        }
+        const constraintX1 = {
+            ...constraintY,
+            axis: 'x',
+            left: Node.getPotentialObjId(n.leaves[0]),
+            gap: Math.floor(nodeWidth / 2)
+        }
+        const constraintX2 = {
+            ...constraintY,
+            axis: 'x',
+            right: Node.getPotentialObjId(n.leaves[0]),
+            gap: Math.floor(nodeWidth / 2)
+        }
+
+
+        // console.log('MainNode constraints', constraint)
+        n.groups.forEach(g => {
+            const cy = { ...constraintY, right: Node.getPotentialObjId(g) }
+            constraints.push(cy)
+
+            constraints.push({ axis: 'x', left: Node.getPotentialObjId(n.leaves[0]), right: Node.getPotentialObjId(g) })
+            // const cx1 = { ...constraintX1, right: Node.getPotentialObjId(g) }
+            // const cx2 = {...constraintX2, left: Node.getPotentialObjId(g)}
+            // constraints.push(cx1)
+            // constraints.push(cx2)
+        })
+
+
+
+
+    })
+
+    // // Root Node Distance
+    // nodes.forEach(n => {
+    //     const constraint = {
+    //         type: 'separation',
+    //         gap: Math.floor(nodeHeight / 3),
+    //         axis: 'y',
+    //         left: n.id
+    //     }
+
+    //     nodes.forEach(_n => {
+    //         constraints.push({
+    //             ...constraint,
+    //             right: _n.id
+    //         })
+    //         constraints.push({
+    //             ...constraint,
+    //             axis: 'x',
+    //             right: _n.id
+    //         })
+    //     })
+    // })
+    // const rootNodes = nodes.filter(n => !n._parent)
+    // rootNodes.forEach(n => {
+    //     const constraint = 
+    // })
+
+
+
+    // firstChildNodes.forEach((n, i) => nodes[i].width = n.width * 2)
+    // constraints.push({
+    //     type: 'separation',
+    //     gap: 100,
+    //     axis: "x",
+    //     // offsets: firstChildNodes.map(n => ({ node: n.id, offset: 200 }))
+    // })
+    // constraints.push({type:'separation', axis: "y", offsets: nodes.map(n => ({node: n.id, offset: 0}))}) // align along x axis
+    // constraints.push({type:'alignment', axis: "y", offsets: nodes.map(n => ({node: n.id, offset: 0}))}) // align along x axis
 
     // // const constraints = [
     // //     { "type": "alignment", "axis": "x", "offsets": [/* { "node": "0", "offset": "0" } */] },
@@ -408,16 +532,62 @@ function redraw(D3Data) {
     // Specifying such a schedule is useful to allow the graph to untangle before making it relatively "rigid" with constraints.
 
 
-
     //inserting groups into g 
     var group = g
         .selectAll(".group")
         .data(groups) // adding Node.groups 
         .enter() // enter all groups
         .append("rect")// adding group elements as rects
-        .attr("class", "group") // adding group style from style-graph.css
-        .style("stroke", "transparent")
-        .style("fill", "transparent")
+        .attr("class", "group") // adding group style from style-graph.css        
+        .attr("width", function (d) {
+            return d.width
+        })
+        .attr("height", function (d) {
+            return d.height
+        })
+        .attr('id', function (d) {
+            return d.id
+        })
+        .attr('weight', function (d) {
+            return 1e6
+        })
+        // .attr("rx", function (d) {
+        //     //style depending on checkbox value 
+        //     if (styleEntities) return d.style.rx
+        //     else return defaultRounding;
+        // })
+        // .attr("ry", function (d) {
+        //     if (styleEntities) return d.style.ry
+        //     else return defaultRounding;
+        // })
+        .style("fill", function (d) {
+            if (styleEntities) return d.style.color
+            else return defaultColour
+        })
+        .style("stoke-color", function (d) {
+            if (styleEntities) return d.style.color
+            else return defaultColour
+        })
+        .on("click", function (d) {
+            const { bounds } = d
+            console.log('clicked', d)
+            zoomOnClick(bounds.x + bounds.width() / 2, bounds.y + bounds.height() / 2)
+
+            // function (node) {
+            //     //on doubleclick toggle group/children visibility 
+            //     if (waitForDoubleClick != null) {
+            //         clearTimeout(waitForDoubleClick)
+            //         waitForDoubleClick = null
+            //         onToggleChildrenVisibility(node.id)
+            //     } else { //on single click zoom in on clicked spot 
+            //         waitForDoubleClick = setTimeout(() => {
+            //             const { x, y } = node
+            //             zoomOnClick(x, y)
+            //             waitForDoubleClick = null
+            //         }, 250)//waiting for 250 to detect double click 
+            //     }
+            // }
+        })
         .call(d3Cola.drag) //adding ability to drag
     /*.on("mouseup", function (d) {
         d.fixed = 0;
@@ -433,48 +603,48 @@ function redraw(D3Data) {
     //inserting nodes-data into g 
     var nodeElements = g
         .selectAll(".node")
-        .data(nodes, function (d) { return d.name })
+        .data(nodes)
 
 
     let waitForDoubleClick = null
-    var pad = 20;
     //inserting nodes into g 
     var enteredNodeElements = nodeElements.enter()
         .append("rect")
         .attr("class", "node")
         .attr("width", function (d) {
-            return d.width - 2 * pad;
+            console.log('enteredNodeElements', d)
+            return d.width
         })
         .attr("height", function (d) {
-            return d.height - 2 * pad;
+            return d.height //- 2 * padding;
         })
-        .attr("rx", function (d) {
-            //style depending on checkbox value 
-            if (styleEntities) return d.style.rx
-            else return defaultRounding;
-        })
-        .attr("ry", function (d) {
-            if (styleEntities) return d.style.ry
-            else return defaultRounding;
+        .attr('id', function (d) {
+            return d.id
         })
         .style("fill", function (d) {
             if (styleEntities) return d.style.color
             else return defaultColour
         })
         .call(d3Cola.drag)
-        .on("click", function (node) {
-            //on doubleclick toggle group/children visibility 
-            if (waitForDoubleClick != null) {
-                clearTimeout(waitForDoubleClick)
-                waitForDoubleClick = null
-                onToggleChildrenVisibility(node.id)
-            } else { //on single click zoom in on clicked spot 
-                waitForDoubleClick = setTimeout(() => {
-                    const { x, y } = node
-                    zoomOnClick(x, y)
-                    waitForDoubleClick = null
-                }, 250)//waiting for 250 to detect double click 
-            }
+        .on("click", function (d) {
+            const { x, y } = d
+            console.log('clicked', x, y)
+            zoomOnClick(x, y)
+
+            // function (node) {
+            //     //on doubleclick toggle group/children visibility 
+            //     if (waitForDoubleClick != null) {
+            //         clearTimeout(waitForDoubleClick)
+            //         waitForDoubleClick = null
+            //         onToggleChildrenVisibility(node.id)
+            //     } else { //on single click zoom in on clicked spot 
+            //         waitForDoubleClick = setTimeout(() => {
+            //             const { x, y } = node
+            //             zoomOnClick(x, y)
+            //             waitForDoubleClick = null
+            //         }, 250)//waiting for 250 to detect double click 
+            //     }
+            // }
         })
     /*.on("mouseup", function (d) {
        d.fixed = 0;
@@ -522,7 +692,7 @@ function redraw(D3Data) {
             .selectAll(".label")
             .data(nodes)
             .enter()
-            .append("text")
+            .append('text')
             .attr("class", "label")
             .text(function (d) {
                 return d.shortName;//show shortName as Label
@@ -536,7 +706,10 @@ function redraw(D3Data) {
         .append("title")
         .text(function (d) {
             return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " + d.name;//capitalize Type and add shortname
-        });
+        })
+
+
+
 
     // //inserting labels for groups into g
     // var groupLabel = g
@@ -567,47 +740,128 @@ function redraw(D3Data) {
     }
 
 
+    // Toggle buttons for child visibility
+    const visibilityButton = g
+        .selectAll('.visibilityButton')
+        .data(nodes.filter(n => n._groups.length > 0))
+        .enter()
+        .append('text')
+        .attr('class', 'visibilityButton')
+        .attr('width', function (d) {
+            return 1000
+        })
+        .attr('height', function (d) {
+            return 1000
+        })
+        .on('click', function (d) {
+            console.log('visibilityButton clicked', d)
+            onToggleChildrenVisibility(d.id)
+            // visibilityButton.text(function (d) {
+            //     return d.childrenVisibility ? '+' : '-'
+            // })
+        })
+
+
+
     //layouting of webcola
     d3Cola.on("tick", function () {
-        const padding = 30;
         //layouting of nodes
         enteredNodeElements
             .each(function (d) {
-                //d.innerBounds = d.bounds.inflate(-margin);// - original
-                d.innerBounds = d.parent.bounds; //make node have the same size as parent (directly surrounding group)
+                //d.parentBounds = d.bounds.inflate(-margin);// - original
+                d.parentBounds = d.parent.bounds; //make node have the same size as parent (directly surrounding group)
             })
             .attr("x", function (d) {
-                return d.parent.bounds.x; //make the node start at the same x position as the parent -> if others access x, this is returned
-                //return d.innerBounds.x; //original
+                return d.parent.bounds.x// + padding; //make the node start at the same x position as the parent -> if others access x, this is returned
+                //return d.parentBounds.x; //original
                 //return d.parent.bounds.x; // -> make the node start at the same x position as the parent
                 //return d.bounds.x
             })
             .attr("y", function (d) {
-                return d.parent.bounds.y; //works, but others do not respect bounding
-                //return d.innerBounds.y; //original
+                // console.log('enteredNode', Object.keys(d.parent))
+                // const parentHeight = d.parent.bounds.height()
+                // const numberOfChildren = d.parent.groups.length
+
+                // const divisor = numberOfChildren !== 0 ? numberOfChildren : 1
+
+                // console.log('enteredNodes', d.parent)
+                // if(d.parent.layers !== 1) d.parent.bounds.y + 25
+                if (!d._parent) return d.parent.bounds.y
+                return d.parent.bounds.y// + parentHeight * divisor// + padding; //works, but others do not respect bounding
+                //return d.parentBounds.y; //original
                 //return d.bounds.y//maybe this is what the others access when drawing ? 
             })
+        // .attr("width", function (d) {
+        //     // const parentWidth = d.parent.bounds.width()
+        //     // const numberOfChildren = d.parent.groups.length
+
+        //     // const divisor = numberOfChildren !== 0 ? numberOfChildren : 1
+
+        //     // console.log('enteredNodes', parentWidth, Math.floor((parentWidth) / divisor), divisor)
+        //     // return Math.floor((parentWidth) / divisor);// make the node have the same height as the parent
+        //     // console.log('enteredNodeElements parent', d.parent)
+
+        //     return d.parent.width // // computed width after D3-scaling
+        //     // return d.parent.bounds.width() - 2 * padding; // -> make the node the same width as the parent (group)
+        //     //return 0; //-> makes the node invisible
+        // })
+        // .attr('height', function (d) {
+        //     return d.height
+        // })
+        //layouting of groups 
+        group
+            .attr("x", function (d) {
+                return d.bounds.x;
+            })
+            .attr("y", function (d) {
+                // if(d._parent) return d.id * 350
+                // if(d.parent) return d.parent.bounds.y
+                /*if(d.parent){
+                    return d.parent.bounds.y;
+                }*/
+                // if (d.parent) return d.parent.bounds.y + d.height * d.parent.groups.findIndex(g => g.id === d.id);// - original
+                if (d.parent) {
+                    return d.bounds.y// + nodeHeight
+                }
+                return d.bounds.y
+            })
             .attr("width", function (d) {
-                //return d.innerBounds.width(); //- original
-                return d.parent.bounds.width(); // -> make the node the same width as the parent (group)
-                //return 0; //-> makes the node invisible
+                // if (d.parent) {
+                //     // return d.bounds.width();
+                //     return d.parent.width
+                // }
+                if (d.parent) return d.parent.bounds.width()
+                return d.bounds.width();
             })
             .attr("height", function (d) {
-                return d.parent.bounds.height();// make the node have the same height as the parent
-                //return d.innerBounds.height();//- original
-                //return 0; //-> makes the node invisible
-            });
+                // if (d.parent) {
+                //     return d.parent.bounds.height() / d.parent.groups.length + 1
+                // }
+                // console.log('d', d.groups)
+                // console.log('d', d.height)
 
+
+
+                if (d.groups.length === 0) return nodeHeight // if group has no children --> groups.height === node.height
+                else if (d.parent) return d.bounds.height() // if group has parent --> group can align itself according to parent - 50 / d.parent.groups.length
+
+                return d.bounds.height() // + nodeHeight //(d.height - 25) / 75 + 25
+                // return d.bounds.height() < d.height ? d.bounds.height() : d.height
+                // if (d.groups.length > 0) {
+                //     return 75 * (d.groups.length + 1)
+                // }
+                // return 75
+            });
         //layouting of links - only if links were created
         if (link) {
             link
                 .attr("d", function (d) {
                     var route = cola.makeEdgeBetween(
-                        d.source.innerBounds,//original
-                        d.target.innerBounds,//original
+                        d.source.parentBounds,//original
+                        d.target.parentBounds,//original
                         //d.source.bounds, 
                         //d.target.bounds,
-                        //pad+8//distance from target - was 4 before, perfect for arrow head -> was before, when innerBounds of node was still set differently
+                        //pad+8//distance from target - was 4 before, perfect for arrow head -> was before, when parentBounds of node was still set differently
                         5
                     );
 
@@ -643,30 +897,9 @@ function redraw(D3Data) {
                 //return d.parent.bounds.y; // -> makes the node be at the top of the parent-group, but the arrows still point to old position :(
             });*/
 
-        //layouting of groups 
-        group
-            .each(function (d) {//new function added
-                d.innerBounds = d.bounds.inflate(-padding);
-            })
-            .attr("x", function (d) {
-                return d.bounds.x;
-            })
-            .attr("y", function (d) {
-                /*if(d.parent){
-                    return d.parent.bounds.y;
-                }*/
-                return d.bounds.y;// - original
 
-            })
-            .attr("width", function (d) {
-                if (d.parent) {
-                    return d.bounds.width();
-                }
-                return d.bounds.width();
-            })
-            .attr("height", function (d) {
-                return d.bounds.height();
-            });
+
+
 
         //layouting of node labels - only if checkbox is checked 
         if (showEntityLabels) {
@@ -678,30 +911,38 @@ function redraw(D3Data) {
                     //return d.bounds.x + d.bounds.width()/2;
                 })
                 .attr("y", function (d) {
-
-                    return d.parent.bounds.y + 18;
+                    const y = d.parent.bounds.y + nodePadding * 2
+                    if (!d._parent) return y // if it doesnt have a parent forget the offsets
+                    else if (d._groups.length !== 0) return y// + nodeHeight * 1.1 // node has children --> make space for visibilityButton
+                    else return y// + nodeHeight // centered placement because node doesnt have children
                     /*var h = this.getBBox().height;
                     return d.y + h /4;*/ //original
                     //return d.bounds.y + h / 4;
-                });
+                })
+            // .attr('width', function (d) {
+            //     return 100 //d.parent.width
+            // })
+            // .attr('height', function (d) {
+            //     return 100 //d.parent.height
+            // })
         }
 
 
-        /*groupLabel
-            .attr("x", function (d) {
-                return d.bounds.x + d.bounds.width() / 2; // calculate x offset by dividing through group width
-            })
-            .attr("y", function (d) {
-                return d.bounds.y + 18; // calculate y offset by adding the height of the groupLabel
-            });*/
+        // /*groupLabel
+        //     .attr("x", function (d) {
+        //         return d.bounds.x + d.bounds.width() / 2; // calculate x offset by dividing through group width
+        //     })
+        //     .attr("y", function (d) {
+        //         return d.bounds.y + 18; // calculate y offset by adding the height of the groupLabel
+        //     });*/
 
         //layouting of linklabels - only if checkbox is checked and links were created
         if (link && showLinkLabels) {
             linkLabel
                 .attr("x", function (d) {
                     var route = cola.makeEdgeBetween(
-                        d.source.innerBounds,
-                        d.target.innerBounds,
+                        d.source.parentBounds,
+                        d.target.parentBounds,
                         5
                     );
                     const source = route.sourceIntersection
@@ -714,8 +955,8 @@ function redraw(D3Data) {
                 })
                 .attr("y", function (d) {
                     var route = cola.makeEdgeBetween(
-                        d.source.innerBounds,
-                        d.target.innerBounds,
+                        d.source.parentBounds,
+                        d.target.parentBounds,
                         5
                     );
                     const source = route.sourceIntersection
@@ -728,6 +969,32 @@ function redraw(D3Data) {
                     }
                 });
         }
+
+
+
+
+
+        visibilityButton
+            .attr("x", function (d) {
+                //console.log("d ->", d, "d.parent -> ", d.parent)
+                return d.parent.bounds.x + nodePadding / 2
+                //return d.x; //orginial
+                //return d.bounds.x + d.bounds.width()/2;
+            })
+            .attr("y", function (d) {
+                const y = d.parent.bounds.y + nodePadding * 2
+                if (!d._parent) {
+                    return y
+                }
+                return y// + nodeHeight * 3 / 4
+                /*var h = this.getBBox().height;
+                return d.y + h /4;*/ //original
+                //return d.bounds.y + h / 4;
+            })
+            .text(function (d) {
+                // console.log('visibilityButton', d)
+                return d.childrenVisibility ? '-' : '+'
+            })
     });
 
 }
