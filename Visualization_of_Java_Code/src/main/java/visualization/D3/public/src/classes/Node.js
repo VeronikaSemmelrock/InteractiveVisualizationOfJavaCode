@@ -24,8 +24,8 @@ export default class Node {
 
 
     // Weight config
-    static weight = 500
-    static fixed = true
+    static weight = 1000
+    static fixed = false
 
     constructor(id, name, type, leaves, groups, parentUniqueName, foreign) {
         this.id = id
@@ -58,7 +58,7 @@ export default class Node {
             style: this.style,
             shortName: this.shortName,
             foreign: this.foreign,
-            
+
         }
 
         // additional props
@@ -186,7 +186,7 @@ export default class Node {
             else return g
         })
 
-        
+
 
         const obj = Object.create(null)
         obj.nodes = nodes// .map(n => n)
@@ -232,9 +232,10 @@ export default class Node {
                 if (node.foreign === true) Node.setInternalDataVisibilityRecursive(node.id, visibility)
             }
         } else {
+            // Update internal list
             const existingIndex = Node.invisibleTypes.findIndex(_type => _type === type)
             if (visibility) Node.invisibleTypes.splice(existingIndex, 1)
-            else Node.invisibleTypes.push(type)
+            else if (existingIndex === -1) Node.invisibleTypes.push(type)
 
             console.log('setting visibility of type', type, 'to', visibility)
 
@@ -251,19 +252,30 @@ export default class Node {
         // console.log('after', Node.internalNodes)
         return D3Data
     }
+    static isInvisibleType(type) {
+        return Node.invisibleTypes.find(t => t === type)
+    }
 
-    //toggles Visibility of children of a nodeId 
+    //toggles Visibility of children of a nodeId
+    static nodesWithInvisibleChildren = []
     static toggleChildrenVisibility(nodeId) {
         // console.log(Node.internalNodes[nodeId].groups)
         Node.resetInternalData()
         const targetNode = Node.internalNodes[nodeId]
+        const visibility = !targetNode.childrenVisibility
         const groupNodeIds = targetNode.groups
 
+        // Update internal list
+        const existingIndex = Node.nodesWithInvisibleChildren.findIndex(_nodeId => _nodeId === nodeId)
+        if (visibility) Node.nodesWithInvisibleChildren.splice(existingIndex, 1)
+        else if (existingIndex === -1) Node.nodesWithInvisibleChildren.push(nodeId)
+
+        // Set childrenVisibility
+        targetNode.childrenVisibility = visibility
+
         if (groupNodeIds.length !== 0) {
-            const visibility = !targetNode.childrenVisibility
             console.log('setting visibility of children', targetNode.toDebugNode(), 'to', visibility)
             // console.log('before', JSON.parse(JSON.stringify(Node.internalNodes)))
-            targetNode.childrenVisibility = visibility
 
             // set internalNodes(children) visibility
             for (const groupNodeId of targetNode.groups) {
@@ -276,6 +288,9 @@ export default class Node {
             return Node.populateVisibleD3Data() // Parse new data into the D3 arrays
         }
     }
+    static isNodeWithInvisibleChildren(nodeId) {
+        return Node.nodesWithInvisibleChildren.find(id => id === nodeId)
+    }
     /////// Public API methods - END
 
 
@@ -284,16 +299,18 @@ export default class Node {
     // Recursive function for hiding children of a group
     static setInternalDataVisibilityRecursive(nodeId, visibility, debug) { // with debug true this method can be executed on non-reset internal data
         const node = Node.internalNodes[nodeId]
-        // console.log('setInternalDataVisibilityRecursive', node)
+        if (visibility ? !(Node.isInvisibleType(node.type) || Node.isNodeWithInvisibleChildren(nodeId)) : true) { // if type is filtered or node has been manually filtered, ignore node
+            // console.log('setInternalDataVisibilityRecursive', node)
 
-        node.visibility = visibility // hide internal node
-        node.childrenVisibility = visibility // set children visibility to visibility as well because this is a recursive function
+            node.visibility = visibility // hide internal node
+            node.childrenVisibility = visibility // set children visibility to visibility as well because this is a recursive function
 
-        // Do the same for all the groups recursively
-        const nodeGroups = node.groups
-        if (nodeGroups.length !== 0) {
-            for (const groupNodeId of nodeGroups) {
-                Node.setInternalDataVisibilityRecursive(debug ? groupNodeId.id : groupNodeId, visibility, debug)
+            // Do the same for all the groups recursively
+            const nodeGroups = node.groups
+            if (nodeGroups.length !== 0) {
+                for (const groupNodeId of nodeGroups) {
+                    Node.setInternalDataVisibilityRecursive(debug ? groupNodeId.id : groupNodeId, visibility, debug)
+                }
             }
         }
     }
