@@ -34,7 +34,7 @@ const defaultColour = "#b3e6b5" //light green
 
 //toggles children Visibility of given nodeId and calls redraw if data changed 
 function onToggleChildrenVisibility(nodeId) {
-    const D3Data = Node.toggleChildrenVisibility(nodeId)
+    const D3Data = Node.setChildrenVisibility(nodeId, undefined)
     if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
 }
 
@@ -120,7 +120,7 @@ const color = d3.scaleOrdinal(d3.schemeSet3);
 //configuring webcola
 const d3Cola = cola
     .d3adaptor(d3)
-    .flowLayout('x', Math.floor(nodeHeight))
+    .flowLayout('y', Math.floor(nodeHeight))
     .jaccardLinkLengths(nodeWidth)
     .linkDistance(nodeWidth * 2)
     .avoidOverlaps(true) // !!!!!!!
@@ -403,10 +403,18 @@ async function initialize() {
         // const response = await fetch('config')
         // const config = await response.json()
         // console.log('loaded config', config)
-        const config = { collapseOnInit: true, disableAllOnInit: true, disablePackagesOnInit: false }
+        const config = { collapseOnInit: false, disableAllOnInit: false, disablePackagesOnInit: false }
 
         const { collapseOnInit, disableAllOnInit, disablePackagesOnInit, disableClassesOnInit, disableMethodsOnInit, disableConstructorsOnInit, disableParametersOnInit, disableAttributesOnInit, disableLocalVariablesOnInit } = config
 
+
+        if (collapseOnInit) { // kinda works
+            for (const node of Node.getD3Data().nodes) {
+                Node.setChildrenVisibility(node.id, false) // TODO: when expanding nodes, all their children get expanded as well, should this stay?
+            }
+
+            redraw(Node.getD3Data())
+        }
 
         $checkboxes.forEach(element => {
             if (disablePackagesOnInit && element.name === 'package') {
@@ -422,13 +430,7 @@ async function initialize() {
         })
 
 
-        // if (collapseOnInit) { // kinda works
-        //     for (const node of Node.getD3Data().nodes) {
-        //         Node.toggleChildrenVisibility(node.id) // TODO: when expanding nodes, all their children get expanded as well, should this stay?
-        //     }
 
-        //     redraw(Node.getD3Data())
-        // }
 
 
 
@@ -477,7 +479,7 @@ function redraw(D3Data) {
     g.selectAll(".linklabel").remove()
     g.selectAll('.visibilityButton').remove()
 
-    console.log('graphContainer', nodes, links, groups)
+    // console.log('graphContainer', nodes, links, groups)
 
     //// constraints
     const constrainedNodes = nodes.slice()
@@ -533,11 +535,27 @@ function redraw(D3Data) {
             // constraints.push(cx1)
             // constraints.push(cx2)
         })
-
-
-
-
     })
+
+    // // Distance main groups from each other
+    // const rootNodes = groups.filter(g => !g._parent)
+    // for (let i = 0; i < rootNodes.length; i++) {
+
+    //     if (i < rootNodes.length - 1) {
+    //         const inequalityConstraint = { axis: 'y', left: Node.getPotentialObjId(rootNodes[i]), right: Node.getPotentialObjId(rootNodes[i + 1]), gap: 300 }
+    //         constraints.push(inequalityConstraint)
+    //     }
+
+    //     // if (i + 2 >= rootNodes.length) {
+    //     //     const extra = { axis: 'x', left: Node.getPotentialObjId(rootNodes[i + 1]), right: Node.getPotentialObjId(rootNodes[i + 2]) }
+    //     //     constraints.push(extra)
+    //     // }
+    // }
+
+    // console.log('veroConstraints', constraints.slice(-rootNodes.length), rootNodes.length)
+
+
+
 
     // // Root Node Distance
     // nodes.forEach(n => {
@@ -643,9 +661,6 @@ function redraw(D3Data) {
         })
         .attr('id', function (d) {
             return d.id
-        })
-        .attr('weight', function (d) {
-            return 1e6
         })
         // .attr("rx", function (d) {
         //     //style depending on checkbox value 
@@ -772,17 +787,6 @@ function redraw(D3Data) {
             .text(function (d) {
                 return d.type;
             });
-
-        //creating lines
-        var lineFunction = d3
-            .line()
-            .x(function (d) {
-                return d.x;
-            })
-            .y(function (d) {
-                return d.y;
-            })
-            .curve(d3.curveLinear);
     }
 
 
@@ -981,7 +985,17 @@ d3Cola.on("tick", function () {
                     5
                 );
 
-                console.log('lineFunction', lineFunction)
+
+                //creating lines
+                const lineFunction = d3
+                    .line()
+                    .x(function (d) {
+                        return d.x;
+                    })
+                    .y(function (d) {
+                        return d.y;
+                    })
+                    .curve(d3.curveLinear);
                 return lineFunction([route.sourceIntersection, route.arrowStart]);
             })
             .attr("x1", function (d) {
@@ -1053,8 +1067,8 @@ d3Cola.on("tick", function () {
     //     });*/
 
     //layouting of linklabels - only if checkbox is checked and links were created
-    if (graphLinks && showLinkLabels && linkLabels) { // -linkLabels
-        linkLabels
+    if (graphLinks && showLinkLabels && graphLinkLabels) { // -linkLabels
+        graphLinkLabels
             .attr("x", function (d) {
                 var route = cola.makeEdgeBetween(
                     d.source.parentBounds,
