@@ -439,27 +439,34 @@ async function initialize() {
         console.error('Failed to load config', error)
     }
 }
-await initialize()
+window.addEventListener('DOMContentLoaded', async () => {
+    await initialize()
+})
 
 
 
-
-
+// Redraw Data
+let graphNodes
+let graphLinks
+let graphGroups
+let graphLabels
+let graphLinkLabels
+let graphVisibilityButtons
 
 
 //(re)drawing of graph 
 function redraw(D3Data) {
+    const { nodes, links, groups } = D3Data
     setGraphZoom(!constrainGraph)
-
 
     // Cleanup Graph and remember x and y positions
     const pastGroups = g.selectAll('.group')
-    const groupPositions = pastGroups._groups[0]
-    console.log('groups', groupPositions)
+    // const groupPositions = pastGroups._groups[0]
+    // console.log('groups', groupPositions)
 
+    // if(groupPositions.length !== 0) console.log(groupPositions[0].outerHTML.split('x="'))
+    // const groups = rawGroups.map(g => )
 
-    // console.log("D3 redraw data --> ", D3Data)
-    const { nodes, links, groups } = D3Data
 
     //removes old graph-elements
     g.selectAll(".node").remove()
@@ -606,9 +613,23 @@ function redraw(D3Data) {
 
 
 
+    // // Load in data
+    // const existingGroupElements = graphGroups?._groups[0]
+    // const newGroups = []
+    // const existingGroups = []
+    // groups.forEach(g => {
+    //     if (existingGroupElements) {
+    //         const exists = existingGroupElements.find(element => element.__data.id === g.id)
+    //         if (exists) return existingGroups.push(g)
+    //     }
+    //     newGroups.push(g)
+    // })
+    // console.log('graphGroups', newGroups, existingGroups)
+
+    //// To be able to leave groups everything at its position when rerendering new data, we need to enter() new data, exit() removed data and leave staying data
 
     //inserting groups into g 
-    var group = g
+    graphGroups = g
         .selectAll(".group")
         .data(groups) // adding Node.groups 
         .enter() // enter all groups
@@ -683,7 +704,7 @@ function redraw(D3Data) {
 
     let waitForDoubleClick = null
     //inserting nodes into g 
-    var enteredNodeElements = nodeElements.enter()
+    graphNodes = nodeElements.enter()
         .append("rect")
         .attr("class", "node")
         .attr("width", function (d) {
@@ -737,7 +758,7 @@ function redraw(D3Data) {
 
     //inserting links - only if checkbox is checked
     if (showLinks) {
-        var link = g
+        graphLinks = g
             .selectAll(".link")
             .data(links)
             .enter()
@@ -746,7 +767,7 @@ function redraw(D3Data) {
             .attr('marker-end', (d) => "url(#end-arrow)")//attach the arrow from defs to the end of the path
 
         //appending title to links so when mouse hovers over link title is displayed
-        link
+        graphLinks
             .append("title")
             .text(function (d) {
                 return d.type;
@@ -767,7 +788,7 @@ function redraw(D3Data) {
 
     //inserting labels for nodes - only if checkbox is checked 
     if (showEntityLabels) {
-        var label = g
+        graphLabels = g
             .selectAll(".label")
             .data(nodes)
             .enter()
@@ -780,12 +801,14 @@ function redraw(D3Data) {
     }
 
 
-    //appending title to node so when mouse hovers over node title is displayed
-    enteredNodeElements
-        .append("title")
-        .text(function (d) {
-            return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " + d.name;//capitalize Type and add shortname
-        })
+    // //appending title to node so when mouse hovers over node title is displayed
+    // enteredNodeElements
+    //     .append("title")
+    //     .text(function (d) {
+    //         return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " + d.name;//capitalize Type and add shortname
+    //     })
+
+
 
 
 
@@ -804,8 +827,8 @@ function redraw(D3Data) {
 
 
     //inserting labels for links - only if checkbox is checked and links are defined
-    if (link && showLinkLabels) {
-        var linkLabel = g
+    if (graphLinks && showLinkLabels) {
+        graphLinkLabels = g
             .selectAll(".linklabel")
             .data(links)
             .enter()
@@ -820,7 +843,7 @@ function redraw(D3Data) {
 
 
     // Toggle buttons for child visibility
-    const visibilityButton = g
+    graphVisibilityButtons = g
         .selectAll('.visibilityButton')
         .data(nodes.filter(n => n._groups.length > 0))
         .enter()
@@ -841,11 +864,15 @@ function redraw(D3Data) {
         })
 
 
+}
 
-    //layouting of webcola
-    d3Cola.on("tick", function () {
-        //layouting of nodes
-        enteredNodeElements
+
+
+//layouting of webcola
+d3Cola.on("tick", function () {
+    //layouting of nodes
+    if (graphNodes) {
+        graphNodes
             .each(function (d) {
                 //d.parentBounds = d.bounds.inflate(-margin);// - original
                 d.parentBounds = d.parent.bounds; //make node have the same size as parent (directly surrounding group)
@@ -890,8 +917,11 @@ function redraw(D3Data) {
         // .attr('height', function (d) {
         //     return d.height
         // })
-        //layouting of groups 
-        group
+    }
+
+    //layouting of groups
+    if (graphGroups) {
+        graphGroups
             .attr("x", function (d) {
                 return d.bounds.x;
             })
@@ -934,129 +964,134 @@ function redraw(D3Data) {
                 // }
                 // return 75
             });
-        //layouting of links - only if links were created
-        if (link) {
-            link
-                .attr("d", function (d) {
-                    var route = cola.makeEdgeBetween(
-                        d.source.parentBounds,//original
-                        d.target.parentBounds,//original
-                        //d.source.bounds, 
-                        //d.target.bounds,
-                        //pad+8//distance from target - was 4 before, perfect for arrow head -> was before, when parentBounds of node was still set differently
-                        5
-                    );
+    }
 
-                    console.log('lineFunction', lineFunction)
-                    return lineFunction([route.sourceIntersection, route.arrowStart]);
-                })
-                .attr("x1", function (d) {
-                    return d.source.x;
-                })
-                .attr("y1", function (d) {
-                    return d.source.y;
-                })
-                .attr("x2", function (d) {
-                    return d.target.x;
-                })
-                .attr("y2", function (d) {
-                    return d.target.y;
-                })
-                .attr("text", function (d) {
-                    return d.name;
-                });
-        }
 
-        /*enteredNodeElements //was originally not commented but seems to not do anything?? 
+
+    //layouting of links - only if links were created
+    if (graphLinks) {
+        graphLinks
+            .attr("d", function (d) {
+                var route = cola.makeEdgeBetween(
+                    d.source.parentBounds,//original
+                    d.target.parentBounds,//original
+                    //d.source.bounds, 
+                    //d.target.bounds,
+                    //pad+8//distance from target - was 4 before, perfect for arrow head -> was before, when parentBounds of node was still set differently
+                    5
+                );
+
+                console.log('lineFunction', lineFunction)
+                return lineFunction([route.sourceIntersection, route.arrowStart]);
+            })
+            .attr("x1", function (d) {
+                return d.source.x;
+            })
+            .attr("y1", function (d) {
+                return d.source.y;
+            })
+            .attr("x2", function (d) {
+                return d.target.x;
+            })
+            .attr("y2", function (d) {
+                return d.target.y;
+            })
+            .attr("text", function (d) {
+                return d.name;
+            });
+    }
+
+    /*enteredNodeElements //was originally not commented but seems to not do anything?? 
+        .attr("x", function (d) {
+            return d.x - d.width / 2 + pad;//original
+            //return d.parent.bounds.x; // -> make the node start at the same x position as the parent
+            //return d.bounds.x; 
+        })
+        .attr("y", function (d) {
+            return d.y - d.height / 2 + pad;//original
+            //return d.parent.bounds.y;
+            //return d.parent.bounds.y; // -> makes the node be at the top of the parent-group, but the arrows still point to old position :(
+        });*/
+
+
+
+
+
+    //layouting of node labels - only if checkbox is checked 
+    if (showEntityLabels && graphLabels) { // - graphLabels
+        graphLabels
             .attr("x", function (d) {
-                return d.x - d.width / 2 + pad;//original
-                //return d.parent.bounds.x; // -> make the node start at the same x position as the parent
-                //return d.bounds.x; 
+                //console.log("d ->", d, "d.parent -> ", d.parent)
+                return d.parent.bounds.x + d.parent.bounds.width() / 2;
+                //return d.x; //orginial
+                //return d.bounds.x + d.bounds.width()/2;
             })
             .attr("y", function (d) {
-                return d.y - d.height / 2 + pad;//original
-                //return d.parent.bounds.y;
-                //return d.parent.bounds.y; // -> makes the node be at the top of the parent-group, but the arrows still point to old position :(
-            });*/
+                const y = d.parent.bounds.y + nodePadding * 2
+                if (!d._parent) return y // if it doesnt have a parent forget the offsets
+                else if (d._groups.length !== 0) return y// + nodeHeight * 1.1 // node has children --> make space for visibilityButton
+                else return y// + nodeHeight // centered placement because node doesnt have children
+                /*var h = this.getBBox().height;
+                return d.y + h /4;*/ //original
+                //return d.bounds.y + h / 4;
+            })
+        // .attr('width', function (d) {
+        //     return 100 //d.parent.width
+        // })
+        // .attr('height', function (d) {
+        //     return 100 //d.parent.height
+        // })
+    }
+
+
+    // /*groupLabel
+    //     .attr("x", function (d) {
+    //         return d.bounds.x + d.bounds.width() / 2; // calculate x offset by dividing through group width
+    //     })
+    //     .attr("y", function (d) {
+    //         return d.bounds.y + 18; // calculate y offset by adding the height of the groupLabel
+    //     });*/
+
+    //layouting of linklabels - only if checkbox is checked and links were created
+    if (graphLinks && showLinkLabels && linkLabels) { // -linkLabels
+        linkLabels
+            .attr("x", function (d) {
+                var route = cola.makeEdgeBetween(
+                    d.source.parentBounds,
+                    d.target.parentBounds,
+                    5
+                );
+                const source = route.sourceIntersection
+                const target = route.arrowStart
+                if (source.x >= target.x) {
+                    return target.x + (source.x - target.x) / 2
+                } else {
+                    return source.x + (target.x - source.x) / 2
+                }
+            })
+            .attr("y", function (d) {
+                var route = cola.makeEdgeBetween(
+                    d.source.parentBounds,
+                    d.target.parentBounds,
+                    5
+                );
+                const source = route.sourceIntersection
+                const target = route.arrowStart
+
+                if (source.y >= target.y) {
+                    return target.y + (source.y - target.y) / 2
+                } else {
+                    return source.y + (target.y - source.y) / 2
+                }
+            });
+    }
 
 
 
 
 
-        //layouting of node labels - only if checkbox is checked 
-        if (showEntityLabels) {
-            label
-                .attr("x", function (d) {
-                    //console.log("d ->", d, "d.parent -> ", d.parent)
-                    return d.parent.bounds.x + d.parent.bounds.width() / 2;
-                    //return d.x; //orginial
-                    //return d.bounds.x + d.bounds.width()/2;
-                })
-                .attr("y", function (d) {
-                    const y = d.parent.bounds.y + nodePadding * 2
-                    if (!d._parent) return y // if it doesnt have a parent forget the offsets
-                    else if (d._groups.length !== 0) return y// + nodeHeight * 1.1 // node has children --> make space for visibilityButton
-                    else return y// + nodeHeight // centered placement because node doesnt have children
-                    /*var h = this.getBBox().height;
-                    return d.y + h /4;*/ //original
-                    //return d.bounds.y + h / 4;
-                })
-            // .attr('width', function (d) {
-            //     return 100 //d.parent.width
-            // })
-            // .attr('height', function (d) {
-            //     return 100 //d.parent.height
-            // })
-        }
-
-
-        // /*groupLabel
-        //     .attr("x", function (d) {
-        //         return d.bounds.x + d.bounds.width() / 2; // calculate x offset by dividing through group width
-        //     })
-        //     .attr("y", function (d) {
-        //         return d.bounds.y + 18; // calculate y offset by adding the height of the groupLabel
-        //     });*/
-
-        //layouting of linklabels - only if checkbox is checked and links were created
-        if (link && showLinkLabels) {
-            linkLabel
-                .attr("x", function (d) {
-                    var route = cola.makeEdgeBetween(
-                        d.source.parentBounds,
-                        d.target.parentBounds,
-                        5
-                    );
-                    const source = route.sourceIntersection
-                    const target = route.arrowStart
-                    if (source.x >= target.x) {
-                        return target.x + (source.x - target.x) / 2
-                    } else {
-                        return source.x + (target.x - source.x) / 2
-                    }
-                })
-                .attr("y", function (d) {
-                    var route = cola.makeEdgeBetween(
-                        d.source.parentBounds,
-                        d.target.parentBounds,
-                        5
-                    );
-                    const source = route.sourceIntersection
-                    const target = route.arrowStart
-
-                    if (source.y >= target.y) {
-                        return target.y + (source.y - target.y) / 2
-                    } else {
-                        return source.y + (target.y - source.y) / 2
-                    }
-                });
-        }
-
-
-
-
-
-        visibilityButton
+    if (graphVisibilityButtons) {
+        graphVisibilityButtons
             .attr("x", function (d) {
                 //console.log("d ->", d, "d.parent -> ", d.parent)
                 return d.parent.bounds.x + nodePadding / 2
@@ -1077,7 +1112,7 @@ function redraw(D3Data) {
                 // console.log('visibilityButton', d)
                 return d.childrenVisibility ? '-' : '+'
             })
-    });
+    }
+});
 
-}
 
