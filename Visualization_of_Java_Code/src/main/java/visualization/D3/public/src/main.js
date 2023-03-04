@@ -24,6 +24,8 @@ var styleEntities;
 var showLinkLabels;
 var showEntityLabels;
 var showLinks;
+//vars for tools and configurations
+var constrainGraph; 
 
 //vars for defaultStyling 
 const defaultRounding = 6
@@ -36,41 +38,73 @@ function onToggleChildrenVisibility(nodeId) {
 }
 
 //sets type visibility of given type (of node or link) and calls redraw if data changed 
-function onSetTypeVisibility(type, visibility) {
+function onCheckboxChange(option, visibility) {
     let D3Data;
-    //if (type === "implements" || type === "extends" || type === "returnType" || type === "access" || type === "invocation") {
-    if (type === "links") {
+    //if (option === "implements" || option === "extends" || option === "returnType" || option === "access" || option === "invocation") {
+    if (option === "links") {
         showLinks = visibility
-    } else if (type === "styling") {
+    } else if (option === "styling") {
         //turn styling on or off 
         styleEntities = visibility
-    } else if (type === "linkLabels") {
+    } else if (option === "linkLabels") {
         //turn linkLabels on or off 
         showLinkLabels = visibility
-    } else if (type === "entityLabels") {
+    } else if (option === "entityLabels") {
         //turn entityLabels on or off 
         showEntityLabels = visibility
+    } else if (option === "constrain") {
+        constrainGraph = visibility
+    } else if (option === "fixed") {
+        Node.fixed = visibility
+
     } else { //node visibility
-        D3Data = Node.setTypeVisibility(type, visibility)
+        D3Data = Node.setTypeVisibility(option, visibility)
     }
     redraw(Node.getD3Data())
 }
+
 const $checkboxes = document.querySelectorAll("input");
 //uncheck all checkboxes on page reload and add event listeners that call toggling of corresponding type visibility - TODO
 for (const checkbox of $checkboxes) {
     checkbox.checked = true;//should be false 
     checkbox.addEventListener("change", (e) => {
-        onSetTypeVisibility(e.target.name, e.target.checked)
+        onCheckboxChange(e.target.name, e.target.checked)
     })
 }
+showLinks = false;
+document.getElementById("filterLinks").checked = false
 //set checkbox of packages to checked, so packages are visible at page reload - TODO
 //document.getElementById("filterPackages").checked = true
-//set corresponding initial values for vars that are for filtering in frontend 
+//set corresponding initial values for vars that are for filtering in frontend
+
 styleEntities = true;
 showEntityLabels = true;
 showLinkLabels = true;
-showLinks = false;
-document.getElementById("filterLinks").checked = false
+
+
+
+//slider
+const $slider = document.getElementById("weight")
+const $weightOutput = document.getElementById("weightOutput")
+$weightOutput.innerText = $slider.value
+
+$slider.onchange = function() {
+    $weightOutput.innerText = this.value  //show current weight
+}
+$slider.onmouseup = function() {
+    $weightOutput.innerText = this.value  //show current weight
+    Node.weight = this.value
+    console.log("test", Node.weight, Node.fixed)
+    redraw(Node.getD3Data()) //redraw with new weight 
+} 
+constrainGraph = false; 
+document.getElementById("constrain").checked = false
+
+
+
+
+
+
 
 /*console.log("Nodes before ", Node.getD3Data().nodes)
 //initially close all nodes 
@@ -209,7 +243,6 @@ const g = svg
 
 
 //// zooming
-let constrainGraph = false
 // Configure zoom
 const zoom = d3.zoom()
 
@@ -433,7 +466,7 @@ redraw(Node.getD3Data())
 function redraw(D3Data) {
     setGraphZoom(!constrainGraph)
 
-    // console.log("D3 redraw data --> ", D3Data)
+    console.log("D3 redraw data --> ", D3Data)
     const { nodes, links, groups } = D3Data
 
     //removes old graph-elements
@@ -597,7 +630,7 @@ function redraw(D3Data) {
             return d.id
         })
         .attr('weight', function (d) {
-            return 1e6
+            return d.weight
         })
         // .attr("rx", function (d) {
         //     //style depending on checkbox value 

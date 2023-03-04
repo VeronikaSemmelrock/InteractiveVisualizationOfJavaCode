@@ -61,15 +61,6 @@ export default class Node {
             
         }
 
-        // additional props
-        node.width = nodeWidth // set status width and height
-        node.height = nodeHeight
-        node.fixed = Node.fixed
-        node.weight = Node.weight
-        node.fixedWeight = Node.weight
-        //node.fill = TODO - get from type
-        //node.rx = TODO - get from type
-        //node.ry = TODO - get from type
         return node
     }
 
@@ -91,14 +82,6 @@ export default class Node {
             group.leaves = this.leaves
             group.groups = this.groups
         }
-
-        // Additional props
-        // group.padding = 8.5
-        group.width = nodeWidth // set status width and height
-        group.height = nodeHeight
-        group.fixed = Node.fixed
-        group.weight = Node.weight
-        group.fixedWeight = Node.weight
 
         return group
     }
@@ -171,13 +154,23 @@ export default class Node {
         // console.log('newGroups with layers', newGroups, newGroups.map(g => g.layers))
         // obj.groups = newGroups.sort((a, b) => a.id - b.id)// .map(g => g)
 
-
+        // Add parent to groups and nodes
         const nodes = Node.nodes.map((g, i) => {
             const parent = Node.groups.find(_g => {
                 // console.log('find group', i, _g.groups, _g.groups)// _g.groups.find(__g => __g === g.id))
                 return _g.groups.find(__g => __g === g.id)
             })
             // console.log('parents', parent)
+
+
+            // Update volatile D3 UI data
+            g.width = Node.groups[i].width = nodeWidth // set status width and height
+            g.height = Node.groups[i].height = nodeHeight
+            g.fixed = Node.groups[i].fixed = Node.fixed
+            g.weight = Node.groups[i].weight = Node.weight
+            g.fixedWeight = Node.groups[i].fixedWeight = Node.weight
+
+
             if (parent) {
                 g._parent = parent.id
                 Node.groups[i]._parent = parent.id
@@ -189,7 +182,7 @@ export default class Node {
         
 
         const obj = Object.create(null)
-        obj.nodes = nodes// .map(n => n)
+        obj.nodes = nodes
         obj.groups = Node.groups
         obj.links = Link.links// .map(l => l)
         return obj

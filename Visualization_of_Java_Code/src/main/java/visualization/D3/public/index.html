@@ -27,7 +27,7 @@
 		<input type="file" id="fileinput" name="file">
 		<br><br>-->
 		<br>
-		<div>Show Entities:</div>
+		<div id="divShowEntities">Show Entities:</div>
 		<input type="checkbox" id="filterPackages" name="package">
 		<label for="filterPackages">Packages</label><br>
 		<input type="checkbox" id="filterClasses" name="class">
@@ -44,7 +44,7 @@
 		<label for="filterLocalVariables">Local Variables</label><br>
 	
 		<br>
-		<div>Show Associations:</div>
+		<div id="divShowAssociations">Show Associations:</div>
 		<!--<input type="checkbox" id="filterImplements" name="implements">
 		<label for="filterImplements">Implements Associations</label><br>
 		<input type="checkbox" id="filterExtends" name="extends">
@@ -59,12 +59,12 @@
 		<label for="filterLinks">Associations</label><br>
 	
 		<br>
-		<div>Show Foreign Entities:</div>
+		<div id="divShowForeign">Show Foreign Entities:</div>
 		<input type="checkbox" id="filterForeign" name="foreign">
 		<label for="filterForeign">Foreign Entities</label><br>
 
 		<br>
-		<div>Styling:</div>
+		<div id="divStyling">Styling:</div>
 		<input type="checkbox" id="styling" name="styling">
 		<label for="styling">Style Different Entity Types</label><br>
 		<input type="checkbox" id="linkLabels" name="linkLabels">
@@ -74,7 +74,17 @@
 
 		<br>
 		<br>
+		<div id="divTools">Tools and Configurations:</div>
 		<button id="fitToView">Fit to View</button>
+		<br><br>
+		<input type="checkbox" id="fixed" name="fixed">
+		<label for="fixed">Fix Positions - disable automatic layouting</label><br>
+		<input type="checkbox" id="constrain" name="constrain">
+		<label for="constrain">Constrain Graph</label><br>
+		<br>
+		<label for="range">Weight: <span id="weightOutput"></span></label><br>
+		<input type="range" min="1" max="1000" value="500" class="slider" id="weight"><br>
+		
 	</div>
 </body>
 </html>
