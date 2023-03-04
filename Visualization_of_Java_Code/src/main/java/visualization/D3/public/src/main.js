@@ -33,7 +33,7 @@ const defaultColour = "#b3e6b5" //light green
 
 //toggles children Visibility of given nodeId and calls redraw if data changed 
 function onToggleChildrenVisibility(nodeId) {
-    const D3Data = Node.toggleChildrenVisibility(nodeId)
+    const D3Data = Node.setChildrenVisibility(nodeId, undefined)
     if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
 }
 
@@ -151,12 +151,12 @@ const color = d3.scaleOrdinal(d3.schemeSet3);
 //configuring webcola
 const d3Cola = cola
     .d3adaptor(d3)
-    .flowLayout('x', Math.floor(nodeHeight * 2))
+    .flowLayout('y', Math.floor(nodeHeight))
     .jaccardLinkLengths(nodeWidth)
     .linkDistance(nodeWidth * 2)
     .avoidOverlaps(true) // !!!!!!!
     .handleDisconnected(false) // !!!!!!!
-    .symmetricDiffLinkLengths(nodeWidth * 2)//directly changes link length
+    .symmetricDiffLinkLengths(nodeWidth)//directly changes link length
     //.flowLayout("x", 150)  //the call to flowLayout causes all edges not involved in a cycle to have a separation constraint generated between their source and sink
     // with a minimum spacing set to 150. Specifying the 'x' axis achieves a left-to-right flow layout. The default is top-to-bottom flow layout
     .size([width, height]);
@@ -251,7 +251,7 @@ function setGraphZoom(enable) {
     else {
         svg.call(zoom
             .extent([[0, 0], [width, height]])
-            .scaleExtent([0, 8])
+            .scaleExtent([0, 80])
             // .translateExtent([[0, 0], [width, height]])
             .on("zoom", function () {
                 const transform = d3.zoomTransform(this)
@@ -285,28 +285,31 @@ function zoomOnClick(x, y) {
         );
 }
 
-function fitGraphToView() {
-    svg
-        .transition()
-        .duration(750)
-        .call(
-            zoom.transform,
-            d3.zoomIdentity
-        )
+function getGraphScale(graph) {
+    try {
+        // console.log(graph.getAttribute('transform'))
+        return parseFloat(graph.getAttribute('transform').split('scale(')[1].split(')')[0])
+    } catch (error) {
+        return 1
+    }
+}
 
+const fitGraphToViewTime = 750
+
+function fitGraphToView(isInternal) {
     // console.log('svg', Object.keys(svg))
 
     // console.log('x', svg.attr('X'))
     const graph = document.getElementById('graph') // := g
-    graph.getAttribute('')
-    console.log('graph', graph)
+    const initialScale = getGraphScale(graph)
+    // console.log('graph', graph, initialScale)
 
     const graphPosition = graph.getBoundingClientRect()
     // const graphPosition = svg.getBBox()
     //graphPosition.x = graphPosition.x - graphContainer.x
     //graphPosition.y = graphPosition.y - graphContainer.y
-    const graphCenterX = graphPosition.x + graphPosition.width / 2
-    const graphCenterY = graphPosition.y + graphPosition.height / 2
+    // const graphCenterX = graphPosition.x + graphPosition.width / 2
+    // const graphCenterY = graphPosition.y + graphPosition.height / 2
     // console.log('graph', graphPosition, graphCenterX)
     // console.log('graphContainer', graphContainer)
     // console.log('center is', centerX, centerY)
@@ -316,11 +319,13 @@ function fitGraphToView() {
     // Scale
     const widthRelation = graphPosition.width / width
     const heightRelation = graphPosition.height / height
-    const graphTooSmall = widthRelation < 0.65 && heightRelation < 0.65
+    const graphTooSmall = widthRelation < 0.5 && heightRelation < 0.5
     const graphTooWide = widthRelation > 1
     const graphTooHigh = heightRelation > 1
+    const graphTooBig = graphTooHigh || graphTooWide
 
-    const factor = Math.max(graphPosition.width / width, graphPosition.height / height)
+
+    // const factor = Math.max(graphPosition.width / width, graphPosition.height / height)
     let scale = 1 // Math.exp(factor) / factor
     let translateX = 0
     let translateY = 0
@@ -328,12 +333,26 @@ function fitGraphToView() {
     // console.log('scaling', scale, Math.max(graphPosition.width / width, graphPosition.height / height))
 
     if (graphTooSmall) {
-        if (widthRelation > heightRelation) relation = heightRelation
-        scale = 1 / Math.sqrt(relation) * 0.8
-        translateX = relation * (centerX - graphCenterX)
-        translateY = relation * (centerY - graphCenterY)
+        if (widthRelation < heightRelation) relation = heightRelation
+        scale = 1 / relation * initialScale * 0.85
+        translateX = -centerX * (scale - 1)
+        translateY = -centerY * (scale - 1)
+        console.log('graph too small, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, 1 / relation, initialScale, scale)
+    }
+    else if (graphTooBig) { // doesnt work yet: TODO, when zooming in really much, have to press fitToView twice for it to work
+        if (graphTooHigh && graphTooWide) relation = graphTooHigh > graphTooWide ? heightRelation : widthRelation
+        else if (graphTooHigh) relation = heightRelation
 
-        console.log('graph too small, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, scale)
+        scale = 1 / relation * initialScale * 0.85
+        translateX = -centerX * (scale - 1)
+        translateY = -centerY * (scale - 1)
+
+        // if (scale >= 1) {
+        //     scale = 1 / relation * scale * 0.85
+        //     translateX = -centerX * (scale - 1)
+        //     translateY = -centerY * (scale - 1)
+        // }
+        console.log('graph too big, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, 1 / relation, initialScale, scale)
     }
 
 
@@ -354,46 +373,31 @@ function fitGraphToView() {
     // // console.log('graph small big, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, scale)
 
 
-    setTimeout(() => {
-        svg.call(zoom.transform, d3.zoomIdentity
-            .translate(-graphCenterX, -graphCenterY)
-            .scale(2)
-        )
-    }, 750)
+    // setTimeout(() => {
 
-    // g
-    //     .transition()
-    //     .duration(500)
-    //     .call(
-    //         zoom.transform,
-    //         d3.zoomIdentity
-    //             .translate(0, 0)
-    //             .scale(1)
-    //     )
-    // setTimeout(() => {
-    // setTimeout(() => {
-    //     svg.call(
-    //         zoom.transform,
-    //         d3.zoomIdentity
-    //             .translate(centerX - graphCenterX, centerY - graphCenterY)
-    //             .scale(scale)
-    //         // .translate(-graphCenterX, -graphCenterY)
-    //     )
-    // }, 1000)
-    // g
-    //     .transition()
-    //     .duration(750)
-    //     .call(
-    //         zoom.transform,
-    //         d3.zoomIdentity
-    //             .translate(centerX - scale * graphCenterX, centerY - scale * graphCenterY)
-    //             .scale(scale)
-    //         // .translate(-graphCenterX, -graphCenterY)
-    //     )
-    // }, 1000)
+
+
+    svg
+        .transition()
+        .duration(!isInternal && graphTooBig ? fitGraphToViewTime / 2 : fitGraphToViewTime)
+        .call(
+            zoom.transform,
+            d3.zoomIdentity
+        )
+        .call(
+            zoom.transform,
+            d3.zoomIdentity
+                // .translate(0, 0)
+                .translate(translateX, translateY)
+                .scale(scale)
+        )
+
+
+    // console.log(graphTooBig, isInternal)
+    if (graphTooBig && graphTooHigh && graphTooWide && !isInternal) setTimeout(() => fitGraphToView(true), fitGraphToViewTime / 2)
 }
 
-document.getElementById('fitToView').addEventListener('click', fitGraphToView)
+document.getElementById('fitToView').addEventListener('click', () => fitGraphToView())
 
 
 
@@ -421,64 +425,89 @@ const delimiterRegex = /[\.\^\'\#\$]/g
 
 
 
-// Init config
-async function loadConfig() { // has to happen 1 line before redraw
+// Initialize graph with config
+async function initialize() {
     try {
         // const response = await fetch('config')
         // const config = await response.json()
         // console.log('loaded config', config)
-        const config = { collapseOnInit: true, disableAllOnInit: false, disablePackagesOnInit: false }
+        const config = { collapseOnInit: false, disableAllOnInit: false, disablePackagesOnInit: false }
 
         const { collapseOnInit, disableAllOnInit, disablePackagesOnInit, disableClassesOnInit, disableMethodsOnInit, disableConstructorsOnInit, disableParametersOnInit, disableAttributesOnInit, disableLocalVariablesOnInit } = config
 
-        if (collapseOnInit) {
+
+        if (collapseOnInit) { // kinda works
             for (const node of Node.getD3Data().nodes) {
-                Node.toggleChildrenVisibility(node.id) // TODO: when expanding nodes, all their children get expanded as well, should this stay?
+                Node.setChildrenVisibility(node.id, false) // TODO: when expanding nodes, all their children get expanded as well, should this stay?
             }
+
+            redraw(Node.getD3Data())
         }
+
         $checkboxes.forEach(element => {
             if (disablePackagesOnInit && element.name === 'package') {
                 console.log('disablePackages', disablePackagesOnInit)
                 element.click()
             }
-            else if (disableAllOnInit || disableClassesOnInit && element.name === 'class') element.click()
-            else if (disableAllOnInit || disableMethodsOnInit && element.name === 'method') element.click()
-            else if (disableAllOnInit || disableConstructorsOnInit && element.name === 'constructor') element.click()
-            else if (disableAllOnInit || disableParametersOnInit && element.name === 'parameter') element.click()
-            else if (disableAllOnInit || disableAttributesOnInit && element.name === 'attribute') element.click()
-            else if (disableAllOnInit || disableLocalVariablesOnInit && element.name === 'localVariable') element.click()
+            if ((disableAllOnInit || disableClassesOnInit) && element.name === 'class') element.click()
+            else if ((disableAllOnInit || disableMethodsOnInit) && element.name === 'method') element.click()
+            else if ((disableAllOnInit || disableConstructorsOnInit) && element.name === 'constructor') element.click()
+            else if ((disableAllOnInit || disableParametersOnInit) && element.name === 'parameter') element.click()
+            else if ((disableAllOnInit || disableAttributesOnInit) && element.name === 'attribute') element.click()
+            else if ((disableAllOnInit || disableLocalVariablesOnInit) && element.name === 'localVariable') element.click()
         })
+
+
+
+
+
+
+        if (!(collapseOnInit || disableAllOnInit || disablePackagesOnInit || disableClassesOnInit || disableMethodsOnInit || disableConstructorsOnInit || disableParametersOnInit || disableAttributesOnInit || disableLocalVariablesOnInit)) {
+            redraw(Node.getD3Data())
+        }
     } catch (error) {
         console.error('Failed to load config', error)
     }
 }
-// loadConfig()
-
-// await loadConfig()
-redraw(Node.getD3Data())
-
+window.addEventListener('DOMContentLoaded', async () => {
+    await initialize()
+})
 
 
 
+// Redraw Data
+let graphNodes
+let graphLinks
+let graphGroups
+let graphLabels
+let graphLinkLabels
+let graphVisibilityButtons
 
 
 //(re)drawing of graph 
 function redraw(D3Data) {
+    const { nodes, links, groups } = D3Data
     setGraphZoom(!constrainGraph)
 
-    console.log("D3 redraw data --> ", D3Data)
-    const { nodes, links, groups } = D3Data
+    // Cleanup Graph and remember x and y positions
+    const pastGroups = g.selectAll('.group')
+    // const groupPositions = pastGroups._groups[0]
+    // console.log('groups', groupPositions)
+
+    // if(groupPositions.length !== 0) console.log(groupPositions[0].outerHTML.split('x="'))
+    // const groups = rawGroups.map(g => )
+
 
     //removes old graph-elements
     g.selectAll(".node").remove()
-    g.selectAll(".group").remove()
+    pastGroups.remove()
     g.selectAll(".link").remove()
     g.selectAll(".label").remove()
     g.selectAll(".grouplabel").remove()
     g.selectAll(".linklabel").remove()
     g.selectAll('.visibilityButton').remove()
 
-    console.log('graphContainer', nodes, links, groups)
+    // console.log('graphContainer', nodes, links, groups)
 
     //// constraints
     const constrainedNodes = nodes.slice()
@@ -521,23 +550,40 @@ function redraw(D3Data) {
         //     gap: Math.floor(nodeWidth / 2)
         // }
 
+        const inequalityConstraint = { axis: 'x', left: Node.getPotentialObjId(n.leaves[0]) }
+
 
         // console.log('MainNode constraints', constraint)
         n.groups.forEach(g => {
-            const cy = { ...constraintY, right: Node.getPotentialObjId(g) }
-            constraints.push(cy)
-
-            constraints.push({ axis: 'x', left: Node.getPotentialObjId(n.leaves[0]), right: Node.getPotentialObjId(g) })
+            // console.log('g', g, { ...constraintY, right: Node.getPotentialObjId(g) }, { ...inequalityConstraint, right: Node.getPotentialObjId(g) })
+            constraints.push({ ...constraintY, right: Node.getPotentialObjId(g) })
+            constraints.push({ ...inequalityConstraint, right: Node.getPotentialObjId(g) })
             // const cx1 = { ...constraintX1, right: Node.getPotentialObjId(g) }
             // const cx2 = {...constraintX2, left: Node.getPotentialObjId(g)}
             // constraints.push(cx1)
             // constraints.push(cx2)
         })
-
-
-
-
     })
+
+    // // Distance main groups from each other
+    // const rootNodes = groups.filter(g => !g._parent)
+    // for (let i = 0; i < rootNodes.length; i++) {
+
+    //     if (i < rootNodes.length - 1) {
+    //         const inequalityConstraint = { axis: 'y', left: Node.getPotentialObjId(rootNodes[i]), right: Node.getPotentialObjId(rootNodes[i + 1]), gap: 300 }
+    //         constraints.push(inequalityConstraint)
+    //     }
+
+    //     // if (i + 2 >= rootNodes.length) {
+    //     //     const extra = { axis: 'x', left: Node.getPotentialObjId(rootNodes[i + 1]), right: Node.getPotentialObjId(rootNodes[i + 2]) }
+    //     //     constraints.push(extra)
+    //     // }
+    // }
+
+    // console.log('veroConstraints', constraints.slice(-rootNodes.length), rootNodes.length)
+
+
+
 
     // // Root Node Distance
     // nodes.forEach(n => {
@@ -612,9 +658,23 @@ function redraw(D3Data) {
 
 
 
+    // // Load in data
+    // const existingGroupElements = graphGroups?._groups[0]
+    // const newGroups = []
+    // const existingGroups = []
+    // groups.forEach(g => {
+    //     if (existingGroupElements) {
+    //         const exists = existingGroupElements.find(element => element.__data.id === g.id)
+    //         if (exists) return existingGroups.push(g)
+    //     }
+    //     newGroups.push(g)
+    // })
+    // console.log('graphGroups', newGroups, existingGroups)
+
+    //// To be able to leave groups everything at its position when rerendering new data, we need to enter() new data, exit() removed data and leave staying data
 
     //inserting groups into g 
-    var group = g
+    graphGroups = g
         .selectAll(".group")
         .data(groups) // adding Node.groups 
         .enter() // enter all groups
@@ -628,9 +688,6 @@ function redraw(D3Data) {
         })
         .attr('id', function (d) {
             return d.id
-        })
-        .attr('weight', function (d) {
-            return d.weight
         })
         // .attr("rx", function (d) {
         //     //style depending on checkbox value 
@@ -689,7 +746,7 @@ function redraw(D3Data) {
 
     let waitForDoubleClick = null
     //inserting nodes into g 
-    var enteredNodeElements = nodeElements.enter()
+    graphNodes = nodeElements.enter()
         .append("rect")
         .attr("class", "node")
         .attr("width", function (d) {
@@ -743,7 +800,7 @@ function redraw(D3Data) {
 
     //inserting links - only if checkbox is checked
     if (showLinks) {
-        var link = g
+        graphLinks = g
             .selectAll(".link")
             .data(links)
             .enter()
@@ -752,28 +809,17 @@ function redraw(D3Data) {
             .attr('marker-end', (d) => "url(#end-arrow)")//attach the arrow from defs to the end of the path
 
         //appending title to links so when mouse hovers over link title is displayed
-        link
+        graphLinks
             .append("title")
             .text(function (d) {
                 return d.type;
             });
-
-        //creating lines
-        var lineFunction = d3
-            .line()
-            .x(function (d) {
-                return d.x;
-            })
-            .y(function (d) {
-                return d.y;
-            })
-            .curve(d3.curveLinear);
     }
 
 
     //inserting labels for nodes - only if checkbox is checked 
     if (showEntityLabels) {
-        var label = g
+        graphLabels = g
             .selectAll(".label")
             .data(nodes)
             .enter()
@@ -786,12 +832,14 @@ function redraw(D3Data) {
     }
 
 
-    //appending title to node so when mouse hovers over node title is displayed
-    enteredNodeElements
-        .append("title")
-        .text(function (d) {
-            return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " + d.name;//capitalize Type and add shortname
-        })
+    // //appending title to node so when mouse hovers over node title is displayed
+    // enteredNodeElements
+    //     .append("title")
+    //     .text(function (d) {
+    //         return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " + d.name;//capitalize Type and add shortname
+    //     })
+
+
 
 
 
@@ -810,8 +858,8 @@ function redraw(D3Data) {
 
 
     //inserting labels for links - only if checkbox is checked and links are defined
-    if (link && showLinkLabels) {
-        var linkLabel = g
+    if (graphLinks && showLinkLabels) {
+        graphLinkLabels = g
             .selectAll(".linklabel")
             .data(links)
             .enter()
@@ -826,7 +874,7 @@ function redraw(D3Data) {
 
 
     // Toggle buttons for child visibility
-    const visibilityButton = g
+    graphVisibilityButtons = g
         .selectAll('.visibilityButton')
         .data(nodes.filter(n => n._groups.length > 0))
         .enter()
@@ -847,11 +895,15 @@ function redraw(D3Data) {
         })
 
 
+}
 
-    //layouting of webcola
-    d3Cola.on("tick", function () {
-        //layouting of nodes
-        enteredNodeElements
+
+
+//layouting of webcola
+d3Cola.on("tick", function () {
+    //layouting of nodes
+    if (graphNodes) {
+        graphNodes
             .each(function (d) {
                 //d.parentBounds = d.bounds.inflate(-margin);// - original
                 d.parentBounds = d.parent.bounds; //make node have the same size as parent (directly surrounding group)
@@ -896,8 +948,11 @@ function redraw(D3Data) {
         // .attr('height', function (d) {
         //     return d.height
         // })
-        //layouting of groups 
-        group
+    }
+
+    //layouting of groups
+    if (graphGroups) {
+        graphGroups
             .attr("x", function (d) {
                 return d.bounds.x;
             })
@@ -940,129 +995,144 @@ function redraw(D3Data) {
                 // }
                 // return 75
             });
-        //layouting of links - only if links were created
-        if (link) {
-            link
-                .attr("d", function (d) {
-                    var route = cola.makeEdgeBetween(
-                        d.source.parentBounds,//original
-                        d.target.parentBounds,//original
-                        //d.source.bounds, 
-                        //d.target.bounds,
-                        //pad+8//distance from target - was 4 before, perfect for arrow head -> was before, when parentBounds of node was still set differently
-                        5
-                    );
+    }
 
-                    console.log('lineFunction', lineFunction)
-                    return lineFunction([route.sourceIntersection, route.arrowStart]);
-                })
-                .attr("x1", function (d) {
-                    return d.source.x;
-                })
-                .attr("y1", function (d) {
-                    return d.source.y;
-                })
-                .attr("x2", function (d) {
-                    return d.target.x;
-                })
-                .attr("y2", function (d) {
-                    return d.target.y;
-                })
-                .attr("text", function (d) {
-                    return d.name;
-                });
-        }
 
-        /*enteredNodeElements //was originally not commented but seems to not do anything?? 
+
+    //layouting of links - only if links were created
+    if (graphLinks) {
+        graphLinks
+            .attr("d", function (d) {
+                var route = cola.makeEdgeBetween(
+                    d.source.parentBounds,//original
+                    d.target.parentBounds,//original
+                    //d.source.bounds, 
+                    //d.target.bounds,
+                    //pad+8//distance from target - was 4 before, perfect for arrow head -> was before, when parentBounds of node was still set differently
+                    5
+                );
+
+
+                //creating lines
+                const lineFunction = d3
+                    .line()
+                    .x(function (d) {
+                        return d.x;
+                    })
+                    .y(function (d) {
+                        return d.y;
+                    })
+                    .curve(d3.curveLinear);
+                return lineFunction([route.sourceIntersection, route.arrowStart]);
+            })
+            .attr("x1", function (d) {
+                return d.source.x;
+            })
+            .attr("y1", function (d) {
+                return d.source.y;
+            })
+            .attr("x2", function (d) {
+                return d.target.x;
+            })
+            .attr("y2", function (d) {
+                return d.target.y;
+            })
+            .attr("text", function (d) {
+                return d.name;
+            });
+    }
+
+    /*enteredNodeElements //was originally not commented but seems to not do anything?? 
+        .attr("x", function (d) {
+            return d.x - d.width / 2 + pad;//original
+            //return d.parent.bounds.x; // -> make the node start at the same x position as the parent
+            //return d.bounds.x; 
+        })
+        .attr("y", function (d) {
+            return d.y - d.height / 2 + pad;//original
+            //return d.parent.bounds.y;
+            //return d.parent.bounds.y; // -> makes the node be at the top of the parent-group, but the arrows still point to old position :(
+        });*/
+
+
+
+
+
+    //layouting of node labels - only if checkbox is checked 
+    if (showEntityLabels && graphLabels) { // - graphLabels
+        graphLabels
             .attr("x", function (d) {
-                return d.x - d.width / 2 + pad;//original
-                //return d.parent.bounds.x; // -> make the node start at the same x position as the parent
-                //return d.bounds.x; 
+                //console.log("d ->", d, "d.parent -> ", d.parent)
+                return d.parent.bounds.x + d.parent.bounds.width() / 2;
+                //return d.x; //orginial
+                //return d.bounds.x + d.bounds.width()/2;
             })
             .attr("y", function (d) {
-                return d.y - d.height / 2 + pad;//original
-                //return d.parent.bounds.y;
-                //return d.parent.bounds.y; // -> makes the node be at the top of the parent-group, but the arrows still point to old position :(
-            });*/
+                const y = d.parent.bounds.y + nodePadding * 2
+                if (!d._parent) return y // if it doesnt have a parent forget the offsets
+                else if (d._groups.length !== 0) return y// + nodeHeight * 1.1 // node has children --> make space for visibilityButton
+                else return y// + nodeHeight // centered placement because node doesnt have children
+                /*var h = this.getBBox().height;
+                return d.y + h /4;*/ //original
+                //return d.bounds.y + h / 4;
+            })
+        // .attr('width', function (d) {
+        //     return 100 //d.parent.width
+        // })
+        // .attr('height', function (d) {
+        //     return 100 //d.parent.height
+        // })
+    }
+
+
+    // /*groupLabel
+    //     .attr("x", function (d) {
+    //         return d.bounds.x + d.bounds.width() / 2; // calculate x offset by dividing through group width
+    //     })
+    //     .attr("y", function (d) {
+    //         return d.bounds.y + 18; // calculate y offset by adding the height of the groupLabel
+    //     });*/
+
+    //layouting of linklabels - only if checkbox is checked and links were created
+    if (graphLinks && showLinkLabels && graphLinkLabels) { // -linkLabels
+        graphLinkLabels
+            .attr("x", function (d) {
+                var route = cola.makeEdgeBetween(
+                    d.source.parentBounds,
+                    d.target.parentBounds,
+                    5
+                );
+                const source = route.sourceIntersection
+                const target = route.arrowStart
+                if (source.x >= target.x) {
+                    return target.x + (source.x - target.x) / 2
+                } else {
+                    return source.x + (target.x - source.x) / 2
+                }
+            })
+            .attr("y", function (d) {
+                var route = cola.makeEdgeBetween(
+                    d.source.parentBounds,
+                    d.target.parentBounds,
+                    5
+                );
+                const source = route.sourceIntersection
+                const target = route.arrowStart
+
+                if (source.y >= target.y) {
+                    return target.y + (source.y - target.y) / 2
+                } else {
+                    return source.y + (target.y - source.y) / 2
+                }
+            });
+    }
 
 
 
 
 
-        //layouting of node labels - only if checkbox is checked 
-        if (showEntityLabels) {
-            label
-                .attr("x", function (d) {
-                    //console.log("d ->", d, "d.parent -> ", d.parent)
-                    return d.parent.bounds.x + d.parent.bounds.width() / 2;
-                    //return d.x; //orginial
-                    //return d.bounds.x + d.bounds.width()/2;
-                })
-                .attr("y", function (d) {
-                    const y = d.parent.bounds.y + nodePadding * 2
-                    if (!d._parent) return y // if it doesnt have a parent forget the offsets
-                    else if (d._groups.length !== 0) return y// + nodeHeight * 1.1 // node has children --> make space for visibilityButton
-                    else return y// + nodeHeight // centered placement because node doesnt have children
-                    /*var h = this.getBBox().height;
-                    return d.y + h /4;*/ //original
-                    //return d.bounds.y + h / 4;
-                })
-            // .attr('width', function (d) {
-            //     return 100 //d.parent.width
-            // })
-            // .attr('height', function (d) {
-            //     return 100 //d.parent.height
-            // })
-        }
-
-
-        // /*groupLabel
-        //     .attr("x", function (d) {
-        //         return d.bounds.x + d.bounds.width() / 2; // calculate x offset by dividing through group width
-        //     })
-        //     .attr("y", function (d) {
-        //         return d.bounds.y + 18; // calculate y offset by adding the height of the groupLabel
-        //     });*/
-
-        //layouting of linklabels - only if checkbox is checked and links were created
-        if (link && showLinkLabels) {
-            linkLabel
-                .attr("x", function (d) {
-                    var route = cola.makeEdgeBetween(
-                        d.source.parentBounds,
-                        d.target.parentBounds,
-                        5
-                    );
-                    const source = route.sourceIntersection
-                    const target = route.arrowStart
-                    if (source.x >= target.x) {
-                        return target.x + (source.x - target.x) / 2
-                    } else {
-                        return source.x + (target.x - source.x) / 2
-                    }
-                })
-                .attr("y", function (d) {
-                    var route = cola.makeEdgeBetween(
-                        d.source.parentBounds,
-                        d.target.parentBounds,
-                        5
-                    );
-                    const source = route.sourceIntersection
-                    const target = route.arrowStart
-
-                    if (source.y >= target.y) {
-                        return target.y + (source.y - target.y) / 2
-                    } else {
-                        return source.y + (target.y - source.y) / 2
-                    }
-                });
-        }
-
-
-
-
-
-        visibilityButton
+    if (graphVisibilityButtons) {
+        graphVisibilityButtons
             .attr("x", function (d) {
                 //console.log("d ->", d, "d.parent -> ", d.parent)
                 return d.parent.bounds.x + nodePadding / 2
@@ -1083,7 +1153,7 @@ function redraw(D3Data) {
                 // console.log('visibilityButton', d)
                 return d.childrenVisibility ? '-' : '+'
             })
-    });
+    }
+});
 
-}
 
