@@ -2,6 +2,7 @@ import express, { Router } from "express"
 import { readFileSync } from "fs";
 import { readFile } from "fs/promises";
 import path from "path"
+import argvParser from 'process.argv'
 
 
 const app = express()
@@ -33,16 +34,20 @@ app.get("/data", async function (request, response) {
 
 
 
+const args = argvParser(process.argv.slice(2))
+const config = args({})
 
+console.log(config)
 
-// console.log(process.argv)
-// app.get('/config', async function (request, response) {
-//     const associations = await readFile(_path + "public/src/data/assocs.json", "utf-8")
-//     const entities = await readFile(_path + "public/src/data/entities.json", "utf-8")
+if (config.help) {
+    console.log('HELP:\n--collapse - collapse all nodes at on init\n--disable - disable all types on init\n--disable=[classes,methods,constructors,parameters,attributes,localVariables] - disable specific types on init (comma separated list without spaces)')
+    process.exit(1)
+}
 
-//     // console.log("associations", associations)
-//     response.send({ associations, entities })
-// })
+const { collapse, disable } = config
+app.get('/config', async function (request, response) {
+    response.send({ collapse, disable })
+})
 
 
 const port = 3002

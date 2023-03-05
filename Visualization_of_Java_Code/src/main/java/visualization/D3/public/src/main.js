@@ -428,15 +428,13 @@ const delimiterRegex = /[\.\^\'\#\$]/g
 // Initialize graph with config
 async function initialize() {
     try {
-        // const response = await fetch('config')
-        // const config = await response.json()
-        // console.log('loaded config', config)
-        const config = { collapseOnInit: false, disableAllOnInit: true }
+        const response = await fetch('config')
+        const config = await response.json()
+        console.log('loaded config', config)
+        const { disable, collapse } = config
+        // const config = { collapseOnInit: false, disableAllOnInit: true }
 
-        const { collapseOnInit, disableAllOnInit, disablePackagesOnInit, disableClassesOnInit, disableMethodsOnInit, disableConstructorsOnInit, disableParametersOnInit, disableAttributesOnInit, disableLocalVariablesOnInit } = config
-
-
-        if (collapseOnInit) { // kinda works
+        if (collapse) { // kinda works
             for (const node of Node.getD3Data().nodes) {
                 Node.setChildrenVisibility(node.id, false) // TODO: when expanding nodes, all their children get expanded as well, should this stay?
             }
@@ -444,13 +442,15 @@ async function initialize() {
             redraw(Node.getD3Data())
         }
 
+
+        
         $checkboxes.forEach(element => {
-            if ((disableAllOnInit || disableClassesOnInit) && element.name === 'class') element.click()
-            else if ((disableAllOnInit || disableMethodsOnInit) && element.name === 'method') element.click()
-            else if ((disableAllOnInit || disableConstructorsOnInit) && element.name === 'constructor') element.click()
-            else if ((disableAllOnInit || disableParametersOnInit) && element.name === 'parameter') element.click()
-            else if ((disableAllOnInit || disableAttributesOnInit) && element.name === 'attribute') element.click()
-            else if ((disableAllOnInit || disableLocalVariablesOnInit) && element.name === 'localVariable') element.click()
+            if ((disable === true || (typeof disable === 'string' && disable.split(',').find(str => str === 'classes'))) && element.name === 'class') element.click()
+            else if ((disable === true || (typeof disable === 'string' && disable.split(',').find(str => str === 'methods'))) && element.name === 'method') element.click()
+            else if ((disable === true || (typeof disable === 'string' && disable.split(',').find(str => str === 'constructors'))) && element.name === 'constructor') element.click()
+            else if ((disable === true || (typeof disable === 'string' && disable.split(',').find(str => str === 'parameters'))) && element.name === 'parameter') element.click()
+            else if ((disable === true || (typeof disable === 'string' && disable.split(',').find(str => str === 'attributes'))) && element.name === 'attribute') element.click()
+            else if ((disable === true || (typeof disable === 'string' && disable.split(',').find(str => str === 'localVariables'))) && element.name === 'localVariable') element.click()
         })
 
 
@@ -458,7 +458,7 @@ async function initialize() {
 
 
 
-        if (!(collapseOnInit || disableAllOnInit || disablePackagesOnInit || disableClassesOnInit || disableMethodsOnInit || disableConstructorsOnInit || disableParametersOnInit || disableAttributesOnInit || disableLocalVariablesOnInit)) {
+        if (!(collapse || disable)) {
             redraw(Node.getD3Data())
         }
     } catch (error) {
