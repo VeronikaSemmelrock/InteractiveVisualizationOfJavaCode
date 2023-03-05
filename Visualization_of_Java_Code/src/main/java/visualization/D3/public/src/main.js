@@ -25,7 +25,7 @@ var showLinkLabels;
 var showEntityLabels;
 var showLinks;
 //vars for tools and configurations
-var constrainGraph; 
+var constrainGraph;
 
 //vars for defaultStyling 
 const defaultRounding = 6
@@ -39,8 +39,8 @@ function onToggleChildrenVisibility(nodeId) {
 
 //sets type visibility of given type (of node or link) and calls redraw if data changed 
 function onCheckboxChange(option, visibility) {
-    let D3Data;
     //if (option === "implements" || option === "extends" || option === "returnType" || option === "access" || option === "invocation") {
+
     if (option === "links") {
         showLinks = visibility
     } else if (option === "styling") {
@@ -58,7 +58,7 @@ function onCheckboxChange(option, visibility) {
         Node.fixed = visibility
 
     } else { //node visibility
-        D3Data = Node.setTypeVisibility(option, visibility)
+        Node.setTypeVisibility(option, visibility)
     }
     redraw(Node.getD3Data())
 }
@@ -88,16 +88,16 @@ const $slider = document.getElementById("weight")
 const $weightOutput = document.getElementById("weightOutput")
 $weightOutput.innerText = $slider.value
 
-$slider.onchange = function() {
+$slider.onchange = function () {
     $weightOutput.innerText = this.value  //show current weight
 }
-$slider.onmouseup = function() {
+$slider.onmouseup = function () {
     $weightOutput.innerText = this.value  //show current weight
     Node.weight = this.value
     console.log("test", Node.weight, Node.fixed)
     redraw(Node.getD3Data()) //redraw with new weight 
-} 
-constrainGraph = false; 
+}
+constrainGraph = false;
 document.getElementById("constrain").checked = false
 
 
@@ -431,7 +431,7 @@ async function initialize() {
         // const response = await fetch('config')
         // const config = await response.json()
         // console.log('loaded config', config)
-        const config = { collapseOnInit: false, disableAllOnInit: false, disablePackagesOnInit: false }
+        const config = { collapseOnInit: false, disableAllOnInit: true }
 
         const { collapseOnInit, disableAllOnInit, disablePackagesOnInit, disableClassesOnInit, disableMethodsOnInit, disableConstructorsOnInit, disableParametersOnInit, disableAttributesOnInit, disableLocalVariablesOnInit } = config
 
@@ -445,10 +445,6 @@ async function initialize() {
         }
 
         $checkboxes.forEach(element => {
-            if (disablePackagesOnInit && element.name === 'package') {
-                console.log('disablePackages', disablePackagesOnInit)
-                element.click()
-            }
             if ((disableAllOnInit || disableClassesOnInit) && element.name === 'class') element.click()
             else if ((disableAllOnInit || disableMethodsOnInit) && element.name === 'method') element.click()
             else if ((disableAllOnInit || disableConstructorsOnInit) && element.name === 'constructor') element.click()
@@ -469,9 +465,7 @@ async function initialize() {
         console.error('Failed to load config', error)
     }
 }
-window.addEventListener('DOMContentLoaded', async () => {
-    await initialize()
-})
+
 
 
 
@@ -531,39 +525,59 @@ function redraw(D3Data) {
     // const firstChildNodes = nodesWithGroups.map(n => groups.find(_n => _n.id === n.groups[0]))
     // // align along y axis
     groups.forEach((n, i) => {
-        const constraintY = {
-            type: 'separation',
-            gap: Math.floor(nodeHeight * 2),
-            axis: "y",
-            left: Node.getPotentialObjId(n.leaves[0]),
+        const mainNodeIndex = Node.getPotentialObjId(n.leaves[0])
+        // const mainNodeIndex = groups.findIndex(_n => Node.getPotentialObjId(_n) === mainNodeId)
+        // console.log('mainNodeIndex', mainNodeIndex)
+
+        if (mainNodeIndex > -1 && mainNodeIndex < groups.length) {
+            const constraintY = {
+                type: 'separation',
+                gap: Math.floor(nodeHeight * 2),
+                axis: "y",
+                left: mainNodeIndex,
+            }
+            // const constraintX1 = {
+            //     ...constraintY,
+            //     axis: 'x',
+            //     left: mainNodeIndex,
+            //     gap: Math.floor(nodeWidth / 2)
+            // }
+            // const constraintX2 = {
+            //     ...constraintY,
+            //     axis: 'x',
+            //     right: mainNodeIndex,
+            //     gap: Math.floor(nodeWidth / 2)
+            // }
+
+            const inequalityConstraint = { axis: 'x', left: mainNodeIndex }
+
+
+            // console.log('groups', n.groups)
+            // console.log('MainNode constraints', constraint)
+            n.groups.forEach(g => {
+                const gid = Node.getPotentialObjId(g)
+
+                if (gid > -1 && gid < groups.length) {
+                    // console.log('g', g, { ...constraintY, right: groupIndex }, { ...inequalityConstraint, right: groupIndex })
+                    // console.log('g constraint', groupIndex, groups.find(_g => Node.getPotentialObjId(_g) === groupIndex) ? true : false, n.leaves)
+
+                    constraints.push({ ...constraintY, right: gid })
+                    // constraints.push({ ...inequalityConstraint, right: gid })
+                    // const cx1 = { ...constraintX1, right: groupIndex }
+                    // const cx2 = {...constraintX2, left: groupIndex}
+                    // constraints.push(cx1)
+                    // constraints.push(cx2)
+                }
+            })
         }
-        // const constraintX1 = {
-        //     ...constraintY,
-        //     axis: 'x',
-        //     left: Node.getPotentialObjId(n.leaves[0]),
-        //     gap: Math.floor(nodeWidth / 2)
-        // }
-        // const constraintX2 = {
-        //     ...constraintY,
-        //     axis: 'x',
-        //     right: Node.getPotentialObjId(n.leaves[0]),
-        //     gap: Math.floor(nodeWidth / 2)
-        // }
-
-        const inequalityConstraint = { axis: 'x', left: Node.getPotentialObjId(n.leaves[0]) }
-
-
-        // console.log('MainNode constraints', constraint)
-        n.groups.forEach(g => {
-            // console.log('g', g, { ...constraintY, right: Node.getPotentialObjId(g) }, { ...inequalityConstraint, right: Node.getPotentialObjId(g) })
-            constraints.push({ ...constraintY, right: Node.getPotentialObjId(g) })
-            constraints.push({ ...inequalityConstraint, right: Node.getPotentialObjId(g) })
-            // const cx1 = { ...constraintX1, right: Node.getPotentialObjId(g) }
-            // const cx2 = {...constraintX2, left: Node.getPotentialObjId(g)}
-            // constraints.push(cx1)
-            // constraints.push(cx2)
-        })
     })
+
+
+
+    // console.log('constraints', nodes.forEach(n => {
+    //     if(n.type === 'parameter') console.log('parameter',n)
+    // }))
+
 
     // // Distance main groups from each other
     // const rootNodes = groups.filter(g => !g._parent)
@@ -832,12 +846,17 @@ function redraw(D3Data) {
     }
 
 
-    // //appending title to node so when mouse hovers over node title is displayed
-    // enteredNodeElements
-    //     .append("title")
-    //     .text(function (d) {
-    //         return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " + d.name;//capitalize Type and add shortname
-    //     })
+    //appending title to nodes and groups so when mouse hovers over either one, title is displayed
+    graphNodes
+        .append("title")
+        .text(function (d) {
+            return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " + d.name;//capitalize Type and add shortname
+        })
+    graphGroups
+        .append("title")
+        .text(function (d) {
+            return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " + d.name;//capitalize Type and add shortname
+        })
 
 
 
@@ -893,8 +912,6 @@ function redraw(D3Data) {
             //     return d.childrenVisibility ? '+' : '-'
             // })
         })
-
-
 }
 
 
@@ -1157,3 +1174,4 @@ d3Cola.on("tick", function () {
 });
 
 
+await initialize()

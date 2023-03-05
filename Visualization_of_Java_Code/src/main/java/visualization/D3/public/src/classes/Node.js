@@ -99,9 +99,13 @@ export default class Node {
     getLowestVisibleParentRecusive() {
         if (this.visibility) return this
         else {
-            const node = Node.internalNodes.find(n => n.name === this.parentUniqueName)
+            const node = this.getDirectParent()
             if (node) return node.getLowestVisibleParentRecusive() // if we dont find the parent it doesnt have a parent
         }
+    }
+    // get the direct parent of this
+    getDirectParent() {
+        return Node.internalNodes.find(n => n.name === this.parentUniqueName)
     }
 
 
@@ -215,7 +219,7 @@ export default class Node {
     static invisibleTypes = []
     //sets visibility of given type in internal and D3Data
     static setTypeVisibility(type, visibility) {
-        console.log("inside toggle ", type, visibility)
+        // console.log("inside toggle ", type, visibility)
         Node.resetInternalData()
 
         //if visibility of foreign entities should be set 
@@ -276,7 +280,7 @@ export default class Node {
             }
 
             // console.log('after', JSON.parse(JSON.stringify(Node.internalNodes)))
-            console.log('internalNodes', Node.internalNodes)
+            // console.log('internalNodes', Node.internalNodes)
             // console.log('internalLinks', Link.internalLinks)
             return Node.populateVisibleD3Data() // Parse new data into the D3 arrays
         }
@@ -293,13 +297,14 @@ export default class Node {
     static setInternalDataVisibilityRecursive(nodeId, visibility, debug) { // with debug true this method can be executed on non-reset internal data
         const node = Node.internalNodes[nodeId]
         const parent = node.getLowestVisibleParentRecusive()
-        const parentChildrenAreVisible = parent ? parent.childrenVisibility : true
+        const parentChildrenAreVisible = parent ? parent.childrenVisibility : true // lowest visible parent`s childrenVisiblity should be true for child to display
 
         // console.log('node with invisible children', Node.nodesWithInvisibleChildren, node, parent, parentChildrenAreVisible, parent ? Node.isNodeWithInvisibleChildren(parent.id) : undefined)
+        const directParent = node.getDirectParent()
+        const directParentChildrenAreVisible = directParent ? directParent.visibility && directParent.childrenVisibility : true // direct parent has to be visible for direct child to display
 
 
-
-        if (visibility ? !Node.isInvisibleType(node.type) && parentChildrenAreVisible : true) { // if type is filtered or node has been manually filtered, ignore node
+        if (visibility ? !Node.isInvisibleType(node.type) && parentChildrenAreVisible && directParentChildrenAreVisible : true) { // if type is filtered or node has been manually filtered, ignore node
             // console.log('setInternalDataVisibilityRecursive', node)
             node.visibility = visibility // hide internal node
 
