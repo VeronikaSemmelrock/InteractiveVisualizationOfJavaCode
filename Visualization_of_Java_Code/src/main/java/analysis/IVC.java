@@ -12,7 +12,7 @@ import java.util.Scanner;
 
 public class IVC {
     private static String SAMPLE_PROJECT_PATH = System.getProperty("user.dir")+"\\src\\test\\resources\\IntegrationTestInputProject";
-    private static String OUTPUT_PATH = System.getProperty("user.dir")+"\\src\\main\\java\\visualization\\D3\\public\\src\\data";
+    private static String OUTPUT_PATH = System.getProperty("user.dir")+"\\src\\main\\js\\D3\\public\\src\\data";
 
     private static HashMap<String, AbstractFamixEntity> famixEntities = new LinkedHashMap<>();
 
@@ -55,7 +55,7 @@ public class IVC {
         jsonExport.exportEntitiesToFile(spoonToFamix.getFamixEntities(), outputPath, "entities");
         jsonExport.exportAssociationsToFile(spoonToFamix.getFamixAssociations(), outputPath, "assocs");
 
-        System.out.println("Parsing process finished, please start server in "+ System.getProperty("user.dir")+"\\src\\main\\java\\visualization\\D3 with command npm start");
+        System.out.println("Parsing process finished, please start server in "+ System.getProperty("user.dir")+"\\src\\main\\js\\D3 with command node index.js. For further information on options, enter command node index.js --help in the same directory.");
     }
 
     public static HashMap<String, AbstractFamixEntity> getEntities(){

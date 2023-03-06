@@ -877,7 +877,7 @@ function redraw(D3Data) {
 
 
     //inserting labels for links - only if checkbox is checked and links are defined
-    if (graphLinks && showLinkLabels) {
+    if (graphLinks && showLinkLabels && showLinks) {
         graphLinkLabels = g
             .selectAll(".linklabel")
             .data(links)
@@ -1111,7 +1111,7 @@ d3Cola.on("tick", function () {
     //     });*/
 
     //layouting of linklabels - only if checkbox is checked and links were created
-    if (graphLinks && showLinkLabels && graphLinkLabels) { // -linkLabels
+    if (graphLinks && showLinkLabels && showLinks) { // -linkLabels
         graphLinkLabels
             .attr("x", function (d) {
                 var route = cola.makeEdgeBetween(
