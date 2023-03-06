@@ -27,12 +27,9 @@ const dir = path.join(__dirname)
 app.get("/data", async function (request, response) {
     const associations = await readFile(dir + "/public/src/data/assocs.json", "utf-8")
     const entities = await readFile(dir + "/public/src/data/entities.json", "utf-8")
-
     // console.log("associations", associations)
     response.send({ associations, entities })
 })
-
-
 
 const args = argvParser(process.argv.slice(2))
 const config = args({})
@@ -49,9 +46,7 @@ app.get('/config', async function (request, response) {
     response.send({ collapse, disable })
 })
 
-
 const port = 3002
-
 app.listen(port, () => {
     console.log('Serving IVJC on', port)
 })

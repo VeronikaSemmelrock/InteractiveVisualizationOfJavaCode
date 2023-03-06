@@ -2,8 +2,10 @@ import Link from "./classes/Link.js"
 import Node, { nodeHeight, nodePadding, nodeWidth } from "./classes/Node.js"
 import importJsonToD3 from "./parse.js"
 
+//loads data from \data directory
 await importJsonToD3()
-// Load data
+
+// Option - Load data manually 
 // data.groups.forEach(group => new Node(group.id, group.name, group.groups.length !== 0 ? 'class' : 'method', group.leaves, group.groups, group.parentUniqueName))
 // data.links.forEach(link => new Link(link.id, link.name, link.source, link.target))
 // console.log('all data', {
@@ -15,33 +17,16 @@ await importJsonToD3()
 // })
 
 
-
-
-
-const d3 = window.d3
-//vars for filtering that only happens in frontend 
-var styleEntities;
-var showLinkLabels;
-var showEntityLabels;
-var showLinks;
-//vars for tools and configurations
-var constrainGraph;
-
-//vars for defaultStyling 
-const defaultRounding = 6
-const defaultColour = "#b3e6b5" //light green
-
 //toggles children Visibility of given nodeId and calls redraw if data changed 
 function onToggleChildrenVisibility(nodeId) {
     const D3Data = Node.setChildrenVisibility(nodeId, undefined)
     if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
 }
 
-//sets type visibility of given type (of node or link) and calls redraw if data changed 
+//sets type or option visibility of given type (of node or link) or option and calls redraw
 function onCheckboxChange(option, visibility) {
-    //if (option === "implements" || option === "extends" || option === "returnType" || option === "access" || option === "invocation") {
-
     if (option === "links") {
+        //turn showing of links on or off
         showLinks = visibility
     } else if (option === "styling") {
         //turn styling on or off 
@@ -53,78 +38,58 @@ function onCheckboxChange(option, visibility) {
         //turn entityLabels on or off 
         showEntityLabels = visibility
     } else if (option === "constrain") {
+        //turn constraining of graph on or off 
         constrainGraph = visibility
     } else if (option === "fixed") {
+        //turn fixed position of nodes on or off 
         Node.fixed = visibility
-
-    } else { //node visibility
+    } else { //set node type visibility
         Node.setTypeVisibility(option, visibility)
     }
+    //call redraw with new data
     redraw(Node.getD3Data())
 }
 
+const d3 = window.d3
+//vars for filtering that only happens in frontend including default values 
+var styleEntities = true
+var showLinkLabels = true
+var showEntityLabels = true
+var showLinks = false 
+
+//vars for tools and configurations
+var constrainGraph = false
+
+//vars for defaultStyling 
+const defaultColour = "#b3e6b5" //light green
+
+//check all checkboxes on page reload and add event listeners that call method that set corresponding visibility
 const $checkboxes = document.querySelectorAll("input");
-//uncheck all checkboxes on page reload and add event listeners that call toggling of corresponding type visibility - TODO
 for (const checkbox of $checkboxes) {
-    checkbox.checked = true;//should be false 
+    checkbox.checked = true;
     checkbox.addEventListener("change", (e) => {
         onCheckboxChange(e.target.name, e.target.checked)
     })
 }
-showLinks = false;
+//uncheck specific checkboxes whose default value is false
 document.getElementById("filterLinks").checked = false
-//set checkbox of packages to checked, so packages are visible at page reload - TODO
-//document.getElementById("filterPackages").checked = true
-//set corresponding initial values for vars that are for filtering in frontend
+document.getElementById("constrain").checked = false
 
-styleEntities = true;
-showEntityLabels = true;
-showLinkLabels = true;
-
-
-
-//slider
+//slider for weight
 const $slider = document.getElementById("weight")
 const $weightOutput = document.getElementById("weightOutput")
 $weightOutput.innerText = $slider.value
 
+//output-Field of weight should be changed whenever slider value changes 
 $slider.onchange = function () {
     $weightOutput.innerText = this.value  //show current weight
 }
+//whenever value of slider really changes (not just dragging of slider) value should be set in Node class and redraw is called
 $slider.onmouseup = function () {
     $weightOutput.innerText = this.value  //show current weight
     Node.weight = this.value
-    console.log("test", Node.weight, Node.fixed)
     redraw(Node.getD3Data()) //redraw with new weight 
 }
-constrainGraph = false;
-document.getElementById("constrain").checked = false
-
-
-
-
-
-
-
-/*console.log("Nodes before ", Node.getD3Data().nodes)
-//initially close all nodes 
-for(const node of Node.getD3Data().nodes){
-    Node.setChildrenVisibility(node.id, false)
-}
-console.log("After setting showChildren to false -> ",  Node.getD3Data(), Node.internalNodes)
-//set data to inital values as well 
-//Node.setTypeVisibility("package", true)
-Node.setTypeVisibility("class", false)
-Node.setTypeVisibility("method", false)
-Node.setTypeVisibility("constructor", false)
-Node.setTypeVisibility("parameter", false)
-Node.setTypeVisibility("attribute", false)
-Node.setTypeVisibility("localVariable", false)*/
-
-
-
-
-
 
 // Graph max sizes
 const graphContainer = document.getElementById('main').getBoundingClientRect()
@@ -140,14 +105,6 @@ const topLeftFixedNode = { ...fixedNode, x: graphBoundaries.x, y: graphBoundarie
 const bottomRightFixedNode = { ...fixedNode, x: graphBoundaries.x + graphBoundaries.width, y: graphBoundaries.y + graphBoundaries.height }
 const constraintBase = { type: 'separation', gap: 40 } // distance to boundary
 
-
-// Node Padding
-const padding = 30
-
-
-//setting colour scheme
-const color = d3.scaleOrdinal(d3.schemeSet3);
-
 //configuring webcola
 const d3Cola = cola
     .d3adaptor(d3)
@@ -160,8 +117,6 @@ const d3Cola = cola
     //.flowLayout("x", 150)  //the call to flowLayout causes all edges not involved in a cycle to have a separation constraint generated between their source and sink
     // with a minimum spacing set to 150. Specifying the 'x' axis achieves a left-to-right flow layout. The default is top-to-bottom flow layout
     .size([width, height]);
-
-// console.log('cola', d3Cola.groupCompactness)
 
 //appending svg to container "main"
 const svg = d3
@@ -224,28 +179,18 @@ const addGrid = () => {
 
     //     <rect width="100%" height="100%" fill="url(#grid)" />
 }
+//add Grid to frontend - has to be before appedning g so it is in the background
 addGrid()
 
-// setTimeout(addGrid, 5000)
-// .attr("width", width)
-// .attr("height", height)
 // Construct graph and its bounds
 const g = svg
     .append('g')
     .attr('id', 'graph')
 
 
-
-// add toggleButton for constrain graph
-// add slider for Node.weight
-// add toggleButton for Node.fixed
-
-
-
 //// zooming
 // Configure zoom
 const zoom = d3.zoom()
-
 function setGraphZoom(enable) {
     if (!enable) svg.call(zoom.on('zoom', function () { }))
     else {
@@ -256,17 +201,10 @@ function setGraphZoom(enable) {
             .on("zoom", function () {
                 const transform = d3.zoomTransform(this)
                 // console.log('zooming', transform, transform.x - width / 2, transform.y - height / 2)
-                // redraw(Node.getD3Data(), true)
-                // enteredNodeElements.attr('x', transform.x)
-                // enteredNodeElements.attr('y', transform.y)
-
-                // enteredNodeElements.attr('width', enteredNodeElements.size())
-
                 //// resize graph content and drag graph content along its axisis
                 g.attr("transform", "translate(" + transform.x + "," + transform.y + ") scale(" + transform.k + ")");
             }))
             .on("dblclick.zoom", null)
-
     }
 }
 
@@ -294,16 +232,11 @@ function getGraphScale(graph) {
     }
 }
 
+//fit Graph into view
 const fitGraphToViewTime = 750
-
 function fitGraphToView(isInternal) {
-    // console.log('svg', Object.keys(svg))
-
-    // console.log('x', svg.attr('X'))
     const graph = document.getElementById('graph') // := g
     const initialScale = getGraphScale(graph)
-    // console.log('graph', graph, initialScale)
-
     const graphPosition = graph.getBoundingClientRect()
     // const graphPosition = svg.getBBox()
     //graphPosition.x = graphPosition.x - graphContainer.x
@@ -315,7 +248,6 @@ function fitGraphToView(isInternal) {
     // console.log('center is', centerX, centerY)
     // console.log('maxWidth and maxHeight', width, height)
 
-
     // Scale
     const widthRelation = graphPosition.width / width
     const heightRelation = graphPosition.height / height
@@ -323,7 +255,6 @@ function fitGraphToView(isInternal) {
     const graphTooWide = widthRelation > 1
     const graphTooHigh = heightRelation > 1
     const graphTooBig = graphTooHigh || graphTooWide
-
 
     // const factor = Math.max(graphPosition.width / width, graphPosition.height / height)
     let scale = 1 // Math.exp(factor) / factor
@@ -339,7 +270,7 @@ function fitGraphToView(isInternal) {
         translateY = -centerY * (scale - 1)
         console.log('graph too small, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, 1 / relation, initialScale, scale)
     }
-    else if (graphTooBig) { // doesnt work yet: TODO, when zooming in really much, have to press fitToView twice for it to work
+    else if (graphTooBig) {
         if (graphTooHigh && graphTooWide) relation = graphTooHigh > graphTooWide ? heightRelation : widthRelation
         else if (graphTooHigh) relation = heightRelation
 
@@ -347,35 +278,8 @@ function fitGraphToView(isInternal) {
         translateX = -centerX * (scale - 1)
         translateY = -centerY * (scale - 1)
 
-        // if (scale >= 1) {
-        //     scale = 1 / relation * scale * 0.85
-        //     translateX = -centerX * (scale - 1)
-        //     translateY = -centerY * (scale - 1)
-        // }
         console.log('graph too big, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, 1 / relation, initialScale, scale)
     }
-
-
-    // else if (graphTooHigh || graphTooWide) { // graph too big
-    //     let relation = heightRelation // use heightRelationTo adjust graph scale
-    //     if (graphTooHigh && graphTooWide) relation = graphTooHigh < graphTooWide ? heightRelation : widthRelation
-    //     else if (widthRelation > heightRelation) relation = widthRelation // use widthRelation to adjust graph scale
-
-    //     scale = 1 / relation
-    //     console.log('graph too big, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, scale)
-    // }
-
-
-    // // const widthRelation = width / graphPosition.width
-    // // const heightRelation = height / graphPosition.height
-    // // let scale = 1
-    // // if (widthRelation > 1 && heightRelation > 1) scale = widthRelation < heightRelation ? widthRelation : heightRelation // graph too small
-    // // console.log('graph small big, adjusting: widthRelation, heightRelation, adjustment', widthRelation, heightRelation, scale)
-
-
-    // setTimeout(() => {
-
-
 
     svg
         .transition()
@@ -391,19 +295,13 @@ function fitGraphToView(isInternal) {
                 .translate(translateX, translateY)
                 .scale(scale)
         )
-
-
     // console.log(graphTooBig, isInternal)
     if (graphTooBig && graphTooHigh && graphTooWide && !isInternal) setTimeout(() => fitGraphToView(true), fitGraphToViewTime / 2)
 }
-
+//add eventListener to button
 document.getElementById('fitToView').addEventListener('click', () => fitGraphToView())
 
-
-
-
-
-//configuration for arrow heads
+//configuration for arrow heads of links
 g
     .append("svg:defs")
     .append("svg:marker")
@@ -419,12 +317,6 @@ g
     .attr("stroke-width", "0px")
     .attr("fill", "#000");
 
-
-const delimiters = ['.', '^', '\'', '#', '$']
-const delimiterRegex = /[\.\^\'\#\$]/g
-
-
-
 // Initialize graph with config
 async function initialize() {
     try {
@@ -434,16 +326,13 @@ async function initialize() {
         const { disable, collapse } = config
         // const config = { collapseOnInit: false, disableAllOnInit: true }
 
-        if (collapse) { // kinda works
+        if (collapse) { 
             for (const node of Node.getD3Data().nodes) {
-                Node.setChildrenVisibility(node.id, false) // TODO: when expanding nodes, all their children get expanded as well, should this stay?
+                Node.setChildrenVisibility(node.id, false) 
             }
-
             redraw(Node.getD3Data())
         }
 
-
-        
         $checkboxes.forEach(element => {
             if ((disable === true || (typeof disable === 'string' && disable.split(',').find(str => str === 'classes'))) && element.name === 'class') element.click()
             else if ((disable === true || (typeof disable === 'string' && disable.split(',').find(str => str === 'methods'))) && element.name === 'method') element.click()
@@ -452,11 +341,6 @@ async function initialize() {
             else if ((disable === true || (typeof disable === 'string' && disable.split(',').find(str => str === 'attributes'))) && element.name === 'attribute') element.click()
             else if ((disable === true || (typeof disable === 'string' && disable.split(',').find(str => str === 'localVariables'))) && element.name === 'localVariable') element.click()
         })
-
-
-
-
-
 
         if (!(collapse || disable)) {
             redraw(Node.getD3Data())
@@ -467,8 +351,6 @@ async function initialize() {
 }
 
 
-
-
 // Redraw Data
 let graphNodes
 let graphLinks
@@ -476,7 +358,6 @@ let graphGroups
 let graphLabels
 let graphLinkLabels
 let graphVisibilityButtons
-
 
 //(re)drawing of graph 
 function redraw(D3Data) {
@@ -501,9 +382,7 @@ function redraw(D3Data) {
     g.selectAll(".linklabel").remove()
     g.selectAll('.visibilityButton').remove()
 
-    // console.log('graphContainer', nodes, links, groups)
-
-    //// constraints
+    //// constraints - for layouting
     const constrainedNodes = nodes.slice()
     const constraints = []
     if (constrainGraph) {
@@ -518,7 +397,6 @@ function redraw(D3Data) {
             constraints.push({ ...constraintBase, axis: 'y', left: i, right: bottomRightFixedNodeIndex })
         }
     }
-
 
     // Main Node to Groups Distance
     // const nodesWithGroups = groups.filter(n => n.groups.length !== 0)
@@ -548,9 +426,7 @@ function redraw(D3Data) {
             //     right: mainNodeIndex,
             //     gap: Math.floor(nodeWidth / 2)
             // }
-
             const inequalityConstraint = { axis: 'x', left: mainNodeIndex }
-
 
             // console.log('groups', n.groups)
             // console.log('MainNode constraints', constraint)
@@ -573,12 +449,6 @@ function redraw(D3Data) {
     })
 
 
-
-    // console.log('constraints', nodes.forEach(n => {
-    //     if(n.type === 'parameter') console.log('parameter',n)
-    // }))
-
-
     // // Distance main groups from each other
     // const rootNodes = groups.filter(g => !g._parent)
     // for (let i = 0; i < rootNodes.length; i++) {
@@ -594,70 +464,6 @@ function redraw(D3Data) {
     //     // }
     // }
 
-    // console.log('veroConstraints', constraints.slice(-rootNodes.length), rootNodes.length)
-
-
-
-
-    // // Root Node Distance
-    // nodes.forEach(n => {
-    //     const constraint = {
-    //         type: 'separation',
-    //         gap: Math.floor(nodeHeight / 3),
-    //         axis: 'y',
-    //         left: n.id
-    //     }
-
-    //     nodes.forEach(_n => {
-    //         constraints.push({
-    //             ...constraint,
-    //             right: _n.id
-    //         })
-    //         constraints.push({
-    //             ...constraint,
-    //             axis: 'x',
-    //             right: _n.id
-    //         })
-    //     })
-    // })
-    // const rootNodes = nodes.filter(n => !n._parent)
-    // rootNodes.forEach(n => {
-    //     const constraint = 
-    // })
-
-
-
-    // firstChildNodes.forEach((n, i) => nodes[i].width = n.width * 2)
-    // constraints.push({
-    //     type: 'separation',
-    //     gap: 100,
-    //     axis: "x",
-    //     // offsets: firstChildNodes.map(n => ({ node: n.id, offset: 200 }))
-    // })
-    // constraints.push({type:'separation', axis: "y", offsets: nodes.map(n => ({node: n.id, offset: 0}))}) // align along x axis
-    // constraints.push({type:'alignment', axis: "y", offsets: rootNodes.map(n => ({node: n.id, offset: 1000}))}) // align along x axis
-
-    // // const constraints = [
-    // //     { "type": "alignment", "axis": "x", "offsets": [/* { "node": "0", "offset": "0" } */] },
-    // //     { "type": "alignment", "axis": "y", "offsets": [/* { "node": "0", "offset": "0" } */] }
-    // // ]
-    // // let xOffsets = 0
-    // // let yOffsets = 0
-
-    // // for (let i = 0; i < constrainedNodes.length; i++) {
-    // //     const node = constrainedNodes[i]
-    // //     const level = node.name.split(delimiterRegex).length
-    // //     // console.log('node', node, level)
-    // //     if (level === 1) {
-    // //         constraints[0].offsets.push({ node: i, offset: 0 })
-    // //     }
-    // //     else {
-    // //         constraints[1].offsets.push({ node: i, offset: 0 })
-    // //     }
-    // // }
-
-
-
     // Setting global data in d3Cola
     // console.log('result', constrainedNodes, links, groups, constraints)
     d3Cola
@@ -669,8 +475,6 @@ function redraw(D3Data) {
         .start(10, 15, 20); // try with 10, 10, 10, 10
     // The start() method now includes up to three integer arguments. In the example above, start will initially apply 10 iterations of layout with no constraints, 15 iterations with only structural (user-specified) constraints and 20 iterations of layout with all constraints including anti-overlap constraints.
     // Specifying such a schedule is useful to allow the graph to untangle before making it relatively "rigid" with constraints.
-
-
 
     // // Load in data
     // const existingGroupElements = graphGroups?._groups[0]
@@ -703,15 +507,6 @@ function redraw(D3Data) {
         .attr('id', function (d) {
             return d.id
         })
-        // .attr("rx", function (d) {
-        //     //style depending on checkbox value 
-        //     if (styleEntities) return d.style.rx
-        //     else return defaultRounding;
-        // })
-        // .attr("ry", function (d) {
-        //     if (styleEntities) return d.style.ry
-        //     else return defaultRounding;
-        // })
         .style("fill", function (d) {
             if (styleEntities) return d.style.color
             else return defaultColour
@@ -724,42 +519,15 @@ function redraw(D3Data) {
             const { bounds } = d
             console.log('zoom button clicked on group', d)
             zoomOnClick(bounds.x + bounds.width() / 2, bounds.y + bounds.height() / 2)
-
-            // function (node) {
-            //     //on doubleclick toggle group/children visibility 
-            //     if (waitForDoubleClick != null) {
-            //         clearTimeout(waitForDoubleClick)
-            //         waitForDoubleClick = null
-            //         onToggleChildrenVisibility(node.id)
-            //     } else { //on single click zoom in on clicked spot 
-            //         waitForDoubleClick = setTimeout(() => {
-            //             const { x, y } = node
-            //             zoomOnClick(x, y)
-            //             waitForDoubleClick = null
-            //         }, 250)//waiting for 250 to detect double click 
-            //     }
-            // }
         })
         .call(d3Cola.drag) //adding ability to drag
-    /*.on("mouseup", function (d) {
-        d.fixed = 0;
-        d3Cola.alpha(1); // fire it off again to satify gridify
-    })
-    .on('click', function (g) {
-        // console.log('group clicked', g.id)
-        const D3Data = Node.toggleChildrenVisibility(g.id)
-        if (D3Data) redraw(D3Data) // if no D3Data is returned a redraw is not necessary
-    })*/
-
 
     //inserting nodes-data into g 
     var nodeElements = g
         .selectAll(".node")
         .data(nodes)
 
-
-    let waitForDoubleClick = null
-    //inserting nodes into g 
+    //inserting nodes into g as elements
     graphNodes = nodeElements.enter()
         .append("rect")
         .attr("class", "node")
@@ -786,31 +554,7 @@ function redraw(D3Data) {
             const { x, y } = d
             console.log('zoom button clicked on node', d)
             zoomOnClick(x, y)
-
-            // function (node) {
-            //     //on doubleclick toggle group/children visibility 
-            //     if (waitForDoubleClick != null) {
-            //         clearTimeout(waitForDoubleClick)
-            //         waitForDoubleClick = null
-            //         onToggleChildrenVisibility(node.id)
-            //     } else { //on single click zoom in on clicked spot 
-            //         waitForDoubleClick = setTimeout(() => {
-            //             const { x, y } = node
-            //             zoomOnClick(x, y)
-            //             waitForDoubleClick = null
-            //         }, 250)//waiting for 250 to detect double click 
-            //     }
-            // }
         })
-    /*.on("mouseup", function (d) {
-       d.fixed = 0;
-     d3Cola.alpha(1); // fire it off again to satify gridify
-    })*/
-    // .on("click", function (d) {
-    //     console.log("WORKS!!!")
-    //     testFunc(d);
-    //     //handleNodeClick(d.id);
-    // });
 
     //inserting links - only if checkbox is checked
     if (showLinks) {
@@ -830,7 +574,6 @@ function redraw(D3Data) {
             });
     }
 
-
     //inserting labels for nodes - only if checkbox is checked 
     if (showEntityLabels) {
         graphLabels = g
@@ -845,7 +588,6 @@ function redraw(D3Data) {
             .call(d3Cola.drag); // text also triggers drag event
     }
 
-
     //appending title to nodes and groups so when mouse hovers over either one, title is displayed
     graphNodes
         .append("title")
@@ -857,24 +599,6 @@ function redraw(D3Data) {
         .text(function (d) {
             return d.type.charAt(0).toUpperCase() + d.type.slice(1) + " " + d.name;//capitalize Type and add shortname
         })
-
-
-
-
-
-
-    // //inserting labels for groups into g
-    // var groupLabel = g
-    //     .selectAll(".grouplabel")
-    //     .data(groups)
-    //     .enter()
-    //     .append("text")
-    //     .attr("class", "grouplabel")
-    //     .text(function (d) {
-    //         return d.name;
-    //     })
-    //     .call(d3Cola.drag); // text also triggers drag event
-
 
     //inserting labels for links - only if checkbox is checked and links are defined
     if (graphLinks && showLinkLabels && showLinks) {
@@ -891,7 +615,6 @@ function redraw(D3Data) {
             .call(d3Cola.drag); // text also triggers drag event
     }
 
-
     // Toggle buttons for child visibility
     graphVisibilityButtons = g
         .selectAll('.visibilityButton')
@@ -899,18 +622,9 @@ function redraw(D3Data) {
         .enter()
         .append('text')
         .attr('class', 'visibilityButton')
-        // .attr('width', function (d) {
-        //     return 1000
-        // })
-        // .attr('height', function (d) {
-        //     return 1000
-        // })
         .on('click', function (d) {
             console.log('visibilityButton clicked', d)
             onToggleChildrenVisibility(d.id)
-            // visibilityButton.text(function (d) {
-            //     return d.childrenVisibility ? '+' : '-'
-            // })
         })
 }
 
@@ -922,49 +636,18 @@ d3Cola.on("tick", function () {
     if (graphNodes) {
         graphNodes
             .each(function (d) {
-                //d.parentBounds = d.bounds.inflate(-margin);// - original
                 d.parentBounds = d.parent.bounds; //make node have the same size as parent (directly surrounding group)
             })
             .attr("x", function (d) {
-                return d.parent.bounds.x// + padding; //make the node start at the same x position as the parent -> if others access x, this is returned
-                //return d.parentBounds.x; //original
-                //return d.parent.bounds.x; // -> make the node start at the same x position as the parent
-                //return d.bounds.x
+                return d.parent.bounds.x
             })
             .attr("y", function (d) {
-                // console.log('enteredNode', Object.keys(d.parent))
-                // const parentHeight = d.parent.bounds.height()
-                // const numberOfChildren = d.parent.groups.length
-
-                // const divisor = numberOfChildren !== 0 ? numberOfChildren : 1
-
-                // console.log('enteredNodes', d.parent)
-                // if(d.parent.layers !== 1) d.parent.bounds.y + 25
                 if (!d._parent) return d.parent.bounds.y
-                return d.parent.bounds.y// + parentHeight * divisor// + padding; //works, but others do not respect bounding
-                //return d.parentBounds.y; //original
-                //return d.bounds.y//maybe this is what the others access when drawing ? 
+                return d.parent.bounds.y
             })
             .attr('width', function (d) { // dunno if this breaks anything
                 return d.parent.bounds.width()
             })
-        // .attr("width", function (d) {
-        //     // const parentWidth = d.parent.bounds.width()
-        //     // const numberOfChildren = d.parent.groups.length
-
-        //     // const divisor = numberOfChildren !== 0 ? numberOfChildren : 1
-
-        //     // console.log('enteredNodes', parentWidth, Math.floor((parentWidth) / divisor), divisor)
-        //     // return Math.floor((parentWidth) / divisor);// make the node have the same height as the parent
-        //     // console.log('enteredNodeElements parent', d.parent)
-
-        //     return d.parent.width // // computed width after D3-scaling
-        //     // return d.parent.bounds.width() - 2 * padding; // -> make the node the same width as the parent (group)
-        //     //return 0; //-> makes the node invisible
-        // })
-        // .attr('height', function (d) {
-        //     return d.height
-        // })
     }
 
     //layouting of groups
@@ -974,43 +657,19 @@ d3Cola.on("tick", function () {
                 return d.bounds.x;
             })
             .attr("y", function (d) {
-                // if(d._parent) return d.id * 350
-                // if(d.parent) return d.parent.bounds.y
-                /*if(d.parent){
-                    return d.parent.bounds.y;
-                }*/
-                // if (d.parent) return d.parent.bounds.y + d.height * d.parent.groups.findIndex(g => g.id === d.id);// - original
                 if (d.parent) {
-                    return d.bounds.y// + nodeHeight
+                    return d.bounds.y
                 }
                 return d.bounds.y
             })
             .attr("width", function (d) {
-                // if (d.parent) {
-                //     // return d.bounds.width();
-                //     return d.parent.width
-                // }
-                // if (d.parent) return d.parent.bounds.width()
                 return d.bounds.width();
             })
             .attr("height", function (d) {
-                // if (d.parent) {
-                //     return d.parent.bounds.height() / d.parent.groups.length + 1
-                // }
-                // console.log('d', d.groups)
-                // console.log('d', d.height)
-
-
-
                 if (d.groups.length === 0) return nodeHeight // if group has no children --> groups.height === node.height
                 else if (d.parent) return d.bounds.height() // if group has parent --> group can align itself according to parent - 50 / d.parent.groups.length
 
                 return d.bounds.height() // + nodeHeight //(d.height - 25) / 75 + 25
-                // return d.bounds.height() < d.height ? d.bounds.height() : d.height
-                // if (d.groups.length > 0) {
-                //     return 75 * (d.groups.length + 1)
-                // }
-                // return 75
             });
     }
 
@@ -1021,14 +680,10 @@ d3Cola.on("tick", function () {
         graphLinks
             .attr("d", function (d) {
                 var route = cola.makeEdgeBetween(
-                    d.source.parentBounds,//original
-                    d.target.parentBounds,//original
-                    //d.source.bounds, 
-                    //d.target.bounds,
-                    //pad+8//distance from target - was 4 before, perfect for arrow head -> was before, when parentBounds of node was still set differently
+                    d.source.parentBounds,
+                    d.target.parentBounds,
                     5
                 );
-
 
                 //creating lines
                 const lineFunction = d3
@@ -1059,56 +714,21 @@ d3Cola.on("tick", function () {
             });
     }
 
-    /*enteredNodeElements //was originally not commented but seems to not do anything?? 
-        .attr("x", function (d) {
-            return d.x - d.width / 2 + pad;//original
-            //return d.parent.bounds.x; // -> make the node start at the same x position as the parent
-            //return d.bounds.x; 
-        })
-        .attr("y", function (d) {
-            return d.y - d.height / 2 + pad;//original
-            //return d.parent.bounds.y;
-            //return d.parent.bounds.y; // -> makes the node be at the top of the parent-group, but the arrows still point to old position :(
-        });*/
-
-
-
-
-
+    
     //layouting of node labels - only if checkbox is checked 
     if (showEntityLabels && graphLabels) { // - graphLabels
         graphLabels
             .attr("x", function (d) {
-                //console.log("d ->", d, "d.parent -> ", d.parent)
                 return d.parent.bounds.x + d.parent.bounds.width() / 2;
-                //return d.x; //orginial
-                //return d.bounds.x + d.bounds.width()/2;
             })
             .attr("y", function (d) {
                 const y = d.parent.bounds.y + nodePadding * 2
                 if (!d._parent) return y // if it doesnt have a parent forget the offsets
                 else if (d._groups.length !== 0) return y// + nodeHeight * 1.1 // node has children --> make space for visibilityButton
                 else return y// + nodeHeight // centered placement because node doesnt have children
-                /*var h = this.getBBox().height;
-                return d.y + h /4;*/ //original
-                //return d.bounds.y + h / 4;
             })
-        // .attr('width', function (d) {
-        //     return 100 //d.parent.width
-        // })
-        // .attr('height', function (d) {
-        //     return 100 //d.parent.height
-        // })
     }
 
-
-    // /*groupLabel
-    //     .attr("x", function (d) {
-    //         return d.bounds.x + d.bounds.width() / 2; // calculate x offset by dividing through group width
-    //     })
-    //     .attr("y", function (d) {
-    //         return d.bounds.y + 18; // calculate y offset by adding the height of the groupLabel
-    //     });*/
 
     //layouting of linklabels - only if checkbox is checked and links were created
     if (graphLinks && showLinkLabels && showLinks) { // -linkLabels
@@ -1144,30 +764,19 @@ d3Cola.on("tick", function () {
             });
     }
 
-
-
-
-
     if (graphVisibilityButtons) {
         graphVisibilityButtons
             .attr("x", function (d) {
-                //console.log("d ->", d, "d.parent -> ", d.parent)
                 return d.parent.bounds.x + nodePadding / 2
-                //return d.x; //orginial
-                //return d.bounds.x + d.bounds.width()/2;
             })
             .attr("y", function (d) {
                 const y = d.parent.bounds.y + nodePadding * 2
                 if (!d._parent) {
                     return y
                 }
-                return y// + nodeHeight * 3 / 4
-                /*var h = this.getBBox().height;
-                return d.y + h /4;*/ //original
-                //return d.bounds.y + h / 4;
+                return y
             })
             .text(function (d) {
-                // console.log('visibilityButton', d)
                 return d.childrenVisibility ? '-' : '+'
             })
     }

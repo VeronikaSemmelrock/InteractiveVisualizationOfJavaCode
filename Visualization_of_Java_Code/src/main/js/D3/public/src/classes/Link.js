@@ -4,6 +4,7 @@ export default class Link{
     static internalLinks = [] // class-based link array for changing links array with class methods
     static links = [] // D3cola link array
 
+    //creates a link
     constructor(id, source, target, type) {
         this.id = id
         this.type = type
@@ -15,12 +16,13 @@ export default class Link{
     }
 
 
+    //returns a link in the format that D3 and cola expect
     toD3Link(newVisibleD3Nodes) {
         const linkObj = {
             id: this.id,
             type: this.type,
         }
-        if (newVisibleD3Nodes) {
+        if (newVisibleD3Nodes) {//source and target have to be indices! 
             linkObj.source = Node.getVisibleIndexById(newVisibleD3Nodes, this.source)
             linkObj.target = Node.getVisibleIndexById(newVisibleD3Nodes, this.target)
         }
@@ -58,12 +60,12 @@ export default class Link{
             if (!sourceIsInvisibleInternalNode && !targetIsInvisibleInternalNode) {
                 visibleD3Links.push(link.toD3Link(visibleD3Nodes))
             }
-            else if (!(sourceIsInvisibleInternalNode && targetIsInvisibleInternalNode)) { // if either link or source is not an invisibleInternalNode we gotta repath the link to the first parent node that is visible := getLowestVisibleParentRecusive
+            else if (!(sourceIsInvisibleInternalNode && targetIsInvisibleInternalNode)) { // if either link or source is not an invisibleInternalNode we gotta repath the link to the first parent node that is visible := getLowestVisibleParentRecursive
                 // console.log('repath links', Link.internalLinks, link.id, sourceIsInvisibleInternalNode ? 'source' : 'target')
                 const key = sourceIsInvisibleInternalNode ? 'source' : 'target'
 
                 const invisibleNode = sourceIsInvisibleInternalNode || targetIsInvisibleInternalNode
-                const parent = invisibleNode.getLowestVisibleParentRecusive()
+                const parent = invisibleNode.getLowestVisibleParentRecursive()
                 // console.log('parent of link', link, 'is', parent)
                 if (parent) { // repath
                     const repathedD3Link = link.toD3Link(visibleD3Nodes)
@@ -75,7 +77,6 @@ export default class Link{
 
         return visibleD3Links
     }
-
 
     // Link Styling
     /*

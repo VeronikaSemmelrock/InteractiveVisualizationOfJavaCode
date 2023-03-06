@@ -1,5 +1,7 @@
 import Node from "./classes/Node.js";
 import Link from "./classes/Link.js";
+
+
 //parses associations.json from IVC to links for D3
 function parseAssociationsToLinks(associations, entities){
     let result = []; 
@@ -64,7 +66,7 @@ function parseEntitiesToNodes(entities){
     return replaceChildUniqueNamesWithIndex(resultNodes); 
 }
 
-//
+//return a list of unique names corresponding to a list of data
 function getUniqueNames(list){
     //console.log(list)
     const result = [];  
@@ -74,7 +76,7 @@ function getUniqueNames(list){
     return result; 
 }
 
-//replaces the uniqueNames of the children (in "group") with the index of the entity in the list 
+//replaces the uniqueNames of the children (in "group") with the index of the entity in the list - necessary for D3
 function replaceChildUniqueNamesWithIndex(list){
     for(let i = 0; i < list.length; i++){//go through all nodes
         const indexesChildren = [];  
@@ -89,7 +91,7 @@ function replaceChildUniqueNamesWithIndex(list){
     return list; 
 }
 
-//imports json-files (association.json and entities.json) and parses them to nodes in class Node and links in class Link
+//imports json-files (association.json and entities.json in \data) and parses them to nodes in class Node and links in class Link
 async function importJsonToD3(){
     try {
         const data = await fetch("data")
